@@ -260,3 +260,37 @@ dialog { width: min(760px, calc(100vw - 1rem)); border: none; border-radius: 1re
   .section-foot > * { width:100%; }
   .app-version { margin-top:.45rem; }
 }
+
+
+.pull-refresh-indicator {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -120%);
+  transition: transform .18s ease, opacity .18s ease;
+  opacity: 0;
+  z-index: 30;
+  padding: .65rem .9rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.96);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+  color: var(--muted);
+  font-size: .92rem;
+  pointer-events: none;
+}
+.pull-refresh-indicator.visible {
+  transform: translate(-50%, 10px);
+  opacity: 1;
+}
+.pull-refresh-indicator.ready {
+  color: var(--accent);
+  border-color: #e2d0ba;
+  background: var(--accent-soft);
+}
+.pull-refresh-indicator.loading {
+  color: var(--ok);
+}
+html, body {
+  overscroll-behavior-y: auto;
+}

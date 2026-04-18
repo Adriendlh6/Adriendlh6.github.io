@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'pilotage-production-vierge-v4-2';
+const STORAGE_KEY = 'pilotage-production-vierge-v4-3';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.2';
+const APP_VERSION = 'v1.3';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -1002,7 +1002,8 @@ window.addEventListener('beforeunload', () => {
 });
 
 renderAll();
-
+renderVersionBadges();
+installPullToRefresh();
 
 function renderVersionBadges() {
   const versionText = `Version ${APP_VERSION}`;
@@ -1028,6 +1029,90 @@ function renderInstallHelp() {
   }
 }
 
+
+function setPullRefreshState(text, stateClass = '') {
+  const indicator = document.getElementById('pullRefreshIndicator');
+  const label = document.getElementById('pullRefreshText');
+  if (!indicator || !label) return;
+  label.textContent = text;
+  indicator.className = 'pull-refresh-indicator visible' + (stateClass ? ` ${stateClass}` : '');
+}
+function hidePullRefreshState() {
+  const indicator = document.getElementById('pullRefreshIndicator');
+  if (!indicator) return;
+  indicator.className = 'pull-refresh-indicator';
+}
+async function forceAppRefresh() {
+  setPullRefreshState('Actualisation de l’application…', 'loading');
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(reg => reg.update().catch(() => {})));
+      if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_APP_CACHE' });
+      }
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(key => caches.delete(key)));
+    }
+  } catch {}
+  const bust = `v=${encodeURIComponent(APP_VERSION)}&r=${Date.now()}`;
+  const clean = `${location.pathname}?${bust}${location.hash || ''}`;
+  location.replace(clean);
+}
+function installPullToRefresh() {
+  let startY = 0;
+  let deltaY = 0;
+  let tracking = false;
+  let active = false;
+  const threshold = 84;
+  const maxPull = 130;
+  const isAtTop = () => (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0) <= 0;
+  document.addEventListener('touchstart', (event) => {
+    if (!isAtTop() || event.touches.length !== 1) return;
+    startY = event.touches[0].clientY;
+    deltaY = 0;
+    tracking = true;
+    active = false;
+  }, { passive: true });
+  document.addEventListener('touchmove', (event) => {
+    if (!tracking) return;
+    const currentY = event.touches[0].clientY;
+    deltaY = Math.max(0, currentY - startY);
+    if (deltaY < 12) return;
+    if (!isAtTop()) {
+      tracking = false;
+      hidePullRefreshState();
+      return;
+    }
+    active = true;
+    const progress = Math.min(deltaY, maxPull);
+    if (progress >= threshold) {
+      setPullRefreshState('Relâchez pour mettre à jour', 'ready');
+    } else {
+      setPullRefreshState('Tirez vers le bas pour actualiser');
+    }
+    event.preventDefault();
+  }, { passive: false });
+  document.addEventListener('touchend', () => {
+    if (!tracking && !active) return;
+    const shouldRefresh = deltaY >= threshold && isAtTop();
+    tracking = false;
+    active = false;
+    if (shouldRefresh) {
+      forceAppRefresh();
+      return;
+    }
+    hidePullRefreshState();
+  }, { passive: true });
+  document.addEventListener('touchcancel', () => {
+    tracking = false;
+    active = false;
+    hidePullRefreshState();
+  }, { passive: true });
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
@@ -1037,3 +1122,12 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('appinstalled', () => {
   renderInstallHelp();
 });
+
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'CACHE_CLEARED') {
+      setPullRefreshState('Cache vidé, rechargement…', 'loading');
+    }
+  });
+}

@@ -19,7 +19,7 @@
       <h1>Application de pilotage</h1>
       <p>Mercuriale • Recettes • Coûts</p>
       <div id="saveStatus" class="save-status"></div>
-      <div class="app-version" id="appVersionBadge">Version v1.2</div>
+      <div class="app-version" id="appVersionBadge">Version v1.3</div>
     </div>
     <div class="header-actions wrap-mobile">
       <button id="backupBtn">Sauvegarde complète</button>
@@ -317,7 +317,11 @@
     </article>
   </template>
 
-  <footer class="app-footer">Version <strong id="appVersionFooter">v1.2</strong></footer>
+
+  <div id="pullRefreshIndicator" class="pull-refresh-indicator" aria-hidden="true">
+    <span id="pullRefreshText">Tirez vers le bas pour actualiser</span>
+  </div>
+  <footer class="app-footer">Version <strong id="appVersionFooter">v1.3</strong></footer>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="app.js"></script>
 </body>
