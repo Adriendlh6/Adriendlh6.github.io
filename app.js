@@ -68,9 +68,21 @@ function normalizeIngredient(raw = {}) {
   };
 }
 
+function collectCategoryMemory(ingredients = [], existing = []) {
+  const categories = new Set((existing || []).filter(Boolean).map(x => String(x).trim()).filter(Boolean));
+  ingredients.forEach(i => {
+    const category = String(i?.category || '').trim();
+    if (category) categories.add(category);
+  });
+  return [...categories].sort((a, b) => a.localeCompare(b, 'fr'));
+}
+
 function normalizeState(candidate) {
   const merged = structuredClone(seedData);
-  if (!candidate || typeof candidate !== 'object') return merged;
+  if (!candidate || typeof candidate !== 'object') {
+    merged.settings.categoryMemory = collectCategoryMemory(merged.ingredients, merged.settings.categoryMemory);
+    return merged;
+  }
 
   merged.settings = { ...merged.settings, ...(candidate.settings || {}) };
   merged.accountingFacts = Array.isArray(candidate.accountingFacts) ? candidate.accountingFacts : merged.accountingFacts;
@@ -86,8 +98,7 @@ function normalizeState(candidate) {
   merged.recipes = Array.isArray(candidate.recipes) ? candidate.recipes : merged.recipes;
   merged.meta = { ...merged.meta, ...(candidate.meta || {}) };
 
-  if (!Array.isArray(merged.settings.categoryMemory)) merged.settings.categoryMemory = [];
-  syncCategoryMemory();
+  merged.settings.categoryMemory = collectCategoryMemory(merged.ingredients, merged.settings.categoryMemory);
   if (!merged.meta.createdAt) merged.meta.createdAt = new Date().toISOString();
   if (!merged.meta.updatedAt) merged.meta.updatedAt = new Date().toISOString();
   if (!merged.meta.appVersion) merged.meta.appVersion = APP_VERSION;
