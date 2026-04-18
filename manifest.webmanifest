@@ -1,5 +1,5 @@
 {
-  "name": "Boulangerie Pilotage Vierge",
+  "name": "Application de pilotage",
   "short_name": "Pilotage",
   "description": "Mercuriale, recettes et coûts de production. Version vide, responsive et installable.",
   "start_url": "./index.html",

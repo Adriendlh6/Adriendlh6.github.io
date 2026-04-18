@@ -1,4 +1,4 @@
-const CACHE_NAME = 'boulangerie-pilotage-pwa-v2-blank';
+const CACHE_NAME = 'pilotage-production-pwa-v3-blank';
 const APP_ASSETS = [
   './',
   './index.html',

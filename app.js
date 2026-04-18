@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'boulangerie-pilotage-blank-v1';
+const STORAGE_KEY = 'pilotage-production-vierge-v2';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = '3.1-blank-pwa';
+const APP_VERSION = '3.2-ultra-blank-pwa';
 
 const seedData = {
   meta: {
@@ -17,12 +17,7 @@ const seedData = {
     energyHourlyCost: 0,
     overheadRate: 0
   },
-  accountingFacts: [
-    'Version vierge : aucune donnée préchargée.',
-    'Commencez par ajouter vos ingrédients dans la mercuriale.',
-    'Créez ensuite vos recettes et renseignez vos paramètres de coût.',
-    'Faites une sauvegarde complète régulière vers Fichiers, iCloud Drive ou Drive.'
-  ],
+  accountingFacts: [],
   ingredients: [],
   recipes: []
 };
@@ -108,7 +103,7 @@ function computeRecipe(recipe) {
 function backupFileName() {
   const d = new Date();
   const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}_${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}`;
-  return `sauvegarde-boulangerie-${stamp}.json`;
+  return `sauvegarde-app-${stamp}.json`;
 }
 function makeExportPayload() {
   return JSON.stringify(state, null, 2);
@@ -127,7 +122,7 @@ async function shareBackup(blob, filename) {
   try {
     if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'application/json' })] })) {
       const file = new File([blob], filename, { type: 'application/json' });
-      await navigator.share({ files: [file], title: 'Sauvegarde Boulangerie Pilotage' });
+      await navigator.share({ files: [file], title: 'Sauvegarde application' });
     }
   } catch {
     // download already done; sharing is optional
@@ -462,7 +457,7 @@ document.getElementById('saveSettingsBtn').addEventListener('click', () => {
 });
 
 document.getElementById('exportBtn').addEventListener('click', () => {
-  downloadTextFile(makeExportPayload(), 'boulangerie-pilotage-export.json');
+  downloadTextFile(makeExportPayload(), 'app-export.json');
 });
 
 document.getElementById('backupBtn').addEventListener('click', async () => {
