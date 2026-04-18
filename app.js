@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'pilotage-production-vierge-v4-5';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.5.7';
+const APP_VERSION = 'v1.5.8';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -54,6 +54,9 @@ let saveTimer = null;
 function bindPress(id, handler, options = {}) {
   const el = typeof id === 'string' ? document.getElementById(id) : id;
   if (!el || typeof handler !== 'function') return;
+  const pressKey = typeof id === 'string' ? `boundPress:${id}` : 'boundPress';
+  if (el.dataset[pressKey]) return;
+  el.dataset[pressKey] = '1';
   let touchTriggered = false;
   const wrapped = (event) => {
     if (event) {
@@ -915,11 +918,31 @@ document.querySelectorAll('dialog .modal-form').forEach((el) => {
   el.addEventListener('touchmove', (event) => { event.stopPropagation(); }, { passive: true });
 });
 
-bindPress('addOfferBtn', () => {
-  document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
-  ensureOneDefaultOffer();
-  updateAllOfferSummaries();
-});
+bindPress('addOfferBtn', appendOfferRow);
+const ingredientDialogEl = document.getElementById('ingredientDialog');
+if (ingredientDialogEl) {
+  ingredientDialogEl.addEventListener('click', (event) => {
+    const addOfferTrigger = event.target?.closest?.('#addOfferBtn');
+    if (addOfferTrigger) {
+      event.preventDefault();
+      event.stopPropagation();
+      appendOfferRow();
+      return;
+    }
+    const removeOfferTrigger = event.target?.closest?.('.offer-remove');
+    if (removeOfferTrigger) {
+      event.preventDefault();
+      event.stopPropagation();
+      const row = removeOfferTrigger.closest('.offer-line');
+      const container = document.getElementById('ingredientOffers');
+      if (!row || !container) return;
+      if (container.querySelectorAll('.offer-line').length <= 1) return;
+      row.remove();
+      ensureOneDefaultOffer();
+      updateAllOfferSummaries();
+    }
+  });
+}
 document.getElementById('ingredientBaseUnit').addEventListener('change', updateAllOfferSummaries);
 document.getElementById('ingredientForm').addEventListener('submit', e => {
   e.preventDefault();
