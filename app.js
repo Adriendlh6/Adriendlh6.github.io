@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'pilotage-production-vierge-v4-3';
+const STORAGE_KEY = 'pilotage-production-vierge-v4-4';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.5.4';
+const APP_VERSION = 'v1.5.5';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -834,6 +834,37 @@ if (addIngredientBtn) {
   }, { passive: false });
 }
 
+
+const scanEANBtn = document.getElementById('scanEANBtn');
+if (scanEANBtn) {
+  scanEANBtn.addEventListener('click', openScannerDialog);
+  scanEANBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    openScannerDialog();
+  }, { passive: false });
+}
+const clearEANBtn = document.getElementById('clearEANBtn');
+if (clearEANBtn) {
+  clearEANBtn.addEventListener('click', () => {
+    const input = document.getElementById('ingredientEAN');
+    if (input) input.value = '';
+    pendingScannedCode = '';
+    setEANStatus('EAN effacé.');
+  });
+}
+const closeScannerBtn = document.getElementById('closeScannerBtn');
+if (closeScannerBtn) {
+  closeScannerBtn.addEventListener('click', async () => {
+    const dialog = document.getElementById('scannerDialog');
+    await stopScanner();
+    if (dialog?.open) dialog.close();
+  });
+}
+const scannerDialogEl = document.getElementById('scannerDialog');
+if (scannerDialogEl) {
+  scannerDialogEl.addEventListener('close', () => { stopScanner(); });
+  scannerDialogEl.addEventListener('cancel', (e) => { e.preventDefault(); stopScanner().then(() => scannerDialogEl.close()); });
+}
 document.getElementById('addOfferBtn').addEventListener('click', () => {
   document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
   ensureOneDefaultOffer();

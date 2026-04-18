@@ -19,15 +19,7 @@
       <h1>Application de pilotage</h1>
       <p>Mercuriale • Recettes • Coûts</p>
       <div id="saveStatus" class="save-status"></div>
-      <div class="app-version" id="appVersionBadge">Version v1.5.1</div>
-    </div>
-    <div class="header-actions wrap-mobile">
-      <button id="backupBtn">Sauvegarde complète</button>
-      <button id="exportBtn" class="ghost">Exporter</button>
-      <label class="file-label">Restaurer
-        <input id="importFile" type="file" accept="application/json" hidden />
-      </label>
-      <button id="resetBtn" class="danger ghost">Réinitialiser</button>
+      <div class="app-version" id="appVersionBadge">Version v1.5.5</div>
     </div>
   </header>
 
@@ -48,7 +40,7 @@
         <div class="grid two">
           <div class="panel">
             <h3>Sécurité des données</h3>
-            <div id="backupHealth" class="summary-box"></div>
+            <div class="summary-box">Retrouvez les actions de sauvegarde dans <strong>Paramètres → Sauvegarde</strong>.</div>
           </div>
           <div class="panel">
             <h3>Notes</h3>
@@ -197,6 +189,21 @@
             <p>Aucun paramètre ni donnée d’entreprise n’est préchargé dans cette version.</p>
             <p>Les champs ci-contre sont vides tant que vous ne les renseignez pas.</p>
             <hr />
+            <details class="expand-block" open>
+              <summary>Sauvegarde</summary>
+              <div class="expand-body stack">
+                <div id="backupHealth" class="summary-box"></div>
+                <div class="header-actions wrap-mobile settings-actions">
+                  <button id="backupBtn">Sauvegarde complète</button>
+                  <button id="exportBtn" class="ghost">Exporter</button>
+                  <label class="file-label">Restaurer
+                    <input id="importFile" type="file" accept="application/json" hidden />
+                  </label>
+                  <button id="resetBtn" class="danger ghost">Réinitialiser</button>
+                </div>
+              </div>
+            </details>
+            <hr />
             <h3>Catégories mémorisées</h3>
             <div id="categoryMemoryList" class="chips"></div>
           </div>
@@ -324,7 +331,7 @@
   <div id="pullRefreshIndicator" class="pull-refresh-indicator" aria-hidden="true">
     <span id="pullRefreshText">Tirez vers le bas pour actualiser</span>
   </div>
-  <footer class="app-footer">Version <strong id="appVersionFooter">v1.5.4</strong></footer>
+  <footer class="app-footer">Version <strong id="appVersionFooter">v1.5.5</strong></footer>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="app.js"></script>
 </body>
