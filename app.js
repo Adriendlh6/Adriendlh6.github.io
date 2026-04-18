@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'pilotage-production-vierge-v4-1';
+const STORAGE_KEY = 'pilotage-production-vierge-v4-2';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.1';
+const APP_VERSION = 'v1.2';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -12,6 +12,7 @@ let scannerStream = null;
 let scannerAnimationFrame = null;
 let pendingScannedCode = '';
 let isScannerRunning = false;
+let html5QrInstance = null;
 
 const seedData = {
   meta: {
@@ -560,9 +561,8 @@ function deleteSupplier(id) {
 
 
 function resetIngredientSections() {
-  document.querySelectorAll('#ingredientForm .expand-block').forEach((block, index) => {
-    block.open = index === 0 || index === 3;
-  });
+  const blocks=[...document.querySelectorAll('#ingredientForm .expand-block')];
+  blocks.forEach((block, index) => { block.open = index === 0 || index === 1; });
 }
 
 function renderSupplierOptions(selectedId = '') {
@@ -663,38 +663,79 @@ function renderOfferLines(offers = []) {
   updateAllOfferSummaries();
 }
 
+
 async function openScannerDialog() {
-  if (!('BarcodeDetector' in window)) {
-    alert('Le lecteur de code-barres n’est pas disponible sur ce navigateur. Vous pouvez saisir l’EAN manuellement.');
-    return;
-  }
   const dialog = document.getElementById('scannerDialog');
   const video = document.getElementById('scannerVideo');
   pendingScannedCode = '';
   setScannerFeedback('Autorisez l’accès caméra puis visez le code-barres.', 'muted');
+  dialog.showModal();
+
+  if (window.Html5Qrcode) {
+    try {
+      if (!html5QrInstance) html5QrInstance = new Html5Qrcode('scannerVideo');
+      video.style.display = 'none';
+      isScannerRunning = true;
+      await html5QrInstance.start(
+        { facingMode: 'environment' },
+        {
+          fps: 10,
+          qrbox: (w, h) => {
+            const size = Math.floor(Math.min(w, h) * 0.72);
+            return { width: size, height: Math.floor(size * 0.55) };
+          },
+          aspectRatio: 1.7778,
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+        },
+        (decodedText) => {
+          const code = trimEan(decodedText || '');
+          if (code) handleScannedCode(code);
+        },
+        () => {}
+      );
+      return;
+    } catch (error) {
+      setScannerFeedback('Le scanner avancé n’a pas pu démarrer. Bascule vers le mode navigateur.', 'status-warn');
+    }
+  }
+
+  if (!('BarcodeDetector' in window)) {
+    setScannerFeedback('Le lecteur caméra n’est pas disponible ici. Saisissez l’EAN manuellement.', 'status-bad');
+    return;
+  }
+  video.style.display = '';
   try {
     scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     video.srcObject = scannerStream;
     await video.play();
-    dialog.showModal();
     isScannerRunning = true;
     scanVideoLoop();
   } catch (error) {
     stopScanner();
-    alert('Impossible d’accéder à la caméra.');
+    setScannerFeedback('Impossible d’accéder à la caméra.', 'status-bad');
   }
 }
 
-function stopScanner() {
+async function stopScanner() {
   isScannerRunning = false;
   if (scannerAnimationFrame) cancelAnimationFrame(scannerAnimationFrame);
   scannerAnimationFrame = null;
+  if (html5QrInstance) {
+    try {
+      const state = html5QrInstance.getState?.();
+      if (state === 2 || state === 1) await html5QrInstance.stop();
+      await html5QrInstance.clear();
+    } catch {}
+  }
   if (scannerStream) {
     scannerStream.getTracks().forEach(track => track.stop());
     scannerStream = null;
   }
   const video = document.getElementById('scannerVideo');
-  if (video) video.srcObject = null;
+  if (video) {
+    video.srcObject = null;
+    video.style.display = '';
+  }
 }
 
 async function scanVideoLoop() {
@@ -724,6 +765,7 @@ async function scanVideoLoop() {
 }
 
 function handleScannedCode(code) {
+
   if (!pendingScannedCode) {
     pendingScannedCode = code;
     setScannerFeedback(`Premier scan détecté : ${code}. Scannez une seconde fois pour vérifier.`, 'status-warn');
@@ -823,7 +865,7 @@ document.getElementById('addIngredientBtn').addEventListener('click', () => {
   resetIngredientSections();
   document.getElementById('ingredientDialog').showModal();
 });
-document.getElementById('cancelIngredientBtn').addEventListener('click', () => { document.getElementById('ingredientDialog').close(); stopScanner(); });
+document.getElementById('cancelIngredientBtn').addEventListener('click', async () => { document.getElementById('ingredientDialog').close(); await stopScanner(); });
 
 document.getElementById('scanEANBtn').addEventListener('click', openScannerDialog);
 document.getElementById('clearEANBtn').addEventListener('click', () => {
@@ -834,11 +876,11 @@ document.getElementById('clearEANBtn').addEventListener('click', () => {
 document.getElementById('ingredientEAN').addEventListener('input', (e) => {
   e.target.value = trimEan(e.target.value);
 });
-document.getElementById('closeScannerBtn').addEventListener('click', () => {
+document.getElementById('closeScannerBtn').addEventListener('click', async () => {
   document.getElementById('scannerDialog').close();
-  stopScanner();
+  await stopScanner();
 });
-document.getElementById('scannerDialog').addEventListener('close', stopScanner);
+document.getElementById('scannerDialog').addEventListener('close', () => { stopScanner(); });
 document.getElementById('addOfferBtn').addEventListener('click', () => {
   document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
   ensureOneDefaultOffer();
@@ -960,6 +1002,15 @@ window.addEventListener('beforeunload', () => {
 });
 
 renderAll();
+
+
+function renderVersionBadges() {
+  const versionText = `Version ${APP_VERSION}`;
+  const badge = document.getElementById('appVersionBadge');
+  const footer = document.getElementById('appVersionFooter');
+  if (badge) badge.textContent = versionText;
+  if (footer) footer.textContent = APP_VERSION;
+}
 
 function renderInstallHelp() {
   const el = document.getElementById('installHelp');

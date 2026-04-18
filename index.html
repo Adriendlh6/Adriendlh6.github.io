@@ -19,6 +19,7 @@
       <h1>Application de pilotage</h1>
       <p>Mercuriale • Recettes • Coûts</p>
       <div id="saveStatus" class="save-status"></div>
+      <div class="app-version" id="appVersionBadge">Version v1.2</div>
     </div>
     <div class="header-actions wrap-mobile">
       <button id="backupBtn">Sauvegarde complète</button>
@@ -247,7 +248,16 @@
         </div>
       </details>
 
-      <details class="expand-block">
+      <details class="expand-block" open>
+        <summary>Offres fournisseurs</summary>
+        <div class="expand-body">
+          <div id="ingredientOffers" class="stack"></div>
+          <div class="section-foot"><button type="button" id="addOfferBtn">Ajouter une offre</button></div>
+        </div>
+      </details>
+
+      <!-- moved below suppliers -->
+      <details class="expand-block" id="nutritionBlock">
         <summary>Valeurs nutritionnelles</summary>
         <div class="expand-body">
           <p class="muted">Renseignez les valeurs pour 100 g, 100 ml ou 1 pièce selon l’unité de base choisie.</p>
@@ -264,18 +274,12 @@
         </div>
       </details>
 
+      
+
       <details class="expand-block">
         <summary>Allergènes</summary>
         <div class="expand-body">
           <div id="allergenChecklist" class="allergen-grid"></div>
-        </div>
-      </details>
-
-      <details class="expand-block" open>
-        <summary>Offres fournisseurs</summary>
-        <div class="expand-body">
-          <div class="section-head"><h4>Offres fournisseurs</h4><button type="button" id="addOfferBtn">Ajouter une offre</button></div>
-          <div id="ingredientOffers" class="stack"></div>
         </div>
       </details>
 
@@ -313,6 +317,8 @@
     </article>
   </template>
 
+  <footer class="app-footer">Version <strong id="appVersionFooter">v1.2</strong></footer>
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="app.js"></script>
 </body>
 </html>
