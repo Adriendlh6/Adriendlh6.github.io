@@ -19,21 +19,22 @@
       <h1>Application de pilotage</h1>
       <p>Mercuriale • Recettes • Coûts</p>
       <div id="saveStatus" class="save-status"></div>
-      <div class="app-version" id="appVersionBadge">Version v1.5.5</div>
+      <div class="app-version" id="appVersionBadge">Version v1.5.9</div>
     </div>
   </header>
 
   <main class="layout">
     <aside class="sidebar">
-      <button type="button" class="nav active" data-tab="dashboard">Tableau de bord</button>
-      <button type="button" class="nav" data-tab="suppliers">Fournisseurs</button>
+      <button type="button" class="nav active" data-tab="dashboard">Dashboard</button>
       <button type="button" class="nav" data-tab="ingredients">Mercuriale</button>
       <button type="button" class="nav" data-tab="recipes">Recettes</button>
-      <button type="button" class="nav" data-tab="production">Simulation production</button>
+      <button type="button" class="nav" data-tab="suppliers">Fournisseurs</button>
+      <button type="button" class="nav" data-tab="production">Simulation</button>
       <button type="button" class="nav" data-tab="settings">Paramètres</button>
     </aside>
 
     <section class="content">
+
       <section id="dashboard" class="tab active">
         <h2>Tableau de bord</h2>
         <div class="cards" id="kpiCards"></div>
@@ -70,32 +71,6 @@
         </div>
       </section>
 
-      <section id="suppliers" class="tab">
-        <div class="section-head">
-          <h2>Fournisseurs</h2>
-          <button type="button" id="addSupplierBtn">Ajouter un fournisseur</button>
-        </div>
-        <div class="panel">
-          <div class="toolbar">
-            <input id="supplierSearch" placeholder="Rechercher un fournisseur..." />
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nom</th>
-                  <th>Contact</th>
-                  <th>Téléphone</th>
-                  <th>Email</th>
-                  <th>Articles liés</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="suppliersTable"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
 
       <section id="ingredients" class="tab">
         <div class="section-head">
@@ -130,6 +105,7 @@
         </div>
       </section>
 
+
       <section id="recipes" class="tab">
         <div class="section-head">
           <h2>Recettes</h2>
@@ -146,6 +122,35 @@
           </div>
         </div>
       </section>
+
+
+      <section id="suppliers" class="tab">
+        <div class="section-head">
+          <h2>Fournisseurs</h2>
+          <button type="button" id="addSupplierBtn">Ajouter un fournisseur</button>
+        </div>
+        <div class="panel">
+          <div class="toolbar">
+            <input id="supplierSearch" placeholder="Rechercher un fournisseur..." />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Contact</th>
+                  <th>Téléphone</th>
+                  <th>Email</th>
+                  <th>Articles liés</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="suppliersTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
 
       <section id="production" class="tab">
         <h2>Simulation de production</h2>
@@ -168,6 +173,7 @@
           </div>
         </div>
       </section>
+
 
       <section id="settings" class="tab">
         <h2>Paramètres coûts</h2>
@@ -331,7 +337,7 @@
   <div id="pullRefreshIndicator" class="pull-refresh-indicator" aria-hidden="true">
     <span id="pullRefreshText">Tirez vers le bas pour actualiser</span>
   </div>
-  <footer class="app-footer">Version <strong id="appVersionFooter">v1.5.5</strong></footer>
+  <footer class="app-footer">Version <strong id="appVersionFooter">v1.5.9</strong></footer>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="app.js"></script>
 </body>

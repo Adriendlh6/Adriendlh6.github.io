@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pilotage-production-pwa-v1-5-6';
+const CACHE_NAME = 'pilotage-production-pwa-v1-5-9';
 const APP_ASSETS = [
   './',
   './index.html',
