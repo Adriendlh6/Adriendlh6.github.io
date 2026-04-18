@@ -667,14 +667,16 @@ function renderOfferLines(offers = []) {
 async function openScannerDialog() {
   const dialog = document.getElementById('scannerDialog');
   const video = document.getElementById('scannerVideo');
+  const reader = document.getElementById('scannerReader');
   pendingScannedCode = '';
   setScannerFeedback('Autorisez l’accès caméra puis visez le code-barres.', 'muted');
   dialog.showModal();
 
   if (window.Html5Qrcode) {
     try {
-      if (!html5QrInstance) html5QrInstance = new Html5Qrcode('scannerVideo');
-      video.style.display = 'none';
+      if (!html5QrInstance) html5QrInstance = new Html5Qrcode('scannerReader');
+      if (reader) reader.hidden = false;
+      video.hidden = true;
       isScannerRunning = true;
       await html5QrInstance.start(
         { facingMode: 'environment' },
@@ -703,7 +705,8 @@ async function openScannerDialog() {
     setScannerFeedback('Le lecteur caméra n’est pas disponible ici. Saisissez l’EAN manuellement.', 'status-bad');
     return;
   }
-  video.style.display = '';
+  if (reader) reader.hidden = true;
+  video.hidden = false;
   try {
     scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     video.srcObject = scannerStream;
@@ -732,6 +735,7 @@ async function stopScanner() {
     scannerStream = null;
   }
   const video = document.getElementById('scannerVideo');
+  const reader = document.getElementById('scannerReader');
   if (video) {
     video.srcObject = null;
     video.style.display = '';
@@ -741,6 +745,7 @@ async function stopScanner() {
 async function scanVideoLoop() {
   if (!isScannerRunning) return;
   const video = document.getElementById('scannerVideo');
+  const reader = document.getElementById('scannerReader');
   const canvas = document.getElementById('scannerCanvas');
   if (!video || !canvas || video.readyState < 2) {
     scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);

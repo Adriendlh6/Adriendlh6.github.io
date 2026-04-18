@@ -171,6 +171,7 @@ hr { border: none; border-top: 1px solid var(--line); margin: .8rem 0; }
   margin:0;
 }
 .checkbox-line input { width:auto; margin:0; }
+#scannerReader,
 #scannerVideo {
   width:100%;
   max-height: 320px;
@@ -252,10 +253,10 @@ dialog { width: min(760px, calc(100vw - 1rem)); border: none; border-radius: 1re
   padding: .8rem 1rem 1.2rem; text-align:center; color: var(--muted); font-size:.92rem;
 }
 #scannerDialog .modal-form { max-width:min(760px, calc(100vw - 1rem)); }
-#scannerVideo { min-height: 220px; display:block; }
-#reader, #scannerVideo__dashboard_section_csr, #scannerVideo__dashboard_section_swaplink { width:100%; }
-#scannerVideo__scan_region { border-radius:.85rem; overflow:hidden; }
-#scannerVideo video { width:100% !important; height:auto !important; border-radius:.85rem; }
+#scannerReader, #scannerVideo { min-height: 220px; display:block; }
+#scannerReader, #scannerReader__dashboard_section_csr, #scannerReader__dashboard_section_swaplink { width:100%; }
+#scannerReader__scan_region { border-radius:.85rem; overflow:hidden; }
+#scannerReader video { width:100% !important; height:auto !important; border-radius:.85rem; }
 @media (max-width: 720px) {
   .section-foot > * { width:100%; }
   .app-version { margin-top:.45rem; }

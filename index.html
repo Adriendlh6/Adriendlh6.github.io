@@ -19,7 +19,7 @@
       <h1>Application de pilotage</h1>
       <p>Mercuriale • Recettes • Coûts</p>
       <div id="saveStatus" class="save-status"></div>
-      <div class="app-version" id="appVersionBadge">Version v1.3</div>
+      <div class="app-version" id="appVersionBadge">Version v1.4</div>
     </div>
     <div class="header-actions wrap-mobile">
       <button id="backupBtn">Sauvegarde complète</button>
@@ -294,7 +294,8 @@
     <div class="modal-form">
       <h3>Scanner le code-barres</h3>
       <p class="muted">Le même code doit être lu deux fois pour validation.</p>
-      <video id="scannerVideo" playsinline autoplay muted></video>
+      <div id="scannerReader"></div>
+      <video id="scannerVideo" playsinline autoplay muted hidden></video>
       <canvas id="scannerCanvas" hidden></canvas>
       <div id="scannerFeedback" class="summary-box small">Autorisez l’accès caméra puis visez le code-barres.</div>
       <div class="dialog-actions">
