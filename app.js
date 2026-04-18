@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'pilotage-production-vierge-v2';
+const STORAGE_KEY = 'pilotage-production-vierge-v3';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = '3.2-ultra-blank-pwa';
+const APP_VERSION = '3.3-pwa-mercuriale-plus';
 
 const seedData = {
   meta: {
@@ -15,9 +15,11 @@ const seedData = {
   settings: {
     laborHourlyCost: 0,
     energyHourlyCost: 0,
-    overheadRate: 0
+    overheadRate: 0,
+    categoryMemory: []
   },
   accountingFacts: [],
+  suppliers: [],
   ingredients: [],
   recipes: []
 };
@@ -26,16 +28,66 @@ let state = loadState();
 let currentRecipeId = state.recipes[0]?.id || null;
 let saveTimer = null;
 
+function normalizeOffer(offer = {}, ingredient = {}) {
+  const baseUnit = ingredient.baseUnit || offer.baseUnit || 'kg';
+  const purchaseQty = Number(offer.purchaseQty ?? ingredient.purchaseQty ?? 0);
+  const purchasePrice = Number(offer.purchasePrice ?? ingredient.purchasePrice ?? 0);
+  return {
+    id: offer.id || crypto.randomUUID(),
+    supplierId: offer.supplierId || '',
+    supplierRef: offer.supplierRef || '',
+    purchaseUnit: offer.purchaseUnit || ingredient.purchaseUnit || '',
+    purchaseQty,
+    purchasePrice,
+    vatRate: Number(offer.vatRate ?? ingredient.vatRate ?? 5.5),
+    isDefault: Boolean(offer.isDefault)
+  };
+}
+
+function normalizeIngredient(raw = {}) {
+  const baseUnit = raw.baseUnit || 'kg';
+  let offers = Array.isArray(raw.offers) ? raw.offers.map(o => normalizeOffer(o, raw)) : [];
+  if (!offers.length && (raw.purchaseQty || raw.purchasePrice || raw.purchaseUnit || raw.supplierId || raw.vatRate !== undefined)) {
+    offers = [normalizeOffer({
+      supplierId: raw.supplierId,
+      purchaseUnit: raw.purchaseUnit,
+      purchaseQty: raw.purchaseQty,
+      purchasePrice: raw.purchasePrice,
+      vatRate: raw.vatRate,
+      isDefault: true
+    }, raw)];
+  }
+  if (offers.length && !offers.some(o => o.isDefault)) offers[0].isDefault = true;
+  return {
+    id: raw.id || crypto.randomUUID(),
+    name: raw.name || '',
+    category: raw.category || '',
+    ean: raw.ean || '',
+    baseUnit,
+    offers
+  };
+}
+
 function normalizeState(candidate) {
   const merged = structuredClone(seedData);
   if (!candidate || typeof candidate !== 'object') return merged;
 
   merged.settings = { ...merged.settings, ...(candidate.settings || {}) };
   merged.accountingFacts = Array.isArray(candidate.accountingFacts) ? candidate.accountingFacts : merged.accountingFacts;
-  merged.ingredients = Array.isArray(candidate.ingredients) ? candidate.ingredients : merged.ingredients;
+  merged.suppliers = Array.isArray(candidate.suppliers) ? candidate.suppliers.map(s => ({
+    id: s.id || crypto.randomUUID(),
+    name: s.name || '',
+    contact: s.contact || '',
+    phone: s.phone || '',
+    email: s.email || '',
+    notes: s.notes || ''
+  })) : [];
+  merged.ingredients = Array.isArray(candidate.ingredients) ? candidate.ingredients.map(normalizeIngredient) : merged.ingredients;
   merged.recipes = Array.isArray(candidate.recipes) ? candidate.recipes : merged.recipes;
   merged.meta = { ...merged.meta, ...(candidate.meta || {}) };
 
+  if (!Array.isArray(merged.settings.categoryMemory)) merged.settings.categoryMemory = [];
+  syncCategoryMemory();
   if (!merged.meta.createdAt) merged.meta.createdAt = new Date().toISOString();
   if (!merged.meta.updatedAt) merged.meta.updatedAt = new Date().toISOString();
   if (!merged.meta.appVersion) merged.meta.appVersion = APP_VERSION;
@@ -52,6 +104,7 @@ function loadState() {
 }
 
 function persistState() {
+  syncCategoryMemory();
   state.meta.updatedAt = new Date().toISOString();
   state.meta.lastLocalSaveAt = state.meta.updatedAt;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -80,11 +133,40 @@ function daysSince(value) {
   const diff = Date.now() - new Date(value).getTime();
   return Math.floor(diff / 86400000);
 }
+function unitLabel(baseUnit) {
+  return baseUnit === 'piece' ? 'pièce' : baseUnit;
+}
+function computeUnitCosts(offer) {
+  const qty = Number(offer?.purchaseQty || 0);
+  const ht = Number(offer?.purchasePrice || 0);
+  const vatRate = Number(offer?.vatRate || 0);
+  const ttc = ht * (1 + vatRate / 100);
+  return {
+    unitHt: qty ? ht / qty : 0,
+    unitTtc: qty ? ttc / qty : 0,
+    totalTtc: ttc
+  };
+}
+function getDefaultOffer(ingredient) {
+  if (!ingredient?.offers?.length) return null;
+  return ingredient.offers.find(o => o.isDefault) || ingredient.offers[0];
+}
 function costPerBaseUnit(ingredient) {
-  return ingredient.purchaseQty ? ingredient.purchasePrice / ingredient.purchaseQty : 0;
+  return computeUnitCosts(getDefaultOffer(ingredient)).unitHt;
 }
 function getIngredient(id) {
   return state.ingredients.find(i => i.id === id);
+}
+function getSupplier(id) {
+  return state.suppliers.find(s => s.id === id);
+}
+function supplierName(id) {
+  return getSupplier(id)?.name || '—';
+}
+function syncCategoryMemory() {
+  const categories = new Set((state.settings.categoryMemory || []).filter(Boolean));
+  state.ingredients.forEach(i => i.category && categories.add(i.category.trim()));
+  state.settings.categoryMemory = [...categories].sort((a, b) => a.localeCompare(b, 'fr'));
 }
 function computeRecipe(recipe) {
   const materialCost = recipe.items.reduce((sum, item) => {
@@ -124,9 +206,7 @@ async function shareBackup(blob, filename) {
       const file = new File([blob], filename, { type: 'application/json' });
       await navigator.share({ files: [file], title: 'Sauvegarde application' });
     }
-  } catch {
-    // download already done; sharing is optional
-  }
+  } catch {}
 }
 function markBackup(filename) {
   state.meta.lastBackupAt = new Date().toISOString();
@@ -145,7 +225,9 @@ function validateImport(data) {
 
 function renderAll() {
   renderTabs();
+  renderCategoryMemory();
   renderDashboard();
+  renderSuppliers();
   renderIngredients();
   renderRecipesList();
   renderRecipeEditor();
@@ -165,27 +247,31 @@ function renderTabs() {
   });
 }
 
+function renderCategoryMemory() {
+  const datalist = document.getElementById('categorySuggestions');
+  if (datalist) {
+    datalist.innerHTML = state.settings.categoryMemory.map(cat => `<option value="${escapeHtml(cat)}"></option>`).join('');
+  }
+}
+
 function renderDashboard() {
   const kpiCards = document.getElementById('kpiCards');
   const recipeCount = state.recipes.length;
   const ingredientCount = state.ingredients.length;
+  const supplierCount = state.suppliers.length;
   const avgUnitCost = state.recipes.length ? state.recipes.map(r => computeRecipe(r).unitCost).reduce((a, b) => a + b, 0) / state.recipes.length : 0;
   const daysFromBackup = daysSince(state.meta.lastBackupAt);
   const data = [
     ['Ingrédients suivis', ingredientCount],
+    ['Fournisseurs mémorisés', supplierCount],
     ['Recettes actives', recipeCount],
     ['Coût moyen unitaire', euro(avgUnitCost)],
     ['Dernière sauvegarde externe', state.meta.lastBackupAt ? `${daysFromBackup} j` : 'Aucune']
   ];
-  kpiCards.innerHTML = data.map(([label, value]) => `
-    <div class="panel kpi">
-      <div class="label">${label}</div>
-      <div class="value">${value}</div>
-    </div>
-  `).join('');
+  kpiCards.innerHTML = data.map(([label, value]) => `<div class="panel kpi"><div class="label">${label}</div><div class="value">${value}</div></div>`).join('');
 
   const facts = document.getElementById('accountingFacts');
-  facts.innerHTML = state.accountingFacts.map(x => `<li>${x}</li>`).join('') || '<li>Aucun repère enregistré.</li>'; 
+  facts.innerHTML = state.accountingFacts.map(x => `<li>${x}</li>`).join('') || '<li>Aucun repère enregistré.</li>';
 
   const backupHealth = document.getElementById('backupHealth');
   let badgeClass = 'status-good';
@@ -222,25 +308,55 @@ function renderBackupStatus() {
   el.innerHTML = `Local : <strong>${formatDateTime(state.meta.lastLocalSaveAt)}</strong> • <span class="${className}">${backupText}</span>`;
 }
 
+function renderSuppliers() {
+  const query = document.getElementById('supplierSearch')?.value?.trim().toLowerCase() || '';
+  const rows = state.suppliers
+    .filter(s => [s.name, s.contact, s.email, s.phone, s.notes].join(' ').toLowerCase().includes(query))
+    .map(s => {
+      const linkedIngredients = state.ingredients.filter(i => i.offers.some(o => o.supplierId === s.id)).length;
+      return `
+        <tr>
+          <td>${escapeHtml(s.name)}</td>
+          <td>${escapeHtml(s.contact || '')}</td>
+          <td>${escapeHtml(s.phone || '')}</td>
+          <td>${escapeHtml(s.email || '')}</td>
+          <td>${linkedIngredients}</td>
+          <td>
+            <button onclick="editSupplier('${s.id}')">Modifier</button>
+            <button class="danger ghost" onclick="deleteSupplier('${s.id}')">Supprimer</button>
+          </td>
+        </tr>`;
+    }).join('');
+  const target = document.getElementById('suppliersTable');
+  if (target) target.innerHTML = rows || '<tr><td colspan="6" class="muted">Aucun fournisseur</td></tr>';
+}
+
 function renderIngredients() {
   const query = document.getElementById('ingredientSearch').value?.trim().toLowerCase() || '';
   const rows = state.ingredients
-    .filter(i => [i.name, i.category].join(' ').toLowerCase().includes(query))
-    .map(i => `
+    .filter(i => [i.name, i.category, i.ean, supplierName(getDefaultOffer(i)?.supplierId)].join(' ').toLowerCase().includes(query))
+    .map(i => {
+      const offer = getDefaultOffer(i);
+      const costs = computeUnitCosts(offer);
+      return `
       <tr>
         <td>${escapeHtml(i.name)}</td>
         <td>${escapeHtml(i.category || '')}</td>
-        <td>${escapeHtml(i.purchaseUnit || '')}</td>
-        <td>${num(i.purchaseQty, 3)} ${i.baseUnit}</td>
-        <td>${euro(i.purchasePrice)}</td>
-        <td>${euro(costPerBaseUnit(i))} / ${i.baseUnit}</td>
+        <td>${escapeHtml(i.ean || '')}</td>
+        <td>${escapeHtml(supplierName(offer?.supplierId))}</td>
+        <td>${num(offer?.purchaseQty, 3)} ${escapeHtml(i.baseUnit === 'piece' ? 'pièce(s)' : i.baseUnit)}</td>
+        <td>${euro(offer?.purchasePrice || 0)} HT</td>
+        <td>${num(offer?.vatRate, 1)} %</td>
+        <td>${euro(costs.unitHt)} / ${unitLabel(i.baseUnit)}</td>
+        <td>${euro(costs.unitTtc)} / ${unitLabel(i.baseUnit)}</td>
+        <td>${i.offers.length}</td>
         <td>
           <button onclick="editIngredient('${i.id}')">Modifier</button>
           <button class="danger ghost" onclick="deleteIngredient('${i.id}')">Supprimer</button>
         </td>
-      </tr>
-    `).join('');
-  document.getElementById('ingredientsTable').innerHTML = rows || '<tr><td colspan="7" class="muted">Aucun ingrédient</td></tr>';
+      </tr>`;
+    }).join('');
+  document.getElementById('ingredientsTable').innerHTML = rows || '<tr><td colspan="11" class="muted">Aucun ingrédient</td></tr>';
 }
 
 function renderRecipesList() {
@@ -252,11 +368,14 @@ function renderRecipesList() {
     const totals = computeRecipe(recipe);
     node.querySelector('.recipe-name').textContent = recipe.name;
     node.querySelector('.recipe-meta').textContent = `${recipe.batchYield} ${recipe.unitLabel} • coût unitaire ${euro(totals.unitCost)}`;
-    node.querySelector('.edit-recipe').onclick = () => { currentRecipeId = recipe.id; renderRecipeEditor(); queueSave(); };
+    node.querySelector('.edit-recipe').onclick = () => {
+      currentRecipeId = recipe.id;
+      renderAll();
+    };
     node.querySelector('.delete-recipe').onclick = () => {
       if (!confirm(`Supprimer la recette « ${recipe.name} » ?`)) return;
       state.recipes = state.recipes.filter(r => r.id !== recipe.id);
-      if (currentRecipeId === recipe.id) currentRecipeId = state.recipes[0]?.id || null;
+      currentRecipeId = state.recipes[0]?.id || null;
       renderAll();
     };
     container.appendChild(node);
@@ -298,8 +417,7 @@ function renderRecipeEditor() {
       </div>
 
       <button onclick="saveRecipeEdits()">Enregistrer la recette</button>
-    </div>
-  `;
+    </div>`;
 
   const lines = document.getElementById('recipeLines');
   recipe.items.forEach((item, index) => {
@@ -310,8 +428,7 @@ function renderRecipeEditor() {
         <label>Quantité<input data-line="${index}" data-field="quantity" type="number" min="0" step="0.001" value="${item.quantity}" /></label>
         <label>Unité<input data-line="${index}" data-field="unit" value="${escapeHtml(item.unit || '')}" /></label>
         <button class="danger ghost" onclick="removeRecipeLine(${index})">Retirer</button>
-      </div>
-    `);
+      </div>`);
   });
 }
 
@@ -324,6 +441,34 @@ function renderSettings() {
   document.getElementById('laborHourlyCost').value = state.settings.laborHourlyCost;
   document.getElementById('energyHourlyCost').value = state.settings.energyHourlyCost;
   document.getElementById('overheadRate').value = state.settings.overheadRate;
+  const catList = document.getElementById('categoryMemoryList');
+  if (catList) {
+    catList.innerHTML = state.settings.categoryMemory.length
+      ? state.settings.categoryMemory.map(cat => `<span class="chip">${escapeHtml(cat)}</span>`).join('')
+      : '<span class="muted">Aucune catégorie mémorisée.</span>';
+  }
+}
+
+function editSupplier(id) {
+  const supplier = getSupplier(id);
+  document.getElementById('supplierDialogTitle').textContent = 'Modifier un fournisseur';
+  document.getElementById('supplierId').value = supplier.id;
+  document.getElementById('supplierName').value = supplier.name;
+  document.getElementById('supplierContact').value = supplier.contact || '';
+  document.getElementById('supplierPhone').value = supplier.phone || '';
+  document.getElementById('supplierEmail').value = supplier.email || '';
+  document.getElementById('supplierNotes').value = supplier.notes || '';
+  document.getElementById('supplierDialog').showModal();
+}
+function deleteSupplier(id) {
+  const used = state.ingredients.some(i => i.offers.some(o => o.supplierId === id));
+  if (used) return alert('Impossible : ce fournisseur est rattaché à au moins une offre d’achat.');
+  state.suppliers = state.suppliers.filter(s => s.id !== id);
+  renderAll();
+}
+
+function renderSupplierOptions(selectedId = '') {
+  return `<option value="">Sélectionner</option>` + state.suppliers.map(s => `<option value="${s.id}" ${s.id === selectedId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
 }
 
 function editIngredient(id) {
@@ -332,10 +477,9 @@ function editIngredient(id) {
   document.getElementById('ingredientId').value = ingredient.id;
   document.getElementById('ingredientName').value = ingredient.name;
   document.getElementById('ingredientCategory').value = ingredient.category || '';
+  document.getElementById('ingredientEAN').value = ingredient.ean || '';
   document.getElementById('ingredientBaseUnit').value = ingredient.baseUnit;
-  document.getElementById('ingredientPurchaseUnit').value = ingredient.purchaseUnit || '';
-  document.getElementById('ingredientPurchaseQty').value = ingredient.purchaseQty;
-  document.getElementById('ingredientPurchasePrice').value = ingredient.purchasePrice;
+  renderOfferLines(ingredient.offers);
   document.getElementById('ingredientDialog').showModal();
 }
 function deleteIngredient(id) {
@@ -343,6 +487,77 @@ function deleteIngredient(id) {
   if (used) return alert('Impossible : cet ingrédient est utilisé dans au moins une recette.');
   state.ingredients = state.ingredients.filter(i => i.id !== id);
   renderAll();
+}
+
+function makeOfferRow(offer = {}) {
+  const row = document.createElement('div');
+  row.className = 'offer-line';
+  row.innerHTML = `
+    <label>Fournisseur<select data-field="supplierId">${renderSupplierOptions(offer.supplierId || '')}</select></label>
+    <label>Réf. four.<input data-field="supplierRef" value="${escapeHtml(offer.supplierRef || '')}" placeholder="Référence / code" /></label>
+    <label>Unité achat<input data-field="purchaseUnit" value="${escapeHtml(offer.purchaseUnit || '')}" placeholder="sac, carton..." /></label>
+    <label>Qté achetée<input data-field="purchaseQty" type="number" min="0" step="0.001" value="${offer.purchaseQty ?? ''}" /></label>
+    <label>Prix achat HT (€)<input data-field="purchasePrice" type="number" min="0" step="0.01" value="${offer.purchasePrice ?? ''}" /></label>
+    <label>TVA (%)<input data-field="vatRate" type="number" min="0" step="0.1" value="${offer.vatRate ?? 5.5}" /></label>
+    <label class="default-toggle"><input data-field="isDefault" type="radio" name="defaultOffer" ${offer.isDefault ? 'checked' : ''} /> Offre par défaut</label>
+    <div class="offer-summary muted" data-summary></div>
+    <button type="button" class="danger ghost" data-remove>Retirer</button>
+  `;
+  row.querySelectorAll('input, select').forEach(el => el.addEventListener('input', () => updateOfferRowSummary(row)));
+  row.querySelector('[data-remove]').addEventListener('click', () => {
+    row.remove();
+    ensureOneDefaultOffer();
+    updateAllOfferSummaries();
+  });
+  row.querySelector('[data-field="isDefault"]').addEventListener('change', () => ensureOneDefaultOffer(row));
+  updateOfferRowSummary(row);
+  return row;
+}
+
+function updateOfferRowSummary(row) {
+  const offer = readOfferRow(row);
+  const costs = computeUnitCosts(offer);
+  const summary = row.querySelector('[data-summary]');
+  summary.innerHTML = `Coût auto : <strong>${euro(costs.unitHt)}</strong> HT / ${unitLabel(document.getElementById('ingredientBaseUnit').value)} • <strong>${euro(costs.unitTtc)}</strong> TTC / ${unitLabel(document.getElementById('ingredientBaseUnit').value)} • total TTC ${euro(costs.totalTtc)}`;
+}
+
+function updateAllOfferSummaries() {
+  document.querySelectorAll('#ingredientOffers .offer-line').forEach(updateOfferRowSummary);
+}
+
+function ensureOneDefaultOffer(preferredRow = null) {
+  const radios = [...document.querySelectorAll('#ingredientOffers [data-field="isDefault"]')];
+  if (!radios.length) return;
+  if (preferredRow) {
+    radios.forEach(r => { if (r !== preferredRow.querySelector('[data-field="isDefault"]')) r.checked = false; });
+  }
+  if (!radios.some(r => r.checked)) radios[0].checked = true;
+}
+
+function readOfferRow(row) {
+  return {
+    id: row.dataset.id || crypto.randomUUID(),
+    supplierId: row.querySelector('[data-field="supplierId"]').value,
+    supplierRef: row.querySelector('[data-field="supplierRef"]').value.trim(),
+    purchaseUnit: row.querySelector('[data-field="purchaseUnit"]').value.trim(),
+    purchaseQty: Number(row.querySelector('[data-field="purchaseQty"]').value || 0),
+    purchasePrice: Number(row.querySelector('[data-field="purchasePrice"]').value || 0),
+    vatRate: Number(row.querySelector('[data-field="vatRate"]').value || 0),
+    isDefault: row.querySelector('[data-field="isDefault"]').checked
+  };
+}
+
+function renderOfferLines(offers = []) {
+  const container = document.getElementById('ingredientOffers');
+  container.innerHTML = '';
+  const safeOffers = offers.length ? offers : [normalizeOffer({ isDefault: true })];
+  safeOffers.forEach(offer => {
+    const row = makeOfferRow(offer);
+    row.dataset.id = offer.id || crypto.randomUUID();
+    container.appendChild(row);
+  });
+  ensureOneDefaultOffer();
+  updateAllOfferSummaries();
 }
 
 function addRecipeLine() {
@@ -379,29 +594,67 @@ function escapeHtml(text) {
 
 window.editIngredient = editIngredient;
 window.deleteIngredient = deleteIngredient;
+window.editSupplier = editSupplier;
+window.deleteSupplier = deleteSupplier;
 window.addRecipeLine = addRecipeLine;
 window.removeRecipeLine = removeRecipeLine;
 window.saveRecipeEdits = saveRecipeEdits;
 
+document.getElementById('supplierSearch').addEventListener('input', renderSuppliers);
 document.getElementById('ingredientSearch').addEventListener('input', renderIngredients);
+document.getElementById('addSupplierBtn').addEventListener('click', () => {
+  document.getElementById('supplierDialogTitle').textContent = 'Ajouter un fournisseur';
+  document.getElementById('supplierForm').reset();
+  document.getElementById('supplierId').value = '';
+  document.getElementById('supplierDialog').showModal();
+});
+document.getElementById('cancelSupplierBtn').addEventListener('click', () => document.getElementById('supplierDialog').close());
+document.getElementById('supplierForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const payload = {
+    id: document.getElementById('supplierId').value || crypto.randomUUID(),
+    name: document.getElementById('supplierName').value.trim(),
+    contact: document.getElementById('supplierContact').value.trim(),
+    phone: document.getElementById('supplierPhone').value.trim(),
+    email: document.getElementById('supplierEmail').value.trim(),
+    notes: document.getElementById('supplierNotes').value.trim()
+  };
+  const idx = state.suppliers.findIndex(s => s.id === payload.id);
+  if (idx >= 0) state.suppliers[idx] = payload; else state.suppliers.push(payload);
+  document.getElementById('supplierDialog').close();
+  renderAll();
+});
+
 document.getElementById('addIngredientBtn').addEventListener('click', () => {
   document.getElementById('ingredientDialogTitle').textContent = 'Ajouter un ingrédient';
   document.getElementById('ingredientForm').reset();
   document.getElementById('ingredientId').value = '';
+  renderOfferLines([normalizeOffer({ isDefault: true, vatRate: 5.5 })]);
   document.getElementById('ingredientDialog').showModal();
 });
 document.getElementById('cancelIngredientBtn').addEventListener('click', () => document.getElementById('ingredientDialog').close());
+document.getElementById('addOfferBtn').addEventListener('click', () => {
+  document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
+  ensureOneDefaultOffer();
+  updateAllOfferSummaries();
+});
+document.getElementById('ingredientBaseUnit').addEventListener('change', updateAllOfferSummaries);
 document.getElementById('ingredientForm').addEventListener('submit', e => {
   e.preventDefault();
-  const payload = {
+  const offers = [...document.querySelectorAll('#ingredientOffers .offer-line')].map(readOfferRow).filter(o => o.purchaseQty || o.purchasePrice || o.purchaseUnit || o.supplierId || o.supplierRef);
+  if (!offers.length) {
+    alert('Ajoutez au moins une offre fournisseur pour cet ingrédient.');
+    return;
+  }
+  if (!offers.some(o => o.isDefault)) offers[0].isDefault = true;
+  const payload = normalizeIngredient({
     id: document.getElementById('ingredientId').value || crypto.randomUUID(),
     name: document.getElementById('ingredientName').value.trim(),
     category: document.getElementById('ingredientCategory').value.trim(),
+    ean: document.getElementById('ingredientEAN').value.trim(),
     baseUnit: document.getElementById('ingredientBaseUnit').value,
-    purchaseUnit: document.getElementById('ingredientPurchaseUnit').value.trim(),
-    purchaseQty: Number(document.getElementById('ingredientPurchaseQty').value || 0),
-    purchasePrice: Number(document.getElementById('ingredientPurchasePrice').value || 0)
-  };
+    offers
+  });
   const idx = state.ingredients.findIndex(i => i.id === payload.id);
   if (idx >= 0) state.ingredients[idx] = payload; else state.ingredients.push(payload);
   document.getElementById('ingredientDialog').close();
@@ -445,8 +698,7 @@ document.getElementById('simulateBtn').addEventListener('click', () => {
     <p><strong>Coût unitaire :</strong> ${euro(totals.unitCost)}</p>
     <p><strong>CA théorique :</strong> ${euro(revenue)}</p>
     <p><strong>Marge brute théorique :</strong> ${euro(grossMargin)}</p>
-    <p><strong>Taux de marge :</strong> ${num(marginRate, 1)} %</p>
-  `;
+    <p><strong>Taux de marge :</strong> ${num(marginRate, 1)} %</p>`;
 });
 
 document.getElementById('saveSettingsBtn').addEventListener('click', () => {
@@ -500,7 +752,6 @@ window.addEventListener('beforeunload', () => {
 });
 
 renderAll();
-
 
 function renderInstallHelp() {
   const el = document.getElementById('installHelp');

@@ -33,6 +33,7 @@
   <main class="layout">
     <aside class="sidebar">
       <button class="nav active" data-tab="dashboard">Tableau de bord</button>
+      <button class="nav" data-tab="suppliers">Fournisseurs</button>
       <button class="nav" data-tab="ingredients">Mercuriale</button>
       <button class="nav" data-tab="recipes">Recettes</button>
       <button class="nav" data-tab="production">Simulation production</button>
@@ -76,6 +77,33 @@
         </div>
       </section>
 
+      <section id="suppliers" class="tab">
+        <div class="section-head">
+          <h2>Fournisseurs</h2>
+          <button id="addSupplierBtn">Ajouter un fournisseur</button>
+        </div>
+        <div class="panel">
+          <div class="toolbar">
+            <input id="supplierSearch" placeholder="Rechercher un fournisseur..." />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Contact</th>
+                  <th>Téléphone</th>
+                  <th>Email</th>
+                  <th>Articles liés</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="suppliersTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section id="ingredients" class="tab">
         <div class="section-head">
           <h2>Mercuriale</h2>
@@ -83,7 +111,7 @@
         </div>
         <div class="panel">
           <div class="toolbar">
-            <input id="ingredientSearch" placeholder="Rechercher farine, beurre, levure..." />
+            <input id="ingredientSearch" placeholder="Rechercher farine, beurre, levure, EAN, fournisseur..." />
           </div>
           <div class="table-wrap">
             <table>
@@ -91,10 +119,14 @@
                 <tr>
                   <th>Nom</th>
                   <th>Catégorie</th>
-                  <th>Unité achat</th>
+                  <th>EAN</th>
+                  <th>Fournisseur défaut</th>
                   <th>Qté achat</th>
-                  <th>Prix achat (€)</th>
-                  <th>Coût unité base (€)</th>
+                  <th>Prix achat</th>
+                  <th>TVA</th>
+                  <th>Coût HT unité</th>
+                  <th>Coût TTC unité</th>
+                  <th>Offres</th>
                   <th></th>
                 </tr>
               </thead>
@@ -162,18 +194,38 @@
             <h3>Informations</h3>
             <p>Aucun paramètre ni donnée d’entreprise n’est préchargé dans cette version.</p>
             <p>Les champs ci-contre sont vides tant que vous ne les renseignez pas.</p>
+            <hr />
+            <h3>Catégories mémorisées</h3>
+            <div id="categoryMemoryList" class="chips"></div>
           </div>
         </div>
       </section>
     </section>
   </main>
 
+  <dialog id="supplierDialog">
+    <form method="dialog" id="supplierForm" class="modal-form">
+      <h3 id="supplierDialogTitle">Ajouter un fournisseur</h3>
+      <input type="hidden" id="supplierId" />
+      <label>Nom<input id="supplierName" required /></label>
+      <label>Contact<input id="supplierContact" /></label>
+      <label>Téléphone<input id="supplierPhone" inputmode="tel" /></label>
+      <label>Email<input id="supplierEmail" type="email" /></label>
+      <label>Notes<textarea id="supplierNotes"></textarea></label>
+      <div class="dialog-actions">
+        <button type="button" id="cancelSupplierBtn" class="ghost">Annuler</button>
+        <button type="submit">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="ingredientDialog">
     <form method="dialog" id="ingredientForm" class="modal-form">
       <h3 id="ingredientDialogTitle">Ajouter un ingrédient</h3>
       <input type="hidden" id="ingredientId" />
       <label>Nom<input id="ingredientName" required /></label>
-      <label>Catégorie<input id="ingredientCategory" /></label>
+      <label>Catégorie<input id="ingredientCategory" list="categorySuggestions" placeholder="Farines, matières grasses..." /></label>
+      <label>EAN<input id="ingredientEAN" inputmode="numeric" placeholder="Code-barres / EAN" /></label>
       <label>Unité de base
         <select id="ingredientBaseUnit">
           <option value="kg">kg</option>
@@ -181,15 +233,19 @@
           <option value="piece">pièce</option>
         </select>
       </label>
-      <label>Unité d'achat<input id="ingredientPurchaseUnit" placeholder="sac, plaque, bouteille..." /></label>
-      <label>Quantité achetée<input id="ingredientPurchaseQty" type="number" min="0" step="0.001" required /></label>
-      <label>Prix d'achat (€)<input id="ingredientPurchasePrice" type="number" min="0" step="0.01" required /></label>
+
+      <div class="subpanel">
+        <div class="section-head"><h4>Offres fournisseurs</h4><button type="button" id="addOfferBtn">Ajouter une offre</button></div>
+        <div id="ingredientOffers" class="stack"></div>
+      </div>
+
       <div class="dialog-actions">
         <button type="button" id="cancelIngredientBtn" class="ghost">Annuler</button>
         <button type="submit">Enregistrer</button>
       </div>
     </form>
   </dialog>
+  <datalist id="categorySuggestions"></datalist>
 
   <template id="recipeCardTemplate">
     <article class="recipe-card">

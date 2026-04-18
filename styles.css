@@ -110,3 +110,39 @@ hr { border: none; border-top: 1px solid var(--line); margin: .8rem 0; }
   .panel { padding: .9rem; }
   table { min-width: 640px; }
 }
+.offer-line {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: .75rem;
+  border: 1px solid var(--line);
+  border-radius: .8rem;
+  padding: .85rem;
+  background: #fcfbf9;
+}
+.offer-summary {
+  grid-column: 1 / -1;
+  background: var(--accent-soft);
+  border: 1px solid #e2d0ba;
+  border-radius: .7rem;
+  padding: .75rem;
+}
+.default-toggle {
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  margin-top: 1.8rem;
+}
+.default-toggle input { width: auto; margin: 0; }
+.chips { display:flex; flex-wrap:wrap; gap:.5rem; }
+.chip {
+  display:inline-flex;
+  align-items:center;
+  padding:.35rem .7rem;
+  border-radius:999px;
+  background: var(--accent-soft);
+  border:1px solid #e2d0ba;
+}
+@media (max-width: 720px) {
+  .offer-line { grid-template-columns: 1fr; }
+  .default-toggle { margin-top: .2rem; }
+}
