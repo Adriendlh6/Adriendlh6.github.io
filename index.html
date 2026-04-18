@@ -261,11 +261,7 @@
         <summary>Valeurs nutritionnelles</summary>
         <div class="expand-body">
           <p class="muted">Renseignez les valeurs pour 100 g, 100 ml ou 1 pièce selon l’unité de base choisie.</p>
-          <div class="section-head">
-            <div class="muted">OCR nutrition : préremplissage à partir d’une photo du tableau nutritionnel.</div>
-            <button type="button" id="openNutritionOCRBtn" class="ghost">OCR nutrition</button>
-          </div>
-          <div id="nutritionOcrStatus" class="muted scan-status">Aucun OCR lancé.</div>
+          <div class="summary-box small muted">Valeurs à renseigner manuellement pour cette version.</div>
           <div class="nutrition-grid">
             <label>Énergie (kcal)<input id="nutritionCalories" type="number" min="0" step="0.1" /></label>
             <label>Matières grasses (g)<input id="nutritionFat" type="number" min="0" step="0.1" /></label>
@@ -301,37 +297,10 @@
       <p class="muted">Le même code doit être lu deux fois pour validation.</p>
       <div class="scanner-shell">
         <div id="scannerReader"></div>
-        <video id="scannerVideo" playsinline autoplay muted hidden></video>
-        <canvas id="scannerCanvas" hidden></canvas>
       </div>
       <div id="scannerFeedback" class="summary-box small">Autorisez l’accès caméra puis visez le code-barres.</div>
       <div class="dialog-actions">
         <button type="button" id="closeScannerBtn" class="ghost">Fermer</button>
-      </div>
-    </div>
-  </dialog>
-
-  <dialog id="ocrDialog">
-    <div class="modal-form">
-      <h3>OCR nutrition</h3>
-      <p class="muted">Prenez une photo ou importez une image du tableau nutritionnel. L’appli tente de préremplir les valeurs pour 100 g.</p>
-      <div class="scanner-shell">
-        <video id="ocrVideo" playsinline autoplay muted hidden></video>
-        <canvas id="ocrCanvas" hidden></canvas>
-        <img id="ocrPreview" alt="Aperçu OCR" hidden />
-      </div>
-      <div class="inline-actions">
-        <button type="button" id="startOcrCameraBtn" class="ghost">Activer la caméra</button>
-        <button type="button" id="captureOcrBtn" class="ghost">Prendre la photo</button>
-        <label class="file-label">Importer une image
-          <input id="ocrFileInput" type="file" accept="image/*" capture="environment" hidden />
-        </label>
-        <button type="button" id="runOcrBtn">Lancer l’OCR</button>
-      </div>
-      <div id="ocrFeedback" class="summary-box small">Chargez une image nette du tableau nutritionnel puis lancez l’OCR.</div>
-      <div class="dialog-actions">
-        <button type="button" id="applyOcrBtn" class="ghost">Appliquer aux champs</button>
-        <button type="button" id="closeOcrBtn" class="ghost">Fermer</button>
       </div>
     </div>
   </dialog>
@@ -357,7 +326,6 @@
   </div>
   <footer class="app-footer">Version <strong id="appVersionFooter">v1.5.1</strong></footer>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
-  <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js" defer></script>
   <script src="app.js"></script>
 </body>
 </html>
