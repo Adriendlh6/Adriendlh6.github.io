@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'pilotage-production-vierge-v4-4';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.5.5';
+const APP_VERSION = 'v1.5.6';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -10,6 +10,17 @@ const ALLERGENS = [
 const NUTRITION_FIELDS = ['calories', 'fat', 'saturatedFat', 'carbs', 'sugars', 'protein', 'fiber', 'salt'];
 let scannerStream = null;
 let scannerAnimationFrame = null;
+
+let openDialogCount = 0;
+
+function syncModalState() {
+  const anyOpen = [...document.querySelectorAll('dialog')].some(d => d.open);
+  document.body.classList.toggle('modal-open', anyOpen);
+}
+function markDialogOpened() { openDialogCount += 1; syncModalState(); }
+function markDialogClosed() { openDialogCount = Math.max(0, openDialogCount - 1); syncModalState(); }
+function isAnyDialogOpen() { return [...document.querySelectorAll('dialog')].some(d => d.open); }
+function isScannerOpen() { return !!document.getElementById('scannerDialog')?.open; }
 let pendingScannedCode = '';
 let isScannerRunning = false;
 let html5QrInstance = null;
@@ -551,6 +562,7 @@ function editSupplier(id) {
   document.getElementById('supplierEmail').value = supplier.email || '';
   document.getElementById('supplierNotes').value = supplier.notes || '';
   document.getElementById('supplierDialog').showModal();
+  markDialogOpened();
 }
 function deleteSupplier(id) {
   const used = state.ingredients.some(i => i.offers.some(o => o.supplierId === id));
@@ -667,9 +679,22 @@ function renderOfferLines(offers = []) {
 async function openScannerDialog() {
   const dialog = document.getElementById('scannerDialog');
   const reader = document.getElementById('scannerReader');
+  if (!dialog || !reader) return;
   pendingScannedCode = '';
   setScannerFeedback('Autorisez l’accès caméra puis visez le code-barres.', 'muted');
-  dialog.showModal();
+  try {
+    if (!dialog.open) {
+      const ingredientDialog = document.getElementById('ingredientDialog');
+      if (ingredientDialog?.open) {
+        dialog.show();
+      } else {
+        dialog.showModal();
+      }
+      markDialogOpened();
+    }
+  } catch {
+    try { dialog.setAttribute('open', 'open'); markDialogOpened(); } catch {}
+  }
 
   if (!window.Html5Qrcode || !reader) {
     setScannerFeedback('Le lecteur caméra n’est pas disponible ici. Saisissez l’EAN manuellement.', 'status-bad');
@@ -758,7 +783,8 @@ function handleScannedCode(code) {
   document.getElementById('ingredientEAN').value = code;
   setScannerFeedback(`EAN validé : ${code}`, 'status-good');
   setEANStatus(`EAN validé par double scan : ${code}`, 'status-good');
-  document.getElementById('scannerDialog').close();
+  const scannerDialog = document.getElementById('scannerDialog');
+  if (scannerDialog?.open) { try { scannerDialog.close(); } catch { scannerDialog.removeAttribute('open'); } markDialogClosed(); }
   stopScanner();
 }
 
@@ -773,6 +799,7 @@ document.getElementById('addSupplierBtn').addEventListener('click', () => {
   document.getElementById('supplierEmail').value = '';
   document.getElementById('supplierNotes').value = '';
   document.getElementById('supplierDialog').showModal();
+  markDialogOpened();
 });
 
 document.getElementById('supplierForm').addEventListener('submit', (e) => {
@@ -792,6 +819,7 @@ document.getElementById('supplierForm').addEventListener('submit', (e) => {
   const idx = state.suppliers.findIndex(s => s.id === payload.id);
   if (idx >= 0) state.suppliers[idx] = payload; else state.suppliers.push(payload);
   document.getElementById('supplierDialog').close();
+  markDialogClosed();
   renderAll();
 });
 
@@ -815,9 +843,10 @@ function openIngredientDialog() {
     }
     try { resetIngredientSections(); } catch {}
     if (typeof dialog.showModal === 'function') {
-      if (!dialog.open) dialog.showModal();
+      if (!dialog.open) { dialog.showModal(); markDialogOpened(); }
     } else {
       dialog.setAttribute('open', 'open');
+      markDialogOpened();
     }
   } catch (error) {
     console.error('openIngredientDialog failed', error);
@@ -857,14 +886,26 @@ if (closeScannerBtn) {
   closeScannerBtn.addEventListener('click', async () => {
     const dialog = document.getElementById('scannerDialog');
     await stopScanner();
-    if (dialog?.open) dialog.close();
+    if (dialog?.open) { try { dialog.close(); } catch { dialog.removeAttribute('open'); } markDialogClosed(); }
   });
 }
 const scannerDialogEl = document.getElementById('scannerDialog');
 if (scannerDialogEl) {
-  scannerDialogEl.addEventListener('close', () => { stopScanner(); });
-  scannerDialogEl.addEventListener('cancel', (e) => { e.preventDefault(); stopScanner().then(() => scannerDialogEl.close()); });
+  scannerDialogEl.addEventListener('close', () => { stopScanner(); markDialogClosed(); });
+  scannerDialogEl.addEventListener('cancel', (e) => { e.preventDefault(); stopScanner().then(() => { try { scannerDialogEl.close(); } catch { scannerDialogEl.removeAttribute('open'); } markDialogClosed(); }); });
 }
+
+['ingredientDialog','supplierDialog'].forEach((id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('close', () => { markDialogClosed(); });
+  el.addEventListener('cancel', (e) => { e.preventDefault(); try { el.close(); } catch { el.removeAttribute('open'); } markDialogClosed(); });
+});
+
+document.querySelectorAll('dialog .modal-form').forEach((el) => {
+  el.addEventListener('touchmove', (event) => { event.stopPropagation(); }, { passive: true });
+});
+
 document.getElementById('addOfferBtn').addEventListener('click', () => {
   document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
   ensureOneDefaultOffer();
@@ -892,6 +933,7 @@ document.getElementById('ingredientForm').addEventListener('submit', e => {
   const idx = state.ingredients.findIndex(i => i.id === payload.id);
   if (idx >= 0) state.ingredients[idx] = payload; else state.ingredients.push(payload);
   document.getElementById('ingredientDialog').close();
+  markDialogClosed();
   renderAll();
 });
 
@@ -984,12 +1026,12 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 const cancelIngredientBtn = document.getElementById('cancelIngredientBtn');
 if (cancelIngredientBtn) cancelIngredientBtn.addEventListener('click', () => {
   const dialog = document.getElementById('ingredientDialog');
-  if (dialog?.open) dialog.close();
+  if (dialog?.open) { try { dialog.close(); } catch { dialog.removeAttribute('open'); } markDialogClosed(); }
 });
 const cancelSupplierBtn = document.getElementById('cancelSupplierBtn');
 if (cancelSupplierBtn) cancelSupplierBtn.addEventListener('click', () => {
   const dialog = document.getElementById('supplierDialog');
-  if (dialog?.open) dialog.close();
+  if (dialog?.open) { try { dialog.close(); } catch { dialog.removeAttribute('open'); } markDialogClosed(); }
 });
 
 window.addEventListener('beforeunload', () => {
@@ -1000,6 +1042,7 @@ window.addEventListener('beforeunload', () => {
 renderAll();
 renderVersionBadges();
 installPullToRefresh();
+syncModalState();
 
 function renderVersionBadges() {
   const versionText = `Version ${APP_VERSION}`;
@@ -1066,14 +1109,14 @@ function installPullToRefresh() {
   const maxPull = 130;
   const isAtTop = () => (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0) <= 0;
   document.addEventListener('touchstart', (event) => {
-    if (!isAtTop() || event.touches.length !== 1) return;
+    if (!isAtTop() || event.touches.length !== 1 || isAnyDialogOpen()) return;
     startY = event.touches[0].clientY;
     deltaY = 0;
     tracking = true;
     active = false;
   }, { passive: true });
   document.addEventListener('touchmove', (event) => {
-    if (!tracking) return;
+    if (!tracking || isAnyDialogOpen()) return;
     const currentY = event.touches[0].clientY;
     deltaY = Math.max(0, currentY - startY);
     if (deltaY < 12) return;
@@ -1093,7 +1136,7 @@ function installPullToRefresh() {
   }, { passive: false });
   document.addEventListener('touchend', () => {
     if (!tracking && !active) return;
-    const shouldRefresh = deltaY >= threshold && isAtTop();
+    const shouldRefresh = deltaY >= threshold && isAtTop() && !isAnyDialogOpen();
     tracking = false;
     active = false;
     if (shouldRefresh) {
