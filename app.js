@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'pilotage-production-vierge-v4-5';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.5.9';
+const APP_VERSION = 'v1.6.0';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -1201,4 +1201,26 @@ if ('serviceWorker' in navigator) {
       setPullRefreshState('Cache vidé, rechargement…', 'loading');
     }
   });
+}
+
+
+function bootstrapApp() {
+  try {
+    renderAll();
+    bindEvents();
+    installPullToRefresh();
+    syncModalState();
+    const versionEl = document.getElementById('appVersion');
+    if (versionEl) versionEl.textContent = APP_VERSION;
+    const titleVersionEl = document.getElementById('titleVersion');
+    if (titleVersionEl) titleVersionEl.textContent = APP_VERSION;
+  } catch (error) {
+    console.error('Bootstrap error', error);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrapApp, { once: true });
+} else {
+  bootstrapApp();
 }

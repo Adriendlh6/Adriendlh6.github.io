@@ -1,3 +1,4 @@
+// v1.6.0
 const CACHE_NAME = 'pilotage-production-pwa-v1-5-9';
 const APP_ASSETS = [
   './',
