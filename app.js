@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'pilotage-production-vierge-v4-3';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.5.2';
+const APP_VERSION = 'v1.5.3';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
