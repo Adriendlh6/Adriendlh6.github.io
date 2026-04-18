@@ -762,6 +762,55 @@ function handleScannedCode(code) {
   stopScanner();
 }
 
+
+
+document.getElementById('addSupplierBtn').addEventListener('click', () => {
+  document.getElementById('supplierDialogTitle').textContent = 'Ajouter un fournisseur';
+  document.getElementById('supplierId').value = '';
+  document.getElementById('supplierName').value = '';
+  document.getElementById('supplierContact').value = '';
+  document.getElementById('supplierPhone').value = '';
+  document.getElementById('supplierEmail').value = '';
+  document.getElementById('supplierNotes').value = '';
+  document.getElementById('supplierDialog').showModal();
+});
+
+document.getElementById('supplierForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const payload = {
+    id: document.getElementById('supplierId').value || crypto.randomUUID(),
+    name: document.getElementById('supplierName').value.trim(),
+    contact: document.getElementById('supplierContact').value.trim(),
+    phone: document.getElementById('supplierPhone').value.trim(),
+    email: document.getElementById('supplierEmail').value.trim(),
+    notes: document.getElementById('supplierNotes').value.trim()
+  };
+  if (!payload.name) {
+    alert('Renseignez le nom du fournisseur.');
+    return;
+  }
+  const idx = state.suppliers.findIndex(s => s.id === payload.id);
+  if (idx >= 0) state.suppliers[idx] = payload; else state.suppliers.push(payload);
+  document.getElementById('supplierDialog').close();
+  renderAll();
+});
+
+document.getElementById('addIngredientBtn').addEventListener('click', () => {
+  document.getElementById('ingredientDialogTitle').textContent = 'Ajouter un ingrédient';
+  document.getElementById('ingredientId').value = '';
+  document.getElementById('ingredientName').value = '';
+  document.getElementById('ingredientCategory').value = '';
+  document.getElementById('ingredientEAN').value = '';
+  document.getElementById('ingredientBaseUnit').value = 'kg';
+  fillNutritionFields({});
+  renderAllergenChecklist([]);
+  setEANStatus('Aucun scan en cours.');
+  pendingScannedCode = '';
+  renderOfferLines([normalizeOffer({ vatRate: 5.5, isDefault: true })]);
+  resetIngredientSections();
+  document.getElementById('ingredientDialog').showModal();
+});
+
 document.getElementById('addOfferBtn').addEventListener('click', () => {
   document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
   ensureOneDefaultOffer();
