@@ -295,3 +295,79 @@ dialog { width: min(760px, calc(100vw - 1rem)); border: none; border-radius: 1re
 html, body {
   overscroll-behavior-y: auto;
 }
+
+
+#scannerDialog {
+  width: min(100vw - 1rem, 760px);
+}
+#scannerDialog .modal-form {
+  width: 100%;
+  max-width: 100%;
+  padding: 1rem;
+}
+.scanner-shell {
+  width: 100%;
+  display: grid;
+  gap: .75rem;
+}
+#scannerReader,
+#scannerVideo {
+  width: 100%;
+  max-width: 100%;
+  min-height: 240px;
+  aspect-ratio: 4 / 3;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #111827;
+}
+#scannerReader {
+  position: relative;
+}
+#scannerReader video,
+#scannerReader img,
+#scannerVideo {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  display: block;
+}
+#scannerReader__scan_region,
+#scannerReader__scan_region > img,
+#scannerReader__scan_region > video {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 240px;
+  object-fit: cover;
+}
+#scannerReader__dashboard {
+  padding: .5rem !important;
+}
+#scannerReader__dashboard_section_csr button,
+#scannerReader__dashboard_section_swaplink {
+  font-size: .95rem;
+}
+@media (max-width: 640px) {
+  #scannerDialog {
+    width: calc(100vw - .5rem);
+    max-width: calc(100vw - .5rem);
+    margin: .25rem;
+  }
+  #scannerDialog .modal-form {
+    padding: .75rem;
+  }
+  #scannerReader,
+  #scannerVideo {
+    min-height: 280px;
+    aspect-ratio: 3 / 4;
+  }
+}
+
+.scanner-shell { width:100%; display:grid; gap:.75rem; }
+#ocrVideo, #ocrPreview {
+  width:100%; max-width:100%; max-height:360px; object-fit:contain; background:#000; border-radius:.85rem; display:block;
+}
+#ocrPreview[hidden], #ocrVideo[hidden] { display:none; }
+#ocrDialog .inline-actions { margin: .75rem 0; }
+@media (max-width: 720px) {
+  #ocrDialog .inline-actions > * { flex: 1 1 100%; }
+}

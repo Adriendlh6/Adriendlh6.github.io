@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'pilotage-production-vierge-v4-3';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.3';
+const APP_VERSION = 'v1.5.1';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -13,6 +13,9 @@ let scannerAnimationFrame = null;
 let pendingScannedCode = '';
 let isScannerRunning = false;
 let html5QrInstance = null;
+let ocrStream = null;
+let ocrImageDataUrl = '';
+let ocrParsedNutrition = null;
 
 const seedData = {
   meta: {
@@ -679,25 +682,72 @@ async function openScannerDialog() {
       video.hidden = true;
       isScannerRunning = true;
       await html5QrInstance.start(
-        { facingMode: 'environment' },
+        { facingMode: { exact: 'environment' } },
         {
-          fps: 10,
+          fps: 12,
           qrbox: (w, h) => {
-            const size = Math.floor(Math.min(w, h) * 0.72);
-            return { width: size, height: Math.floor(size * 0.55) };
+            const scanWidth = Math.max(220, Math.floor(Math.min(w * 0.88, 420)));
+            const scanHeight = Math.floor(scanWidth * 0.55);
+            return { width: scanWidth, height: scanHeight };
           },
-          aspectRatio: 1.7778,
-          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+          aspectRatio: 1.333,
+          disableFlip: false,
+          rememberLastUsedCamera: true,
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+          formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128
+          ],
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
         },
         (decodedText) => {
           const code = trimEan(decodedText || '');
-          if (code) handleScannedCode(code);
+          if (code && code.length >= 8) handleScannedCode(code);
         },
         () => {}
       );
       return;
     } catch (error) {
-      setScannerFeedback('Le scanner avancé n’a pas pu démarrer. Bascule vers le mode navigateur.', 'status-warn');
+      try {
+        await html5QrInstance.start(
+          { facingMode: 'environment' },
+          {
+            fps: 10,
+            qrbox: (w, h) => {
+              const scanWidth = Math.max(220, Math.floor(Math.min(w * 0.88, 420)));
+              const scanHeight = Math.floor(scanWidth * 0.55);
+              return { width: scanWidth, height: scanHeight };
+            },
+            aspectRatio: 1.333,
+            disableFlip: false,
+            rememberLastUsedCamera: true,
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E,
+              Html5QrcodeSupportedFormats.CODE_128
+            ],
+            experimentalFeatures: {
+              useBarCodeDetectorIfSupported: true
+            }
+          },
+          (decodedText) => {
+            const code = trimEan(decodedText || '');
+            if (code && code.length >= 8) handleScannedCode(code);
+          },
+          () => {}
+        );
+        return;
+      } catch (fallbackError) {
+        setScannerFeedback('Le scanner avancé n’a pas pu démarrer. Bascule vers le mode navigateur.', 'status-warn');
+      }
     }
   }
 
@@ -740,6 +790,10 @@ async function stopScanner() {
     video.srcObject = null;
     video.style.display = '';
   }
+  if (reader) {
+    reader.hidden = false;
+    reader.innerHTML = '';
+  }
 }
 
 async function scanVideoLoop() {
@@ -748,7 +802,7 @@ async function scanVideoLoop() {
   const reader = document.getElementById('scannerReader');
   const canvas = document.getElementById('scannerCanvas');
   if (!video || !canvas || video.readyState < 2) {
-    scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
+    if (scannerStream) scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
     return;
   }
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -775,14 +829,14 @@ function handleScannedCode(code) {
     pendingScannedCode = code;
     setScannerFeedback(`Premier scan détecté : ${code}. Scannez une seconde fois pour vérifier.`, 'status-warn');
     setEANStatus(`Premier scan détecté : ${code}. En attente de vérification.`, 'status-warn');
-    scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
+    if (scannerStream) scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
     return;
   }
   if (pendingScannedCode !== code) {
     setScannerFeedback(`Le second scan (${code}) ne correspond pas au premier (${pendingScannedCode}). Recommencez.`, 'status-bad');
     setEANStatus('Les deux scans ne correspondent pas. Recommencez.', 'status-bad');
     pendingScannedCode = '';
-    scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
+    if (scannerStream) scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
     return;
   }
   document.getElementById('ingredientEAN').value = code;
@@ -792,6 +846,185 @@ function handleScannedCode(code) {
   stopScanner();
 }
 
+
+function setNutritionOCRStatus(message, cls = 'muted') {
+  const el = document.getElementById('nutritionOcrStatus');
+  if (!el) return;
+  el.className = `scan-status ${cls}`;
+  el.textContent = message;
+}
+
+function setOCRFeedback(message, cls = 'muted') {
+  const el = document.getElementById('ocrFeedback');
+  if (!el) return;
+  el.className = `summary-box small ${cls}`;
+  el.textContent = message;
+}
+
+async function openOCRDialog() {
+  ocrParsedNutrition = null;
+  ocrImageDataUrl = '';
+  const preview = document.getElementById('ocrPreview');
+  const video = document.getElementById('ocrVideo');
+  if (preview) { preview.hidden = true; preview.src = ''; }
+  if (video) { video.hidden = true; video.srcObject = null; }
+  setOCRFeedback('Chargez une image nette du tableau nutritionnel puis lancez l’OCR.');
+  document.getElementById('ocrDialog').showModal();
+}
+
+async function startOCRCamera() {
+  const video = document.getElementById('ocrVideo');
+  const preview = document.getElementById('ocrPreview');
+  try {
+    await stopOCRCamera();
+    ocrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = ocrStream;
+    await video.play();
+    video.hidden = false;
+    preview.hidden = true;
+    setOCRFeedback('Caméra active. Cadrez le tableau nutritionnel puis prenez la photo.', 'status-good');
+  } catch (e) {
+    setOCRFeedback('Impossible d’activer la caméra. Importez une image à la place.', 'status-bad');
+  }
+}
+
+async function stopOCRCamera() {
+  if (ocrStream) {
+    ocrStream.getTracks().forEach(t => t.stop());
+    ocrStream = null;
+  }
+  const video = document.getElementById('ocrVideo');
+  if (video) video.srcObject = null;
+}
+
+function captureOCRPhoto() {
+  const video = document.getElementById('ocrVideo');
+  const canvas = document.getElementById('ocrCanvas');
+  const preview = document.getElementById('ocrPreview');
+  if (!video || !canvas || !video.videoWidth) {
+    setOCRFeedback('La caméra n’est pas prête.', 'status-warn');
+    return;
+  }
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  ocrImageDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  preview.src = ocrImageDataUrl;
+  preview.hidden = false;
+  video.hidden = true;
+  stopOCRCamera();
+  setOCRFeedback('Photo capturée. Lancez maintenant l’OCR.', 'status-good');
+}
+
+function handleOCRFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    ocrImageDataUrl = String(reader.result || '');
+    const preview = document.getElementById('ocrPreview');
+    const video = document.getElementById('ocrVideo');
+    if (preview) {
+      preview.src = ocrImageDataUrl;
+      preview.hidden = false;
+    }
+    if (video) video.hidden = true;
+    stopOCRCamera();
+    setOCRFeedback('Image importée. Lancez maintenant l’OCR.', 'status-good');
+  };
+  reader.readAsDataURL(file);
+}
+
+function normalizeOCRText(text) {
+  return String(text || '')
+    .replace(/[|]/g, '1')
+    .replace(/[Oo](?=\d)/g, '0')
+    .replace(/,/g, '.')
+    .replace(/kJ\s*\/\s*kcal/gi, 'kcal')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractNumericAfterLabel(text, patterns) {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match) {
+      const raw = (match[1] || '').replace(',', '.');
+      const value = Number(raw);
+      if (!Number.isNaN(value)) return value;
+    }
+  }
+  return null;
+}
+
+function parseNutritionFromOCR(rawText) {
+  const text = normalizeOCRText(rawText);
+  return {
+    calories: extractNumericAfterLabel(text, [/kcal[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i, /énergie[^\d]{0,40}(\d+(?:[\.,]\d+)?)\s*kcal/i]),
+    fat: extractNumericAfterLabel(text, [/mati[eè]res? grasses?[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i, /fat[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i]),
+    saturatedFat: extractNumericAfterLabel(text, [/(?:acides? gras satur[eé]s|dont satur[eé]s|saturates?)[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i]),
+    carbs: extractNumericAfterLabel(text, [/glucides?[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i, /carbohydrates?[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i]),
+    sugars: extractNumericAfterLabel(text, [/(?:dont sucres|sugars?)[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i]),
+    protein: extractNumericAfterLabel(text, [/prot[eé]ines?[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i, /protein[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i]),
+    fiber: extractNumericAfterLabel(text, [/fibres?[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i, /fiber[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i]),
+    salt: extractNumericAfterLabel(text, [/sel[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i, /salt[^\d]{0,20}(\d+(?:[\.,]\d+)?)/i])
+  };
+}
+
+function summarizeParsedNutrition(nutrition) {
+  const entries = [
+    ['Énergie', nutrition.calories, 'kcal'],
+    ['Matières grasses', nutrition.fat, 'g'],
+    ['AGS', nutrition.saturatedFat, 'g'],
+    ['Glucides', nutrition.carbs, 'g'],
+    ['Sucres', nutrition.sugars, 'g'],
+    ['Protéines', nutrition.protein, 'g'],
+    ['Fibres', nutrition.fiber, 'g'],
+    ['Sel', nutrition.salt, 'g']
+  ].filter(([,v]) => typeof v === 'number' && !Number.isNaN(v));
+  if (!entries.length) return 'Aucune valeur exploitable détectée. Essayez une photo plus nette et centrée sur le tableau nutritionnel.';
+  return 'Valeurs détectées pour 100 g : ' + entries.map(([k,v,u]) => `${k} ${v} ${u}`).join(' • ');
+}
+
+async function runNutritionOCR() {
+  if (!ocrImageDataUrl) {
+    setOCRFeedback('Ajoutez d’abord une photo ou une image.', 'status-warn');
+    return;
+  }
+  if (!window.Tesseract) {
+    setOCRFeedback('Le module OCR n’a pas chargé. Vérifiez la connexion puis réessayez.', 'status-bad');
+    return;
+  }
+  setOCRFeedback('OCR en cours… cela peut prendre quelques secondes.', 'status-warn');
+  try {
+    const result = await Tesseract.recognize(ocrImageDataUrl, 'fra+eng', {
+      logger: (m) => {
+        if (m.status === 'recognizing text' && typeof m.progress === 'number') {
+          setOCRFeedback(`OCR en cours… ${Math.round(m.progress * 100)} %`, 'status-warn');
+        }
+      }
+    });
+    const text = result?.data?.text || '';
+    ocrParsedNutrition = parseNutritionFromOCR(text);
+    const summary = summarizeParsedNutrition(ocrParsedNutrition);
+    const ok = Object.values(ocrParsedNutrition).some(v => typeof v === 'number' && !Number.isNaN(v));
+    setOCRFeedback(summary, ok ? 'status-good' : 'status-bad');
+    setNutritionOCRStatus(ok ? 'OCR nutrition prêt à être appliqué.' : 'OCR terminé, mais aucune valeur exploitable n’a été trouvée.', ok ? 'status-good' : 'status-bad');
+  } catch (e) {
+    setOCRFeedback('Erreur OCR. Essayez une image plus nette ou importez une photo recadrée.', 'status-bad');
+  }
+}
+
+function applyOCRNutrition() {
+  if (!ocrParsedNutrition) {
+    setOCRFeedback('Aucun résultat OCR à appliquer.', 'status-warn');
+    return;
+  }
+  fillNutritionFields(ocrParsedNutrition);
+  setNutritionOCRStatus('Valeurs nutritionnelles préremplies par OCR (base 100 g).', 'status-good');
+  document.getElementById('nutritionBlock')?.setAttribute('open', 'open');
+  document.getElementById('ocrDialog').close();
+}
 function addRecipeLine() {
   const recipe = state.recipes.find(r => r.id === currentRecipeId);
   recipe.items.push({ ingredientId: state.ingredients[0]?.id || '', quantity: 0, unit: state.ingredients[0]?.baseUnit || 'kg' });
@@ -886,6 +1119,17 @@ document.getElementById('closeScannerBtn').addEventListener('click', async () =>
   await stopScanner();
 });
 document.getElementById('scannerDialog').addEventListener('close', () => { stopScanner(); });
+document.getElementById('openNutritionOCRBtn').addEventListener('click', openOCRDialog);
+document.getElementById('startOcrCameraBtn').addEventListener('click', startOCRCamera);
+document.getElementById('captureOcrBtn').addEventListener('click', captureOCRPhoto);
+document.getElementById('ocrFileInput').addEventListener('change', handleOCRFile);
+document.getElementById('runOcrBtn').addEventListener('click', runNutritionOCR);
+document.getElementById('applyOcrBtn').addEventListener('click', applyOCRNutrition);
+document.getElementById('closeOcrBtn').addEventListener('click', async () => {
+  document.getElementById('ocrDialog').close();
+  await stopOCRCamera();
+});
+document.getElementById('ocrDialog').addEventListener('close', () => { stopOCRCamera(); });
 document.getElementById('addOfferBtn').addEventListener('click', () => {
   document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
   ensureOneDefaultOffer();
