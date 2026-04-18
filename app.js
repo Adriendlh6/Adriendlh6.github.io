@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'pilotage-production-vierge-v4-4';
+const STORAGE_KEY = 'pilotage-production-vierge-v4-5';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.5.6';
+const APP_VERSION = 'v1.5.7';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -50,6 +50,29 @@ const seedData = {
 let state = loadState();
 let currentRecipeId = state.recipes[0]?.id || null;
 let saveTimer = null;
+
+function bindPress(id, handler, options = {}) {
+  const el = typeof id === 'string' ? document.getElementById(id) : id;
+  if (!el || typeof handler !== 'function') return;
+  let touchTriggered = false;
+  const wrapped = (event) => {
+    if (event) {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+    }
+    handler(event);
+  };
+  el.addEventListener('click', (event) => {
+    if (touchTriggered) { touchTriggered = false; return; }
+    wrapped(event);
+  });
+  el.addEventListener('touchend', (event) => {
+    touchTriggered = true;
+    wrapped(event);
+    setTimeout(() => { touchTriggered = false; }, 350);
+  }, { passive: false });
+}
+
 
 function normalizeOffer(offer = {}, ingredient = {}) {
   const baseUnit = ingredient.baseUnit || offer.baseUnit || 'kg';
@@ -790,7 +813,7 @@ function handleScannedCode(code) {
 
 
 
-document.getElementById('addSupplierBtn').addEventListener('click', () => {
+bindPress('addSupplierBtn', () => {
   document.getElementById('supplierDialogTitle').textContent = 'Ajouter un fournisseur';
   document.getElementById('supplierId').value = '';
   document.getElementById('supplierName').value = '';
@@ -854,27 +877,13 @@ function openIngredientDialog() {
   }
 }
 window.__openIngredientDialog = openIngredientDialog;
-const addIngredientBtn = document.getElementById('addIngredientBtn');
-if (addIngredientBtn) {
-  addIngredientBtn.addEventListener('click', openIngredientDialog);
-  addIngredientBtn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    openIngredientDialog();
-  }, { passive: false });
-}
+bindPress('addIngredientBtn', openIngredientDialog);
 
 
-const scanEANBtn = document.getElementById('scanEANBtn');
-if (scanEANBtn) {
-  scanEANBtn.addEventListener('click', openScannerDialog);
-  scanEANBtn.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    openScannerDialog();
-  }, { passive: false });
-}
+bindPress('scanEANBtn', openScannerDialog);
 const clearEANBtn = document.getElementById('clearEANBtn');
 if (clearEANBtn) {
-  clearEANBtn.addEventListener('click', () => {
+  bindPress(clearEANBtn, () => {
     const input = document.getElementById('ingredientEAN');
     if (input) input.value = '';
     pendingScannedCode = '';
@@ -883,7 +892,7 @@ if (clearEANBtn) {
 }
 const closeScannerBtn = document.getElementById('closeScannerBtn');
 if (closeScannerBtn) {
-  closeScannerBtn.addEventListener('click', async () => {
+  bindPress(closeScannerBtn, async () => {
     const dialog = document.getElementById('scannerDialog');
     await stopScanner();
     if (dialog?.open) { try { dialog.close(); } catch { dialog.removeAttribute('open'); } markDialogClosed(); }
@@ -906,7 +915,7 @@ document.querySelectorAll('dialog .modal-form').forEach((el) => {
   el.addEventListener('touchmove', (event) => { event.stopPropagation(); }, { passive: true });
 });
 
-document.getElementById('addOfferBtn').addEventListener('click', () => {
+bindPress('addOfferBtn', () => {
   document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
   ensureOneDefaultOffer();
   updateAllOfferSummaries();
@@ -937,7 +946,7 @@ document.getElementById('ingredientForm').addEventListener('submit', e => {
   renderAll();
 });
 
-document.getElementById('addRecipeBtn').addEventListener('click', () => {
+bindPress('addRecipeBtn', () => {
   const recipe = {
     id: crypto.randomUUID(),
     name: 'Nouvelle recette',
@@ -953,7 +962,7 @@ document.getElementById('addRecipeBtn').addEventListener('click', () => {
   renderAll();
 });
 
-document.getElementById('simulateBtn').addEventListener('click', () => {
+bindPress('simulateBtn', () => {
   const recipe = state.recipes.find(r => r.id === document.getElementById('productionRecipe').value);
   if (!recipe) return;
   const lots = Number(document.getElementById('productionLots').value || 1);
@@ -977,18 +986,18 @@ document.getElementById('simulateBtn').addEventListener('click', () => {
     <p><strong>Taux de marge :</strong> ${num(marginRate, 1)} %</p>`;
 });
 
-document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+bindPress('saveSettingsBtn', () => {
   state.settings.laborHourlyCost = Number(document.getElementById('laborHourlyCost').value || 0);
   state.settings.energyHourlyCost = Number(document.getElementById('energyHourlyCost').value || 0);
   state.settings.overheadRate = Number(document.getElementById('overheadRate').value || 0);
   renderAll();
 });
 
-document.getElementById('exportBtn').addEventListener('click', () => {
+bindPress('exportBtn', () => {
   downloadTextFile(makeExportPayload(), 'app-export.json');
 });
 
-document.getElementById('backupBtn').addEventListener('click', async () => {
+bindPress('backupBtn', async () => {
   const filename = backupFileName();
   const blob = downloadTextFile(makeExportPayload(), filename);
   markBackup(filename);
@@ -1015,7 +1024,7 @@ document.getElementById('importFile').addEventListener('change', async (e) => {
   }
 });
 
-document.getElementById('resetBtn').addEventListener('click', () => {
+bindPress('resetBtn', () => {
   if (!confirm('Réinitialiser toutes les données locales ? Pensez à faire une sauvegarde complète avant.')) return;
   state = normalizeState(seedData);
   currentRecipeId = state.recipes[0]?.id || null;
@@ -1024,12 +1033,12 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 
 
 const cancelIngredientBtn = document.getElementById('cancelIngredientBtn');
-if (cancelIngredientBtn) cancelIngredientBtn.addEventListener('click', () => {
+if (cancelIngredientBtn) bindPress(cancelIngredientBtn, () => {
   const dialog = document.getElementById('ingredientDialog');
   if (dialog?.open) { try { dialog.close(); } catch { dialog.removeAttribute('open'); } markDialogClosed(); }
 });
 const cancelSupplierBtn = document.getElementById('cancelSupplierBtn');
-if (cancelSupplierBtn) cancelSupplierBtn.addEventListener('click', () => {
+if (cancelSupplierBtn) bindPress(cancelSupplierBtn, () => {
   const dialog = document.getElementById('supplierDialog');
   if (dialog?.open) { try { dialog.close(); } catch { dialog.removeAttribute('open'); } markDialogClosed(); }
 });
