@@ -126,6 +126,7 @@
                   <th>TVA</th>
                   <th>Coût HT unité</th>
                   <th>Coût TTC unité</th>
+                  <th>Allergènes</th>
                   <th>Offres</th>
                   <th></th>
                 </tr>
@@ -225,7 +226,14 @@
       <input type="hidden" id="ingredientId" />
       <label>Nom<input id="ingredientName" required /></label>
       <label>Catégorie<input id="ingredientCategory" list="categorySuggestions" placeholder="Farines, matières grasses..." /></label>
-      <label>EAN<input id="ingredientEAN" inputmode="numeric" placeholder="Code-barres / EAN" /></label>
+      <div class="ean-row">
+        <label>EAN<input id="ingredientEAN" inputmode="numeric" placeholder="Code-barres / EAN" /></label>
+        <div class="ean-actions">
+          <button type="button" id="scanEANBtn" class="ghost">Scanner EAN</button>
+          <button type="button" id="clearEANBtn" class="ghost">Effacer</button>
+        </div>
+      </div>
+      <div id="eanScanStatus" class="muted scan-status">Aucun scan en cours.</div>
       <label>Unité de base
         <select id="ingredientBaseUnit">
           <option value="kg">kg</option>
@@ -233,6 +241,26 @@
           <option value="piece">pièce</option>
         </select>
       </label>
+
+      <div class="subpanel">
+        <h4>Valeurs nutritionnelles</h4>
+        <p class="muted">Renseignez les valeurs pour 100 g, 100 ml ou 1 pièce selon l’unité de base choisie.</p>
+        <div class="nutrition-grid">
+          <label>Énergie (kcal)<input id="nutritionCalories" type="number" min="0" step="0.1" /></label>
+          <label>Matières grasses (g)<input id="nutritionFat" type="number" min="0" step="0.1" /></label>
+          <label>dont acides gras saturés (g)<input id="nutritionSaturatedFat" type="number" min="0" step="0.1" /></label>
+          <label>Glucides (g)<input id="nutritionCarbs" type="number" min="0" step="0.1" /></label>
+          <label>dont sucres (g)<input id="nutritionSugars" type="number" min="0" step="0.1" /></label>
+          <label>Protéines (g)<input id="nutritionProtein" type="number" min="0" step="0.1" /></label>
+          <label>Fibres (g)<input id="nutritionFiber" type="number" min="0" step="0.1" /></label>
+          <label>Sel (g)<input id="nutritionSalt" type="number" min="0" step="0.01" /></label>
+        </div>
+      </div>
+
+      <div class="subpanel">
+        <h4>Allergènes</h4>
+        <div id="allergenChecklist" class="allergen-grid"></div>
+      </div>
 
       <div class="subpanel">
         <div class="section-head"><h4>Offres fournisseurs</h4><button type="button" id="addOfferBtn">Ajouter une offre</button></div>
@@ -244,6 +272,19 @@
         <button type="submit">Enregistrer</button>
       </div>
     </form>
+  </dialog>
+
+  <dialog id="scannerDialog">
+    <div class="modal-form">
+      <h3>Scanner le code-barres</h3>
+      <p class="muted">Le même code doit être lu deux fois pour validation.</p>
+      <video id="scannerVideo" playsinline autoplay muted></video>
+      <canvas id="scannerCanvas" hidden></canvas>
+      <div id="scannerFeedback" class="summary-box small">Autorisez l’accès caméra puis visez le code-barres.</div>
+      <div class="dialog-actions">
+        <button type="button" id="closeScannerBtn" class="ghost">Fermer</button>
+      </div>
+    </div>
   </dialog>
   <datalist id="categorySuggestions"></datalist>
 

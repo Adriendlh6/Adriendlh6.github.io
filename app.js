@@ -1,6 +1,17 @@
-const STORAGE_KEY = 'pilotage-production-vierge-v3';
+const STORAGE_KEY = 'pilotage-production-vierge-v4';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = '3.3-pwa-mercuriale-plus';
+const APP_VERSION = '3.4-pwa-mercuriale-nutrition-scan';
+
+const VAT_RATES = [0, 2.1, 5.5, 10, 20];
+const ALLERGENS = [
+  'Gluten', 'Crustacés', 'Œufs', 'Poissons', 'Arachides', 'Soja', 'Lait', 'Fruits à coque',
+  'Céleri', 'Moutarde', 'Sésame', 'Sulfites', 'Lupin', 'Mollusques'
+];
+const NUTRITION_FIELDS = ['calories', 'fat', 'saturatedFat', 'carbs', 'sugars', 'protein', 'fiber', 'salt'];
+let scannerStream = null;
+let scannerAnimationFrame = null;
+let pendingScannedCode = '';
+let isScannerRunning = false;
 
 const seedData = {
   meta: {
@@ -44,6 +55,19 @@ function normalizeOffer(offer = {}, ingredient = {}) {
   };
 }
 
+function normalizeNutrition(raw = {}) {
+  return {
+    calories: Number(raw.calories || 0),
+    fat: Number(raw.fat || 0),
+    saturatedFat: Number(raw.saturatedFat || 0),
+    carbs: Number(raw.carbs || 0),
+    sugars: Number(raw.sugars || 0),
+    protein: Number(raw.protein || 0),
+    fiber: Number(raw.fiber || 0),
+    salt: Number(raw.salt || 0)
+  };
+}
+
 function normalizeIngredient(raw = {}) {
   const baseUnit = raw.baseUnit || 'kg';
   let offers = Array.isArray(raw.offers) ? raw.offers.map(o => normalizeOffer(o, raw)) : [];
@@ -64,7 +88,9 @@ function normalizeIngredient(raw = {}) {
     category: raw.category || '',
     ean: raw.ean || '',
     baseUnit,
-    offers
+    offers,
+    nutrition: normalizeNutrition(raw.nutrition || {}),
+    allergens: Array.isArray(raw.allergens) ? raw.allergens.filter(x => ALLERGENS.includes(x)) : []
   };
 }
 
@@ -146,6 +172,59 @@ function daysSince(value) {
 }
 function unitLabel(baseUnit) {
   return baseUnit === 'piece' ? 'pièce' : baseUnit;
+}
+
+function legalVatLabel(rate) {
+  return `${String(rate).replace('.', ',')} %`;
+}
+function renderVatOptions(selected = 5.5) {
+  return VAT_RATES.map(rate => `<option value="${rate}" ${Number(selected) === Number(rate) ? 'selected' : ''}>${legalVatLabel(rate)}</option>`).join('');
+}
+function trimEan(value = '') {
+  return String(value).replace(/\D/g, '').slice(0, 14);
+}
+function renderAllergenChecklist(selected = []) {
+  const container = document.getElementById('allergenChecklist');
+  if (!container) return;
+  const selectedSet = new Set(selected || []);
+  container.innerHTML = ALLERGENS.map(name => `
+    <label class="checkbox-line"><input type="checkbox" value="${escapeHtml(name)}" ${selectedSet.has(name) ? 'checked' : ''}/> ${escapeHtml(name)}</label>
+  `).join('');
+}
+function fillNutritionFields(nutrition = {}) {
+  NUTRITION_FIELDS.forEach(key => {
+    const el = document.getElementById(`nutrition${key.charAt(0).toUpperCase()}${key.slice(1)}`);
+    if (el) el.value = Number(nutrition[key] || 0) || '';
+  });
+}
+function readNutritionFields() {
+  return {
+    calories: Number(document.getElementById('nutritionCalories').value || 0),
+    fat: Number(document.getElementById('nutritionFat').value || 0),
+    saturatedFat: Number(document.getElementById('nutritionSaturatedFat').value || 0),
+    carbs: Number(document.getElementById('nutritionCarbs').value || 0),
+    sugars: Number(document.getElementById('nutritionSugars').value || 0),
+    protein: Number(document.getElementById('nutritionProtein').value || 0),
+    fiber: Number(document.getElementById('nutritionFiber').value || 0),
+    salt: Number(document.getElementById('nutritionSalt').value || 0)
+  };
+}
+function readSelectedAllergens() {
+  return [...document.querySelectorAll('#allergenChecklist input[type="checkbox"]:checked')].map(el => el.value);
+}
+function formatAllergens(ingredient) {
+  return ingredient.allergens?.length ? ingredient.allergens.join(', ') : '—';
+}
+function setEANStatus(message, tone = 'muted') {
+  const el = document.getElementById('eanScanStatus');
+  if (!el) return;
+  el.className = `${tone} scan-status`;
+  el.textContent = message;
+}
+function setScannerFeedback(message, tone = 'muted') {
+  const el = document.getElementById('scannerFeedback');
+  if (!el) return;
+  el.innerHTML = `<span class="${tone}">${escapeHtml(message)}</span>`;
 }
 function computeUnitCosts(offer) {
   const qty = Number(offer?.purchaseQty || 0);
@@ -345,7 +424,7 @@ function renderSuppliers() {
 function renderIngredients() {
   const query = document.getElementById('ingredientSearch').value?.trim().toLowerCase() || '';
   const rows = state.ingredients
-    .filter(i => [i.name, i.category, i.ean, supplierName(getDefaultOffer(i)?.supplierId)].join(' ').toLowerCase().includes(query))
+    .filter(i => [i.name, i.category, i.ean, supplierName(getDefaultOffer(i)?.supplierId), formatAllergens(i)].join(' ').toLowerCase().includes(query))
     .map(i => {
       const offer = getDefaultOffer(i);
       const costs = computeUnitCosts(offer);
@@ -357,9 +436,10 @@ function renderIngredients() {
         <td>${escapeHtml(supplierName(offer?.supplierId))}</td>
         <td>${num(offer?.purchaseQty, 3)} ${escapeHtml(i.baseUnit === 'piece' ? 'pièce(s)' : i.baseUnit)}</td>
         <td>${euro(offer?.purchasePrice || 0)} HT</td>
-        <td>${num(offer?.vatRate, 1)} %</td>
+        <td>${legalVatLabel(offer?.vatRate || 0)}</td>
         <td>${euro(costs.unitHt)} / ${unitLabel(i.baseUnit)}</td>
         <td>${euro(costs.unitTtc)} / ${unitLabel(i.baseUnit)}</td>
+        <td>${escapeHtml(formatAllergens(i))}</td>
         <td>${i.offers.length}</td>
         <td>
           <button onclick="editIngredient('${i.id}')">Modifier</button>
@@ -367,7 +447,7 @@ function renderIngredients() {
         </td>
       </tr>`;
     }).join('');
-  document.getElementById('ingredientsTable').innerHTML = rows || '<tr><td colspan="11" class="muted">Aucun ingrédient</td></tr>';
+  document.getElementById('ingredientsTable').innerHTML = rows || '<tr><td colspan="12" class="muted">Aucun ingrédient</td></tr>';
 }
 
 function renderRecipesList() {
@@ -490,6 +570,10 @@ function editIngredient(id) {
   document.getElementById('ingredientCategory').value = ingredient.category || '';
   document.getElementById('ingredientEAN').value = ingredient.ean || '';
   document.getElementById('ingredientBaseUnit').value = ingredient.baseUnit;
+  fillNutritionFields(ingredient.nutrition || {});
+  renderAllergenChecklist(ingredient.allergens || []);
+  setEANStatus(ingredient.ean ? `EAN enregistré : ${ingredient.ean}` : 'Aucun scan en cours.');
+  pendingScannedCode = '';
   renderOfferLines(ingredient.offers);
   document.getElementById('ingredientDialog').showModal();
 }
@@ -509,7 +593,7 @@ function makeOfferRow(offer = {}) {
     <label>Unité achat<input data-field="purchaseUnit" value="${escapeHtml(offer.purchaseUnit || '')}" placeholder="sac, carton..." /></label>
     <label>Qté achetée<input data-field="purchaseQty" type="number" min="0" step="0.001" value="${offer.purchaseQty ?? ''}" /></label>
     <label>Prix achat HT (€)<input data-field="purchasePrice" type="number" min="0" step="0.01" value="${offer.purchasePrice ?? ''}" /></label>
-    <label>TVA (%)<input data-field="vatRate" type="number" min="0" step="0.1" value="${offer.vatRate ?? 5.5}" /></label>
+    <label>TVA<select data-field="vatRate">${renderVatOptions(offer.vatRate ?? 5.5)}</select></label>
     <label class="default-toggle"><input data-field="isDefault" type="radio" name="defaultOffer" ${offer.isDefault ? 'checked' : ''} /> Offre par défaut</label>
     <div class="offer-summary muted" data-summary></div>
     <button type="button" class="danger ghost" data-remove>Retirer</button>
@@ -569,6 +653,88 @@ function renderOfferLines(offers = []) {
   });
   ensureOneDefaultOffer();
   updateAllOfferSummaries();
+}
+
+async function openScannerDialog() {
+  if (!('BarcodeDetector' in window)) {
+    alert('Le lecteur de code-barres n’est pas disponible sur ce navigateur. Vous pouvez saisir l’EAN manuellement.');
+    return;
+  }
+  const dialog = document.getElementById('scannerDialog');
+  const video = document.getElementById('scannerVideo');
+  pendingScannedCode = '';
+  setScannerFeedback('Autorisez l’accès caméra puis visez le code-barres.', 'muted');
+  try {
+    scannerStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = scannerStream;
+    await video.play();
+    dialog.showModal();
+    isScannerRunning = true;
+    scanVideoLoop();
+  } catch (error) {
+    stopScanner();
+    alert('Impossible d’accéder à la caméra.');
+  }
+}
+
+function stopScanner() {
+  isScannerRunning = false;
+  if (scannerAnimationFrame) cancelAnimationFrame(scannerAnimationFrame);
+  scannerAnimationFrame = null;
+  if (scannerStream) {
+    scannerStream.getTracks().forEach(track => track.stop());
+    scannerStream = null;
+  }
+  const video = document.getElementById('scannerVideo');
+  if (video) video.srcObject = null;
+}
+
+async function scanVideoLoop() {
+  if (!isScannerRunning) return;
+  const video = document.getElementById('scannerVideo');
+  const canvas = document.getElementById('scannerCanvas');
+  if (!video || !canvas || video.readyState < 2) {
+    scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
+    return;
+  }
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  try {
+    const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
+    const barcodes = await detector.detect(canvas);
+    if (barcodes.length) {
+      const raw = trimEan(barcodes[0].rawValue || '');
+      if (raw) {
+        handleScannedCode(raw);
+        return;
+      }
+    }
+  } catch {}
+  scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
+}
+
+function handleScannedCode(code) {
+  if (!pendingScannedCode) {
+    pendingScannedCode = code;
+    setScannerFeedback(`Premier scan détecté : ${code}. Scannez une seconde fois pour vérifier.`, 'status-warn');
+    setEANStatus(`Premier scan détecté : ${code}. En attente de vérification.`, 'status-warn');
+    scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
+    return;
+  }
+  if (pendingScannedCode !== code) {
+    setScannerFeedback(`Le second scan (${code}) ne correspond pas au premier (${pendingScannedCode}). Recommencez.`, 'status-bad');
+    setEANStatus('Les deux scans ne correspondent pas. Recommencez.', 'status-bad');
+    pendingScannedCode = '';
+    scannerAnimationFrame = requestAnimationFrame(scanVideoLoop);
+    return;
+  }
+  document.getElementById('ingredientEAN').value = code;
+  setScannerFeedback(`EAN validé : ${code}`, 'status-good');
+  setEANStatus(`EAN validé par double scan : ${code}`, 'status-good');
+  document.getElementById('scannerDialog').close();
+  stopScanner();
 }
 
 function addRecipeLine() {
@@ -640,10 +806,30 @@ document.getElementById('addIngredientBtn').addEventListener('click', () => {
   document.getElementById('ingredientDialogTitle').textContent = 'Ajouter un ingrédient';
   document.getElementById('ingredientForm').reset();
   document.getElementById('ingredientId').value = '';
+  fillNutritionFields({});
+  renderAllergenChecklist([]);
+  document.getElementById('ingredientEAN').value = '';
+  setEANStatus('Aucun scan en cours.');
+  pendingScannedCode = '';
   renderOfferLines([normalizeOffer({ isDefault: true, vatRate: 5.5 })]);
   document.getElementById('ingredientDialog').showModal();
 });
-document.getElementById('cancelIngredientBtn').addEventListener('click', () => document.getElementById('ingredientDialog').close());
+document.getElementById('cancelIngredientBtn').addEventListener('click', () => { document.getElementById('ingredientDialog').close(); stopScanner(); });
+
+document.getElementById('scanEANBtn').addEventListener('click', openScannerDialog);
+document.getElementById('clearEANBtn').addEventListener('click', () => {
+  document.getElementById('ingredientEAN').value = '';
+  pendingScannedCode = '';
+  setEANStatus('EAN effacé.');
+});
+document.getElementById('ingredientEAN').addEventListener('input', (e) => {
+  e.target.value = trimEan(e.target.value);
+});
+document.getElementById('closeScannerBtn').addEventListener('click', () => {
+  document.getElementById('scannerDialog').close();
+  stopScanner();
+});
+document.getElementById('scannerDialog').addEventListener('close', stopScanner);
 document.getElementById('addOfferBtn').addEventListener('click', () => {
   document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
   ensureOneDefaultOffer();
@@ -662,8 +848,10 @@ document.getElementById('ingredientForm').addEventListener('submit', e => {
     id: document.getElementById('ingredientId').value || crypto.randomUUID(),
     name: document.getElementById('ingredientName').value.trim(),
     category: document.getElementById('ingredientCategory').value.trim(),
-    ean: document.getElementById('ingredientEAN').value.trim(),
+    ean: trimEan(document.getElementById('ingredientEAN').value),
     baseUnit: document.getElementById('ingredientBaseUnit').value,
+    nutrition: readNutritionFields(),
+    allergens: readSelectedAllergens(),
     offers
   });
   const idx = state.ingredients.findIndex(i => i.id === payload.id);

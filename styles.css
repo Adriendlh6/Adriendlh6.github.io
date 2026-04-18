@@ -146,3 +146,39 @@ hr { border: none; border-top: 1px solid var(--line); margin: .8rem 0; }
   .offer-line { grid-template-columns: 1fr; }
   .default-toggle { margin-top: .2rem; }
 }
+.ean-row {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:.75rem;
+  align-items:end;
+}
+.ean-actions { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.8rem; }
+.scan-status { margin-bottom: .85rem; }
+.nutrition-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+  gap:.75rem;
+}
+.allergen-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+  gap:.45rem .9rem;
+}
+.checkbox-line {
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+  margin:0;
+}
+.checkbox-line input { width:auto; margin:0; }
+#scannerVideo {
+  width:100%;
+  max-height: 320px;
+  background:#000;
+  border-radius:.85rem;
+  margin:.5rem 0 1rem;
+}
+@media (max-width: 720px) {
+  .ean-row { grid-template-columns:1fr; }
+  .ean-actions { margin-bottom:0; }
+}
