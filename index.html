@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Copilot boulangerie</title>
+  <meta name="theme-color" content="#8a5a2b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Copilot boulangerie" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>Copilot boulangerie</h1>
+        <div class="version" id="versionLabel">v1.6.1</div>
+      </div>
+      <nav class="nav-list" id="navList">
+        <button type="button" class="nav-btn active" data-tab="dashboard">Dashboard</button>
+        <button type="button" class="nav-btn" data-tab="ingredients">Mercuriale</button>
+        <button type="button" class="nav-btn" data-tab="recipes">Recettes</button>
+        <button type="button" class="nav-btn" data-tab="suppliers">Fournisseurs</button>
+        <button type="button" class="nav-btn" data-tab="simulation">Simulation</button>
+        <button type="button" class="nav-btn" data-tab="settings">Paramètres</button>
+      </nav>
+      <div class="sidebar-note">
+        Correctif complet de stabilité. Pas de cache hors ligne agressif sur cette version.
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="mobile-header">
+        <button type="button" id="menuToggle" class="menu-toggle">☰</button>
+        <div>
+          <div class="mobile-title">Copilot boulangerie</div>
+          <div class="mobile-version">Version v1.6.1</div>
+        </div>
+      </header>
+
+      <section class="tab active" id="dashboard">
+        <div class="page-head">
+          <div>
+            <h2>Dashboard</h2>
+            <p>Vue d’ensemble de la mercuriale, des recettes et des simulations.</p>
+          </div>
+        </div>
+        <div class="kpis" id="kpiGrid"></div>
+        <div class="grid two">
+          <article class="panel">
+            <h3>Raccourcis</h3>
+            <div class="stack gap-sm">
+              <button type="button" id="quickAddIngredient" class="secondary">Ajouter un ingrédient</button>
+              <button type="button" id="quickAddSupplier" class="secondary">Ajouter un fournisseur</button>
+              <button type="button" id="quickAddRecipe" class="secondary">Créer une recette</button>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>Sauvegarde</h3>
+            <div class="summary-box" id="backupSummary"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="tab" id="ingredients">
+        <div class="page-head">
+          <div>
+            <h2>Mercuriale</h2>
+            <p>Gestion des matières premières, EAN, catégories, fournisseurs et coûts unitaires.</p>
+          </div>
+          <button type="button" id="addIngredientBtn">Ajouter un ingrédient</button>
+        </div>
+        <article class="panel">
+          <div class="toolbar">
+            <input id="ingredientSearch" type="search" placeholder="Rechercher un ingrédient, EAN, catégorie..." />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Catégorie</th>
+                  <th>EAN</th>
+                  <th>Offre défaut</th>
+                  <th>Coût HT</th>
+                  <th>Coût TTC</th>
+                  <th>Allergènes</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="ingredientsTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="tab" id="recipes">
+        <div class="page-head">
+          <div>
+            <h2>Recettes</h2>
+            <p>Composition, rendement et coût complet.</p>
+          </div>
+          <button type="button" id="addRecipeBtn">Créer une recette</button>
+        </div>
+        <div class="grid two">
+          <article class="panel">
+            <h3>Liste</h3>
+            <div class="stack" id="recipesList"></div>
+          </article>
+          <article class="panel">
+            <h3>Détail</h3>
+            <div id="recipeDetail" class="muted">Sélectionnez une recette.</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="tab" id="suppliers">
+        <div class="page-head">
+          <div>
+            <h2>Fournisseurs</h2>
+            <p>Annuaire fournisseurs et rattachement aux offres d’achat.</p>
+          </div>
+          <button type="button" id="addSupplierBtn">Ajouter un fournisseur</button>
+        </div>
+        <article class="panel">
+          <div class="toolbar">
+            <input id="supplierSearch" type="search" placeholder="Rechercher un fournisseur..." />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Contact</th>
+                  <th>Téléphone</th>
+                  <th>Email</th>
+                  <th>Nb offres liées</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="suppliersTable"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <section class="tab" id="simulation">
+        <div class="page-head">
+          <div>
+            <h2>Simulation</h2>
+            <p>Calcule le coût total, le coût unitaire et la marge théorique.</p>
+          </div>
+        </div>
+        <div class="grid two">
+          <article class="panel form-grid">
+            <label>Recette
+              <select id="simulationRecipe"></select>
+            </label>
+            <label>Nombre de lots
+              <input id="simulationLots" type="number" min="1" step="1" value="1" />
+            </label>
+            <label>Prix de vente unitaire (€)
+              <input id="simulationPrice" type="number" min="0" step="0.01" value="1.20" />
+            </label>
+            <button type="button" id="simulateBtn">Calculer</button>
+          </article>
+          <article class="panel">
+            <h3>Résultat</h3>
+            <div id="simulationResult" class="result-box">Choisissez une recette puis lancez le calcul.</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="tab" id="settings">
+        <div class="page-head">
+          <div>
+            <h2>Paramètres</h2>
+            <p>Réglages de coûts et sauvegarde.</p>
+          </div>
+        </div>
+        <div class="grid two">
+          <article class="panel form-grid">
+            <label>Coût horaire main-d’œuvre (€ / h)
+              <input id="laborHourlyCost" type="number" min="0" step="0.01" />
+            </label>
+            <label>Coût énergie (€ / h)
+              <input id="energyHourlyCost" type="number" min="0" step="0.01" />
+            </label>
+            <label>Charges indirectes (%)
+              <input id="overheadRate" type="number" min="0" step="0.1" />
+            </label>
+            <button type="button" id="saveSettingsBtn">Enregistrer</button>
+          </article>
+          <article class="panel stack">
+            <details open>
+              <summary>Sauvegarde</summary>
+              <div class="details-body stack">
+                <div class="summary-box" id="backupHealth"></div>
+                <div class="actions-wrap">
+                  <button type="button" id="backupBtn">Sauvegarde complète</button>
+                  <button type="button" id="exportBtn" class="secondary">Exporter</button>
+                  <label class="file-btn">Restaurer
+                    <input id="importFile" type="file" accept="application/json" hidden />
+                  </label>
+                  <button type="button" id="resetBtn" class="danger secondary">Réinitialiser</button>
+                </div>
+              </div>
+            </details>
+            <div>
+              <h3>Catégories mémorisées</h3>
+              <div id="categoryMemoryList" class="chips"></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer-version">Version v1.6.1</footer>
+    </main>
+  </div>
+
+  <dialog id="ingredientDialog" class="sheet-dialog">
+    <form id="ingredientForm" class="dialog-card" method="dialog">
+      <div class="dialog-head">
+        <h3 id="ingredientDialogTitle">Ajouter un ingrédient</h3>
+        <button type="button" class="icon-btn" data-close-dialog="ingredientDialog">✕</button>
+      </div>
+
+      <details open>
+        <summary>Informations produit</summary>
+        <div class="details-body form-grid">
+          <input type="hidden" id="ingredientId" />
+          <label>Nom
+            <input id="ingredientName" required />
+          </label>
+          <label>Catégorie
+            <input id="ingredientCategory" list="categorySuggestions" />
+          </label>
+          <label>EAN
+            <input id="ingredientEan" inputmode="numeric" />
+          </label>
+          <label>Unité de base
+            <select id="ingredientBaseUnit">
+              <option value="kg">kg</option>
+              <option value="l">l</option>
+              <option value="piece">pièce</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details open>
+        <summary>Fournisseurs</summary>
+        <div class="details-body stack">
+          <div id="offersContainer" class="stack"></div>
+          <button type="button" id="addOfferBtn" class="secondary">Ajouter une offre</button>
+        </div>
+      </details>
+
+      <details>
+        <summary>Valeurs nutritionnelles (pour 100 g)</summary>
+        <div class="details-body nutrition-grid">
+          <label>Énergie (kcal)<input id="nutritionCalories" type="number" min="0" step="0.01" /></label>
+          <label>Matières grasses<input id="nutritionFat" type="number" min="0" step="0.01" /></label>
+          <label>Acides gras saturés<input id="nutritionSaturatedFat" type="number" min="0" step="0.01" /></label>
+          <label>Glucides<input id="nutritionCarbs" type="number" min="0" step="0.01" /></label>
+          <label>Sucres<input id="nutritionSugars" type="number" min="0" step="0.01" /></label>
+          <label>Protéines<input id="nutritionProtein" type="number" min="0" step="0.01" /></label>
+          <label>Fibres<input id="nutritionFiber" type="number" min="0" step="0.01" /></label>
+          <label>Sel<input id="nutritionSalt" type="number" min="0" step="0.01" /></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>Allergènes</summary>
+        <div class="details-body checkbox-grid" id="allergenChecklist"></div>
+      </details>
+
+      <div class="dialog-actions">
+        <button type="button" class="secondary" data-close-dialog="ingredientDialog">Annuler</button>
+        <button type="submit">Enregistrer</button>
+      </div>
+      <datalist id="categorySuggestions"></datalist>
+    </form>
+  </dialog>
+
+  <dialog id="supplierDialog" class="sheet-dialog">
+    <form id="supplierForm" class="dialog-card" method="dialog">
+      <div class="dialog-head">
+        <h3 id="supplierDialogTitle">Ajouter un fournisseur</h3>
+        <button type="button" class="icon-btn" data-close-dialog="supplierDialog">✕</button>
+      </div>
+      <div class="form-grid">
+        <input type="hidden" id="supplierId" />
+        <label>Nom
+          <input id="supplierName" required />
+        </label>
+        <label>Contact
+          <input id="supplierContact" />
+        </label>
+        <label>Téléphone
+          <input id="supplierPhone" />
+        </label>
+        <label>Email
+          <input id="supplierEmail" type="email" />
+        </label>
+        <label>Notes
+          <textarea id="supplierNotes" rows="3"></textarea>
+        </label>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" data-close-dialog="supplierDialog">Annuler</button>
+        <button type="submit">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="recipeDialog" class="sheet-dialog">
+    <form id="recipeForm" class="dialog-card" method="dialog">
+      <div class="dialog-head">
+        <h3 id="recipeDialogTitle">Créer une recette</h3>
+        <button type="button" class="icon-btn" data-close-dialog="recipeDialog">✕</button>
+      </div>
+      <div class="form-grid">
+        <input type="hidden" id="recipeId" />
+        <label>Nom
+          <input id="recipeName" required />
+        </label>
+        <label>Rendement du lot
+          <input id="recipeYield" type="number" min="0" step="0.01" value="1" />
+        </label>
+        <label>Unité de vente
+          <input id="recipeUnitLabel" value="pièce" />
+        </label>
+        <label>Temps de production (h)
+          <input id="recipeLaborHours" type="number" min="0" step="0.01" value="0" />
+        </label>
+        <label>Temps four (h)
+          <input id="recipeOvenHours" type="number" min="0" step="0.01" value="0" />
+        </label>
+      </div>
+      <div class="details-body stack">
+        <div class="ingredients-line-head">
+          <h4>Ingrédients</h4>
+          <button type="button" id="addRecipeItemBtn" class="secondary">Ajouter une ligne</button>
+        </div>
+        <div id="recipeItemsContainer" class="stack"></div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" data-close-dialog="recipeDialog">Annuler</button>
+        <button type="submit">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
