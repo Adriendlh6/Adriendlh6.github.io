@@ -108,7 +108,7 @@
       <section id="ingredients" class="tab">
         <div class="section-head">
           <h2>Mercuriale</h2>
-          <button id="addIngredientBtn">Ajouter un ingrédient</button>
+          <button id="addIngredientBtn" onclick="window.__openIngredientDialog && window.__openIngredientDialog()">Ajouter un ingrédient</button>
         </div>
         <div class="panel">
           <div class="toolbar">
@@ -324,7 +324,7 @@
   <div id="pullRefreshIndicator" class="pull-refresh-indicator" aria-hidden="true">
     <span id="pullRefreshText">Tirez vers le bas pour actualiser</span>
   </div>
-  <footer class="app-footer">Version <strong id="appVersionFooter">v1.5.1</strong></footer>
+  <footer class="app-footer">Version <strong id="appVersionFooter">v1.5.4</strong></footer>
   <script src="https://unpkg.com/html5-qrcode" defer></script>
   <script src="app.js"></script>
 </body>

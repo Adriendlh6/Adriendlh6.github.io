@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'pilotage-production-vierge-v4-3';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = 'v1.5.3';
+const APP_VERSION = 'v1.5.4';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -795,21 +795,44 @@ document.getElementById('supplierForm').addEventListener('submit', (e) => {
   renderAll();
 });
 
-document.getElementById('addIngredientBtn').addEventListener('click', () => {
-  document.getElementById('ingredientDialogTitle').textContent = 'Ajouter un ingrédient';
-  document.getElementById('ingredientId').value = '';
-  document.getElementById('ingredientName').value = '';
-  document.getElementById('ingredientCategory').value = '';
-  document.getElementById('ingredientEAN').value = '';
-  document.getElementById('ingredientBaseUnit').value = 'kg';
-  fillNutritionFields({});
-  renderAllergenChecklist([]);
-  setEANStatus('Aucun scan en cours.');
-  pendingScannedCode = '';
-  renderOfferLines([normalizeOffer({ vatRate: 5.5, isDefault: true })]);
-  resetIngredientSections();
-  document.getElementById('ingredientDialog').showModal();
-});
+function openIngredientDialog() {
+  const dialog = document.getElementById('ingredientDialog');
+  if (!dialog) return;
+  try {
+    document.getElementById('ingredientDialogTitle').textContent = 'Ajouter un ingrédient';
+    document.getElementById('ingredientId').value = '';
+    document.getElementById('ingredientName').value = '';
+    document.getElementById('ingredientCategory').value = '';
+    document.getElementById('ingredientEAN').value = '';
+    document.getElementById('ingredientBaseUnit').value = 'kg';
+    try { fillNutritionFields({}); } catch {}
+    try { renderAllergenChecklist([]); } catch {}
+    try { setEANStatus('Aucun scan en cours.'); } catch {}
+    pendingScannedCode = '';
+    try { renderOfferLines([normalizeOffer({ vatRate: 5.5, isDefault: true })]); } catch {
+      const offers = document.getElementById('ingredientOffers');
+      if (offers) offers.innerHTML = '';
+    }
+    try { resetIngredientSections(); } catch {}
+    if (typeof dialog.showModal === 'function') {
+      if (!dialog.open) dialog.showModal();
+    } else {
+      dialog.setAttribute('open', 'open');
+    }
+  } catch (error) {
+    console.error('openIngredientDialog failed', error);
+    alert('Impossible d’ouvrir le formulaire ingrédient. Rechargez la page puis réessayez.');
+  }
+}
+window.__openIngredientDialog = openIngredientDialog;
+const addIngredientBtn = document.getElementById('addIngredientBtn');
+if (addIngredientBtn) {
+  addIngredientBtn.addEventListener('click', openIngredientDialog);
+  addIngredientBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    openIngredientDialog();
+  }, { passive: false });
+}
 
 document.getElementById('addOfferBtn').addEventListener('click', () => {
   document.getElementById('ingredientOffers').appendChild(makeOfferRow(normalizeOffer({ vatRate: 5.5 })));
@@ -924,6 +947,18 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   state = normalizeState(seedData);
   currentRecipeId = state.recipes[0]?.id || null;
   renderAll();
+});
+
+
+const cancelIngredientBtn = document.getElementById('cancelIngredientBtn');
+if (cancelIngredientBtn) cancelIngredientBtn.addEventListener('click', () => {
+  const dialog = document.getElementById('ingredientDialog');
+  if (dialog?.open) dialog.close();
+});
+const cancelSupplierBtn = document.getElementById('cancelSupplierBtn');
+if (cancelSupplierBtn) cancelSupplierBtn.addEventListener('click', () => {
+  const dialog = document.getElementById('supplierDialog');
+  if (dialog?.open) dialog.close();
 });
 
 window.addEventListener('beforeunload', () => {
