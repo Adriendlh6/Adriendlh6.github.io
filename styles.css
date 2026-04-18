@@ -182,3 +182,63 @@ hr { border: none; border-top: 1px solid var(--line); margin: .8rem 0; }
   .ean-row { grid-template-columns:1fr; }
   .ean-actions { margin-bottom:0; }
 }
+
+
+.content, .panel, .summary-box, .result-box, .recipe-card, .modal-form, .offer-line, .subpanel { max-width: 100%; }
+.sidebar { min-width: 0; }
+.sidebar .nav { width: 100%; text-align: left; }
+button, .file-label, .nav { min-height: 44px; }
+textarea { min-height: 110px; resize: vertical; }
+dialog { width: min(760px, calc(100vw - 1rem)); border: none; border-radius: 1rem; padding: 0; }
+.modal-form { width: min(760px, calc(100vw - 1rem)); max-width: 100%; min-width: 0; padding: 1rem; }
+#ingredientForm.modal-form { display: grid; gap: .85rem; }
+.expand-block {
+  border: 1px solid var(--line);
+  border-radius: .9rem;
+  background: #fcfbf9;
+  overflow: hidden;
+}
+.expand-block summary {
+  list-style: none;
+  cursor: pointer;
+  padding: .95rem 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.expand-block summary::-webkit-details-marker { display: none; }
+.expand-block summary::after { content: '▾'; color: var(--muted); }
+.expand-block:not([open]) summary::after { content: '▸'; }
+.expand-body { padding: 0 1rem 1rem; }
+.expand-body .section-head { margin-top: .15rem; }
+#ingredients .table-wrap, #suppliers .table-wrap { border-radius: .85rem; }
+@media (max-width: 980px) {
+  .layout { min-height: auto; }
+  .content { min-width: 0; }
+  .sidebar { gap: .65rem; padding-bottom: .75rem; }
+  .sidebar .nav { width: auto; text-align: center; }
+}
+@media (max-width: 720px) {
+  body { overflow-x: hidden; }
+  .cards { grid-template-columns: 1fr; }
+  .toolbar input { width: 100%; }
+  .table-wrap { margin-inline: -.15rem; }
+  table { min-width: 560px; }
+  .modal-form { padding: .9rem; }
+  .dialog-actions > * { flex: 1 1 100%; }
+  .expand-block summary { padding: .9rem; }
+  .expand-body { padding: 0 .9rem .9rem; }
+}
+@media (max-width: 520px) {
+  .content { padding: .75rem; }
+  .topbar { padding: .8rem; }
+  .sidebar { padding: .75rem; }
+  h2 { font-size: 1.2rem; }
+  .section-head > * { width: 100%; }
+  .section-head button { width: 100%; }
+  .recipe-card { padding: .75rem; }
+  .offer-summary { font-size: .95rem; }
+  .chips { gap: .4rem; }
+  table { min-width: 520px; }
+}

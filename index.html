@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Application de pilotage — version vierge</title>
+  <title>Application de pilotage</title>
   <meta name="theme-color" content="#8a5a2b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -224,48 +224,60 @@
     <form method="dialog" id="ingredientForm" class="modal-form">
       <h3 id="ingredientDialogTitle">Ajouter un ingrédient</h3>
       <input type="hidden" id="ingredientId" />
-      <label>Nom<input id="ingredientName" required /></label>
-      <label>Catégorie<input id="ingredientCategory" list="categorySuggestions" placeholder="Farines, matières grasses..." /></label>
-      <div class="ean-row">
-        <label>EAN<input id="ingredientEAN" inputmode="numeric" placeholder="Code-barres / EAN" /></label>
-        <div class="ean-actions">
-          <button type="button" id="scanEANBtn" class="ghost">Scanner EAN</button>
-          <button type="button" id="clearEANBtn" class="ghost">Effacer</button>
+      <details class="expand-block" open>
+        <summary>Informations produit</summary>
+        <div class="expand-body">
+          <label>Nom<input id="ingredientName" required /></label>
+          <label>Catégorie<input id="ingredientCategory" list="categorySuggestions" placeholder="Farines, matières grasses..." /></label>
+          <div class="ean-row">
+            <label>EAN<input id="ingredientEAN" inputmode="numeric" placeholder="Code-barres / EAN" /></label>
+            <div class="ean-actions">
+              <button type="button" id="scanEANBtn" class="ghost">Scanner EAN</button>
+              <button type="button" id="clearEANBtn" class="ghost">Effacer</button>
+            </div>
+          </div>
+          <div id="eanScanStatus" class="muted scan-status">Aucun scan en cours.</div>
+          <label>Unité de base
+            <select id="ingredientBaseUnit">
+              <option value="kg">kg</option>
+              <option value="l">l</option>
+              <option value="piece">pièce</option>
+            </select>
+          </label>
         </div>
-      </div>
-      <div id="eanScanStatus" class="muted scan-status">Aucun scan en cours.</div>
-      <label>Unité de base
-        <select id="ingredientBaseUnit">
-          <option value="kg">kg</option>
-          <option value="l">l</option>
-          <option value="piece">pièce</option>
-        </select>
-      </label>
+      </details>
 
-      <div class="subpanel">
-        <h4>Valeurs nutritionnelles</h4>
-        <p class="muted">Renseignez les valeurs pour 100 g, 100 ml ou 1 pièce selon l’unité de base choisie.</p>
-        <div class="nutrition-grid">
-          <label>Énergie (kcal)<input id="nutritionCalories" type="number" min="0" step="0.1" /></label>
-          <label>Matières grasses (g)<input id="nutritionFat" type="number" min="0" step="0.1" /></label>
-          <label>dont acides gras saturés (g)<input id="nutritionSaturatedFat" type="number" min="0" step="0.1" /></label>
-          <label>Glucides (g)<input id="nutritionCarbs" type="number" min="0" step="0.1" /></label>
-          <label>dont sucres (g)<input id="nutritionSugars" type="number" min="0" step="0.1" /></label>
-          <label>Protéines (g)<input id="nutritionProtein" type="number" min="0" step="0.1" /></label>
-          <label>Fibres (g)<input id="nutritionFiber" type="number" min="0" step="0.1" /></label>
-          <label>Sel (g)<input id="nutritionSalt" type="number" min="0" step="0.01" /></label>
+      <details class="expand-block">
+        <summary>Valeurs nutritionnelles</summary>
+        <div class="expand-body">
+          <p class="muted">Renseignez les valeurs pour 100 g, 100 ml ou 1 pièce selon l’unité de base choisie.</p>
+          <div class="nutrition-grid">
+            <label>Énergie (kcal)<input id="nutritionCalories" type="number" min="0" step="0.1" /></label>
+            <label>Matières grasses (g)<input id="nutritionFat" type="number" min="0" step="0.1" /></label>
+            <label>dont acides gras saturés (g)<input id="nutritionSaturatedFat" type="number" min="0" step="0.1" /></label>
+            <label>Glucides (g)<input id="nutritionCarbs" type="number" min="0" step="0.1" /></label>
+            <label>dont sucres (g)<input id="nutritionSugars" type="number" min="0" step="0.1" /></label>
+            <label>Protéines (g)<input id="nutritionProtein" type="number" min="0" step="0.1" /></label>
+            <label>Fibres (g)<input id="nutritionFiber" type="number" min="0" step="0.1" /></label>
+            <label>Sel (g)<input id="nutritionSalt" type="number" min="0" step="0.01" /></label>
+          </div>
         </div>
-      </div>
+      </details>
 
-      <div class="subpanel">
-        <h4>Allergènes</h4>
-        <div id="allergenChecklist" class="allergen-grid"></div>
-      </div>
+      <details class="expand-block">
+        <summary>Allergènes</summary>
+        <div class="expand-body">
+          <div id="allergenChecklist" class="allergen-grid"></div>
+        </div>
+      </details>
 
-      <div class="subpanel">
-        <div class="section-head"><h4>Offres fournisseurs</h4><button type="button" id="addOfferBtn">Ajouter une offre</button></div>
-        <div id="ingredientOffers" class="stack"></div>
-      </div>
+      <details class="expand-block" open>
+        <summary>Offres fournisseurs</summary>
+        <div class="expand-body">
+          <div class="section-head"><h4>Offres fournisseurs</h4><button type="button" id="addOfferBtn">Ajouter une offre</button></div>
+          <div id="ingredientOffers" class="stack"></div>
+        </div>
+      </details>
 
       <div class="dialog-actions">
         <button type="button" id="cancelIngredientBtn" class="ghost">Annuler</button>

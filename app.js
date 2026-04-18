@@ -1,6 +1,6 @@
-const STORAGE_KEY = 'pilotage-production-vierge-v4';
+const STORAGE_KEY = 'pilotage-production-vierge-v4-1';
 const BACKUP_WARNING_DAYS = 7;
-const APP_VERSION = '3.4-pwa-mercuriale-nutrition-scan';
+const APP_VERSION = 'v1.1';
 
 const VAT_RATES = [0, 2.1, 5.5, 10, 20];
 const ALLERGENS = [
@@ -558,6 +558,13 @@ function deleteSupplier(id) {
   renderAll();
 }
 
+
+function resetIngredientSections() {
+  document.querySelectorAll('#ingredientForm .expand-block').forEach((block, index) => {
+    block.open = index === 0 || index === 3;
+  });
+}
+
 function renderSupplierOptions(selectedId = '') {
   return `<option value="">Sélectionner</option>` + state.suppliers.map(s => `<option value="${s.id}" ${s.id === selectedId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
 }
@@ -575,6 +582,7 @@ function editIngredient(id) {
   setEANStatus(ingredient.ean ? `EAN enregistré : ${ingredient.ean}` : 'Aucun scan en cours.');
   pendingScannedCode = '';
   renderOfferLines(ingredient.offers);
+  resetIngredientSections();
   document.getElementById('ingredientDialog').showModal();
 }
 function deleteIngredient(id) {
@@ -812,6 +820,7 @@ document.getElementById('addIngredientBtn').addEventListener('click', () => {
   setEANStatus('Aucun scan en cours.');
   pendingScannedCode = '';
   renderOfferLines([normalizeOffer({ isDefault: true, vatRate: 5.5 })]);
+  resetIngredientSections();
   document.getElementById('ingredientDialog').showModal();
 });
 document.getElementById('cancelIngredientBtn').addEventListener('click', () => { document.getElementById('ingredientDialog').close(); stopScanner(); });
