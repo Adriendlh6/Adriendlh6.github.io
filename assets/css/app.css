@@ -73,6 +73,7 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 .mercuriale-actions{display:flex;gap:10px;align-items:center}
 .icon-square-btn,.icon-close-btn{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:14px;border:1px solid var(--line);background:var(--surface);font-size:1.2rem}
 .icon-square-btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.icon-square-btn.danger{background:#fff1f1;border-color:#f2caca;color:var(--danger)}
 .icon-close-btn{flex:0 0 auto}
 .product-card{cursor:pointer;transition:transform .15s ease, box-shadow .15s ease}
 .product-card:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
@@ -105,69 +106,25 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .mercuriale-header{align-items:center}
   .bottom-sheet{width:100%;padding:14px 14px 18px}
 }
-.btn-square {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  border: none;
-  background: #eee;
-  font-size: 18px;
-}
 
-.btn-square.danger {
-  background: #ffdddd;
-}
-
-.actions {
-  display: flex;
-  gap: 8px;
-}
-
-.tabs {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.tab {
-  flex: 1;
-  padding: 10px;
-  border: none;
-  background: #eee;
-  border-radius: 8px;
-}
-
-.tab.active {
-  background: #ddd;
-}
-
-.tab-content {
-  display: none;
-}
-
-.tab-content.active {
-  display: block;
-}
-
-.field {
-  margin-bottom: 12px;
-}
-
-.ean-row {
-  display: flex;
-  gap: 8px;
-}
-
-.allergen-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
-.collapsible {
-  display: none;
-}
-
-.toggle {
-  cursor: pointer;
+.detail-panel{display:grid;gap:14px}
+.detail-actions-row{display:flex;gap:10px;flex-wrap:wrap}
+.detail-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.detail-tab{border:1px solid var(--line);background:var(--surface-2);padding:12px 10px;border-radius:12px;font-weight:600}
+.detail-tab.active{background:var(--brand);border-color:var(--brand);color:#fff}
+.detail-tab-panel{display:none;gap:14px}
+.detail-tab-panel.active{display:grid}
+.detail-info-stack{display:grid;gap:14px}
+.detail-label{font-size:.9rem;font-weight:700;color:var(--muted);margin-bottom:4px}
+.detail-value{font-size:1rem;font-weight:600}
+.detail-title-value{font-size:1.15rem}
+.monospace{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.ean-detail-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nutrition-details summary{padding-left:0;padding-right:0}
+.nutrition-grid-detail{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;padding-left:0!important;padding-right:0!important}
+.placeholder-card p{margin:0}
+.fournisseur-detail-item{gap:4px}
+@media (max-width: 920px){
+  .detail-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nutrition-grid-detail{grid-template-columns:1fr}
 }
