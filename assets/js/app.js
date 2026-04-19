@@ -294,7 +294,7 @@ async function renderMercuriale(){
     ingredientForm.reset();
     offres = [];
     renderCategorySelect('');
-    renderOffres();
+    renderOffers();
     renderAllergenes([]);
   }
 
@@ -315,7 +315,7 @@ async function renderMercuriale(){
     ingredientForm.sel.value = ingredient?.nutrition?.sel || '';
     renderAllergenes(ingredient?.allergenes || []);
     offres = JSON.parse(JSON.stringify(ingredient?.offres || []));
-    renderOffres();
+    renderOffers();
   }
 
   function openIngredientSheetWithData(ingredient){
@@ -449,14 +449,14 @@ async function renderMercuriale(){
       fournisseurId: '', marque: '', reference: '', tva: 5.5, quantiteColis: 1,
       uniteColis: ingredientForm.uniteBase.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
     });
-    renderOffres();
+    renderOffers();
   };
 
   offersEditor.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-remove-offre]');
     if (!btn) return;
     offres.splice(Number(btn.dataset.removeOffre), 1);
-    renderOffres();
+    renderOffers();
   });
   offersEditor.addEventListener('input', (e) => {
     const field = e.target.dataset.offreField;
@@ -470,7 +470,7 @@ async function renderMercuriale(){
     if (field == null || Number.isNaN(idx) || !offres[idx]) return;
     offres[idx][field] = ['quantiteColis','prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','tva'].includes(field) ? num(e.target.value) : e.target.value;
     if (['prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','quantiteColis','tva'].includes(field)) computeOffreFromField(offres[idx], field);
-    renderOffres();
+    renderOffers();
   });
 
   categoriesForm.onsubmit = async (e) => {
