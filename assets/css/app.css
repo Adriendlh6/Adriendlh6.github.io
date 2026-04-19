@@ -189,3 +189,10 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .mercuriale-print-table .product-sub-row td:nth-child(2),
   .mercuriale-print-table .product-sub-row td:nth-child(3){color:transparent}
 }
+
+
+.ean-visual-wrap{padding:8px 10px}
+.ean-svg{max-width:360px;max-height:72px;min-width:220px}
+@media (max-width: 920px){
+  .ean-svg{max-width:100%;max-height:64px;min-width:0}
+}
