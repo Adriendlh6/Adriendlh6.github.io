@@ -1,4 +1,5 @@
-const APP_VERSION = 'v2.0.1';
+const APP_VERSION = 'v2.0.2';
+let mercurialeDraft = null;
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -103,7 +104,6 @@ function createEmptyOffre() {
     fournisseurId: '',
     marque: '',
     reference: '',
-    conditionnement: '',
     quantite: 1,
     unite: 'kg',
     tva: 5.5,
@@ -111,6 +111,60 @@ function createEmptyOffre() {
     prixUniteTTC: 0,
     prixColisHT: 0,
     prixColisTTC: 0,
+  };
+}
+
+function createEmptyNutrition() {
+  return {
+    energie: '',
+    matieresGrasses: '',
+    acidesGrasSatures: '',
+    glucides: '',
+    sucres: '',
+    fibres: '',
+    proteines: '',
+    sel: '',
+  };
+}
+
+function createEmptyIngredientDraft() {
+  return {
+    nom: '',
+    ean: '',
+    categorie: '',
+    uniteBase: 'kg',
+    notes: '',
+    nutrition: createEmptyNutrition(),
+    allergenes: [],
+    offres: [createEmptyOffre()],
+  };
+}
+
+function normalizeOffre(offre = {}) {
+  return {
+    fournisseurId: offre.fournisseurId || '',
+    marque: offre.marque || '',
+    reference: offre.reference || '',
+    quantite: offre.quantite ?? 1,
+    unite: offre.unite || 'kg',
+    tva: offre.tva ?? 5.5,
+    prixUniteHT: offre.prixUniteHT ?? 0,
+    prixUniteTTC: offre.prixUniteTTC ?? 0,
+    prixColisHT: offre.prixColisHT ?? 0,
+    prixColisTTC: offre.prixColisTTC ?? 0,
+  };
+}
+
+function cloneMercurialeDraft(draft = createEmptyIngredientDraft()) {
+  return {
+    nom: draft.nom || '',
+    ean: draft.ean || '',
+    categorie: draft.categorie || '',
+    uniteBase: draft.uniteBase || 'kg',
+    notes: draft.notes || '',
+    nutrition: { ...createEmptyNutrition(), ...(draft.nutrition || {}) },
+    allergenes: [...(draft.allergenes || [])],
+    offres: ((draft.offres || []).length ? draft.offres : [createEmptyOffre()]).map((o) => normalizeOffre(o)),
   };
 }
 
@@ -162,16 +216,15 @@ function renderOffresEditor(container, offres, fournisseurs) {
         <div class="field"><label>Fournisseur</label><select data-offre="fournisseurId" data-index="${idx}">${fournisseurOptions(fournisseurs, offre.fournisseurId)}</select></div>
         <div class="field"><label>Marque</label><input data-offre="marque" data-index="${idx}" value="${esc(offre.marque || '')}"></div>
         <div class="field"><label>Référence</label><input data-offre="reference" data-index="${idx}" value="${esc(offre.reference || '')}"></div>
-        <div class="field"><label>Conditionnement</label><input data-offre="conditionnement" data-index="${idx}" value="${esc(offre.conditionnement || '')}" placeholder="Sac 25 kg"></div>
-        <div class="field"><label>Quantité colis</label><input type="number" min="0.001" step="0.001" data-offre="quantite" data-index="${idx}" value="${round(offre.quantite || 1, 3)}"></div>
-        <div class="field"><label>Unité</label><select data-offre="unite" data-index="${idx}"><option value="kg" ${offre.unite === 'kg' ? 'selected' : ''}>kg</option><option value="piece" ${offre.unite === 'piece' ? 'selected' : ''}>pièce</option><option value="l" ${offre.unite === 'l' ? 'selected' : ''}>litre</option></select></div>
+        <div class="field"><label>Quantité colis</label><input type="number" min="0.001" step="0.001" data-offre="quantite" data-index="${idx}" value="${offre.quantite ?? 1}"></div>
+        <div class="field"><label>Unité colis</label><select data-offre="unite" data-index="${idx}"><option value="kg" ${offre.unite === 'kg' ? 'selected' : ''}>kg</option><option value="piece" ${offre.unite === 'piece' ? 'selected' : ''}>pièce</option><option value="l" ${offre.unite === 'l' ? 'selected' : ''}>litre</option></select></div>
         <div class="field"><label>TVA</label><select data-offre="tva" data-index="${idx}">${tvaOptions(offre.tva)}</select></div>
       </div>
       <div class="form-grid compact-two offer-pricing-grid">
-        <div class="field"><label>Prix HT unité</label><input type="number" min="0" step="0.0001" data-offre="prixUniteHT" data-index="${idx}" value="${round(offre.prixUniteHT)}"></div>
-        <div class="field"><label>Prix TTC unité</label><input type="number" min="0" step="0.0001" data-offre="prixUniteTTC" data-index="${idx}" value="${round(offre.prixUniteTTC)}"></div>
-        <div class="field"><label>Prix HT colis</label><input type="number" min="0" step="0.0001" data-offre="prixColisHT" data-index="${idx}" value="${round(offre.prixColisHT)}"></div>
-        <div class="field"><label>Prix TTC colis</label><input type="number" min="0" step="0.0001" data-offre="prixColisTTC" data-index="${idx}" value="${round(offre.prixColisTTC)}"></div>
+        <div class="field"><label>Prix HT unité</label><input type="number" min="0" step="0.0001" inputmode="decimal" data-offre="prixUniteHT" data-index="${idx}" value="${offre.prixUniteHT ?? 0}"></div>
+        <div class="field"><label>Prix TTC unité</label><input type="number" min="0" step="0.0001" inputmode="decimal" data-offre="prixUniteTTC" data-index="${idx}" value="${offre.prixUniteTTC ?? 0}"></div>
+        <div class="field"><label>Prix HT colis</label><input type="number" min="0" step="0.0001" inputmode="decimal" data-offre="prixColisHT" data-index="${idx}" value="${offre.prixColisHT ?? 0}"></div>
+        <div class="field"><label>Prix TTC colis</label><input type="number" min="0" step="0.0001" inputmode="decimal" data-offre="prixColisTTC" data-index="${idx}" value="${offre.prixColisTTC ?? 0}"></div>
       </div>`;
     container.appendChild(block);
   });
@@ -179,6 +232,7 @@ function renderOffresEditor(container, offres, fournisseurs) {
   qsa('[data-remove-offre]', container).forEach((btn) => {
     btn.onclick = () => {
       offres.splice(Number(btn.dataset.removeOffre), 1);
+      if (!offres.length) offres.push(createEmptyOffre());
       renderOffresEditor(container, offres, fournisseurs);
     };
   });
@@ -207,6 +261,51 @@ async function renderFournisseurs() {
   if (!list.length) { target.innerHTML = '<div class="notice">Aucun fournisseur enregistré.</div>'; return; }
   target.innerHTML = list.map((f) => `<div class="item"><div class="item-top"><div><strong>${esc(f.nom)}</strong><div class="muted">${esc(f.contact || '')}</div><div class="muted">${esc(f.telephone || '')}</div></div><button class="btn danger" type="button" data-delete-fournisseur="${f.id}">Supprimer</button></div></div>`).join('');
   qsa('[data-delete-fournisseur]').forEach((btn) => btn.onclick = async () => { await AppDB.delete('fournisseurs', btn.dataset.deleteFournisseur); renderFournisseurs(); });
+}
+
+
+function populateIngredientForm(form, draft = createEmptyIngredientDraft()) {
+  form.nom.value = draft.nom || '';
+  form.ean.value = draft.ean || '';
+  form.categorie.value = draft.categorie || '';
+  form.uniteBase.value = draft.uniteBase || 'kg';
+  form.notes.value = draft.notes || '';
+  const nutrition = { ...createEmptyNutrition(), ...(draft.nutrition || {}) };
+  Object.entries(nutrition).forEach(([key, value]) => {
+    if (form[key]) form[key].value = value ?? '';
+  });
+  qsa('input[name="allergenes"]', form).forEach((input) => {
+    input.checked = (draft.allergenes || []).includes(input.value);
+  });
+}
+
+function captureIngredientDraft(form, offres) {
+  const data = parseFormEntries(form);
+  return {
+    nom: data.nom || '',
+    ean: data.ean || '',
+    categorie: data.categorie || '',
+    uniteBase: data.uniteBase || 'kg',
+    notes: data.notes || '',
+    nutrition: {
+      energie: data.energie || '',
+      matieresGrasses: data.matieresGrasses || '',
+      acidesGrasSatures: data.acidesGrasSatures || '',
+      glucides: data.glucides || '',
+      sucres: data.sucres || '',
+      fibres: data.fibres || '',
+      proteines: data.proteines || '',
+      sel: data.sel || '',
+    },
+    allergenes: new FormData(form).getAll('allergenes'),
+    offres: offres.map((offre) => ({ ...offre })),
+  };
+}
+
+async function clearCategoryFromIngredients(categoryName) {
+  const ingredients = await AppDB.getAll('ingredients');
+  const impacted = ingredients.filter((item) => item.categorie === categoryName);
+  await Promise.all(impacted.map((item) => AppDB.put('ingredients', { ...item, categorie: '' })));
 }
 
 async function renderMercuriale() {
@@ -248,63 +347,102 @@ async function renderMercuriale() {
     };
   });
 
-  qs('#open-ingredient-sheet').onclick = () => openSheet('ingredient-sheet');
-  qs('#open-mercuriale-settings').onclick = () => openSheet('mercuriale-settings-sheet');
-
   const ingredientForm = qs('#ingredient-form');
-  const offres = [createEmptyOffre()];
   const offreWrap = qs('#offres-editor');
   const categorySelect = qs('#ingredient-categorie-select');
+  const ingredientSheetTitle = qs('#ingredient-sheet-title');
+  const offres = cloneMercurialeDraft(mercurialeDraft || createEmptyIngredientDraft()).offres;
   updateCategorySelect(categorySelect, categories);
+  populateIngredientForm(ingredientForm, cloneMercurialeDraft(mercurialeDraft || createEmptyIngredientDraft()));
   renderOffresEditor(offreWrap, offres, fournisseurs);
+
+  const syncDraft = () => {
+    mercurialeDraft = captureIngredientDraft(ingredientForm, offres);
+  };
+
+  const resetIngredientDraft = () => {
+    mercurialeDraft = createEmptyIngredientDraft();
+    updateCategorySelect(categorySelect, categories);
+    populateIngredientForm(ingredientForm, mercurialeDraft);
+    offres.splice(0, offres.length, ...mercurialeDraft.offres.map((offre) => normalizeOffre(offre)));
+    renderOffresEditor(offreWrap, offres, fournisseurs);
+  };
+
+  if (!mercurialeDraft) {
+    mercurialeDraft = createEmptyIngredientDraft();
+  }
+
+  qs('#open-ingredient-sheet').onclick = () => {
+    ingredientSheetTitle.textContent = 'Ajouter un ingrédient';
+    updateCategorySelect(categorySelect, categories);
+    populateIngredientForm(ingredientForm, mercurialeDraft);
+    offres.splice(0, offres.length, ...cloneMercurialeDraft(mercurialeDraft || createEmptyIngredientDraft()).offres);
+    renderOffresEditor(offreWrap, offres, fournisseurs);
+    openSheet('ingredient-sheet');
+  };
+  qs('#open-mercuriale-settings').onclick = () => openSheet('mercuriale-settings-sheet');
 
   qs('#add-offre-btn').onclick = () => {
     offres.push(createEmptyOffre());
     renderOffresEditor(offreWrap, offres, fournisseurs);
+    syncDraft();
   };
 
-  const syncOffreFromEvent = (e) => {
+  ingredientForm.oninput = (e) => {
+    if (e.target.name === 'allergenes') {
+      syncDraft();
+      return;
+    }
+    if (!e.target.dataset.offre) syncDraft();
+  };
+  ingredientForm.onchange = () => syncDraft();
+
+  offreWrap.oninput = (e) => {
+    const key = e.target.dataset.offre;
+    const idx = Number(e.target.dataset.index);
+    if (!key || Number.isNaN(idx) || !offres[idx]) return;
+    offres[idx][key] = e.target.value;
+    if (!['quantite', 'tva', 'prixUniteHT', 'prixUniteTTC', 'prixColisHT', 'prixColisTTC'].includes(key)) {
+      syncDraft();
+    }
+  };
+
+  offreWrap.onchange = (e) => {
     const key = e.target.dataset.offre;
     const idx = Number(e.target.dataset.index);
     if (!key || Number.isNaN(idx) || !offres[idx]) return;
     const numericFields = ['quantite', 'tva', 'prixUniteHT', 'prixUniteTTC', 'prixColisHT', 'prixColisTTC'];
     offres[idx][key] = numericFields.includes(key) ? num(e.target.value) : e.target.value;
-    if (['quantite', 'tva', 'prixUniteHT', 'prixUniteTTC', 'prixColisHT', 'prixColisTTC'].includes(key)) {
+    if (numericFields.includes(key)) {
       const recalcKey = key === 'quantite' || key === 'tva' ? 'prixColisHT' : key;
       recalculateOffre(offres[idx], recalcKey);
       renderOffresEditor(offreWrap, offres, fournisseurs);
     }
+    syncDraft();
   };
-  offreWrap.oninput = syncOffreFromEvent;
-  offreWrap.onchange = syncOffreFromEvent;
 
   ingredientForm.onsubmit = async (e) => {
     e.preventDefault();
-    const data = parseFormEntries(ingredientForm);
-    const allergenes = new FormData(ingredientForm).getAll('allergenes');
+    const draft = captureIngredientDraft(ingredientForm, offres);
     await AppDB.put('ingredients', {
-      nom: data.nom,
-      categorie: data.categorie,
-      ean: data.ean,
-      uniteBase: data.uniteBase,
-      notes: data.notes,
-      nutrition: {
-        energie: data.energie,
-        matieresGrasses: data.matieresGrasses,
-        acidesGrasSatures: data.acidesGrasSatures,
-        glucides: data.glucides,
-        sucres: data.sucres,
-        fibres: data.fibres,
-        proteines: data.proteines,
-        sel: data.sel,
-      },
-      allergenes,
-      offres: offres.map((offre) => ({ ...offre })),
+      nom: draft.nom,
+      categorie: draft.categorie,
+      ean: draft.ean,
+      uniteBase: draft.uniteBase,
+      notes: draft.notes,
+      nutrition: draft.nutrition,
+      allergenes: draft.allergenes,
+      offres: draft.offres.map((offre) => ({
+        ...offre,
+        quantite: num(offre.quantite),
+        tva: num(offre.tva),
+        prixUniteHT: num(offre.prixUniteHT),
+        prixUniteTTC: num(offre.prixUniteTTC),
+        prixColisHT: num(offre.prixColisHT),
+        prixColisTTC: num(offre.prixColisTTC),
+      })),
     });
-    ingredientForm.reset();
-    categorySelect.value = '';
-    offres.splice(0, offres.length, createEmptyOffre());
-    renderOffresEditor(offreWrap, offres, fournisseurs);
+    resetIngredientDraft();
     closeSheet('ingredient-sheet');
     renderMercuriale();
     renderDashboard();
@@ -328,9 +466,13 @@ async function renderMercuriale() {
 
     qsa('[data-delete-category]', categoriesList).forEach((btn) => {
       btn.onclick = async () => {
+        const deleted = current.find((cat) => cat.id === btn.dataset.deleteCategory);
         const remaining = current.filter((cat) => cat.id !== btn.dataset.deleteCategory);
         await saveMercurialeCategories(remaining);
+        if (deleted) await clearCategoryFromIngredients(deleted.nom);
+        if (mercurialeDraft?.categorie === deleted?.nom) mercurialeDraft.categorie = '';
         updateCategorySelect(categorySelect, remaining);
+        if (categorySelect.value === deleted?.nom) categorySelect.value = '';
         drawCategories();
         renderMercuriale();
       };

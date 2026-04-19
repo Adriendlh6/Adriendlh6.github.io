@@ -48,7 +48,7 @@ button{cursor:pointer}
 .field{display:flex;flex-direction:column;gap:6px}
 .field.full{grid-column:1 / -1}
 label{font-weight:600}
-input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#fff}
+input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:16px;-webkit-text-size-adjust:100%}
 textarea{min-height:92px;resize:vertical}
 .table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse}
@@ -84,7 +84,7 @@ body.sheet-open{overflow:hidden}
 .toolbar-end{justify-content:flex-end}
 .compact-two{grid-template-columns:repeat(2,minmax(0,1fr))}
 .checkbox-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
-.checkbox-grid label{display:flex;align-items:center;gap:10px;font-weight:500}
+.checkbox-grid label{display:flex;align-items:flex-start;gap:10px;font-weight:500;line-height:1.3}.checkbox-grid input[type="checkbox"]{margin-top:2px;flex:0 0 auto}
 .item-top-stack{align-items:stretch}
 .item-title-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .color-tag{background:color-mix(in srgb, var(--tag-color) 20%, white);border-color:color-mix(in srgb, var(--tag-color) 55%, #6b6b6b)}
@@ -111,3 +111,5 @@ body.sheet-open{overflow:hidden}
   .checkbox-grid{grid-template-columns:1fr}
   .sheet-panel{border-radius:20px 20px 0 0}
 }
+
+input:focus,select:focus,textarea:focus{font-size:16px}
