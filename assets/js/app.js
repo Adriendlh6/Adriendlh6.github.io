@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.0.8';
+const APP_VERSION = 'v2.0.9';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -185,8 +185,61 @@ function printProductSheet(ingredient, category, fournisseurs){
   setTimeout(() => window.print(), 50);
 }
 
+function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
+  const rows = ingredients.map((ingredient) => {
+    const category = getCategoryById(categories, ingredient.categorieId);
+    const offers = ingredient.offres && ingredient.offres.length ? ingredient.offres : [{}];
+    return offers.map((offre) => {
+      const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
+      return `<tr>
+        <td><strong>${esc(ingredient.nom || '-')}</strong></td>
+        <td>${esc(category?.nom || 'Sans catégorie')}</td>
+        <td class="monospace">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</td>
+        <td>${esc(supplier?.nom || 'Sans fournisseur')}</td>
+        <td>${esc(offre.marque || '-')}</td>
+        <td>${esc(offre.reference || '-')}</td>
+        <td>${esc(offre.quantiteColis || '-')} ${esc(offre.uniteColis || ingredient.uniteBase || 'u')}</td>
+        <td>${String(offre.tva ?? 0).replace('.', ',')}%</td>
+        <td>${offre.prixHTUnite ? euro(offre.prixHTUnite) : '-'}</td>
+        <td>${offre.prixTTCUnite ? euro(offre.prixTTCUnite) : '-'}</td>
+        <td>${offre.prixHTColis ? euro(offre.prixHTColis) : '-'}</td>
+        <td>${offre.prixTTCColis ? euro(offre.prixTTCColis) : '-'}</td>
+      </tr>`;
+    }).join('');
+  }).join('');
+  return `
+    <div class="print-page print-page-wide">
+      <header class="print-header">
+        <div>
+          <div class="print-app-name">Copilot boulangerie</div>
+          <h1>Mercuriale</h1>
+          <div class="print-subtitle">Édition du ${new Date().toLocaleDateString('fr-FR')}</div>
+        </div>
+      </header>
+      <section class="print-card">
+        <table class="print-table mercuriale-print-table">
+          <thead>
+            <tr>
+              <th>Produit</th><th>Catégorie</th><th>EAN</th><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>Colis</th><th>TVA</th><th>HT unité</th><th>TTC unité</th><th>HT colis</th><th>TTC colis</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="12">Aucun produit enregistré.</td></tr>'}</tbody>
+        </table>
+      </section>
+    </div>`;
+}
+
+function printMercurialeList(ingredients, categories, fournisseurs){
+  const root = getOrCreatePrintRoot();
+  root.innerHTML = buildMercurialePrintMarkup(ingredients, categories, fournisseurs);
+  root.classList.remove('hidden');
+  document.body.classList.add('printing-mercuriale');
+  setTimeout(() => window.print(), 50);
+}
+
 window.addEventListener('afterprint', () => {
   document.body.classList.remove('printing-product');
+  document.body.classList.remove('printing-mercuriale');
   const root = document.getElementById('product-print-root');
   if (root) root.classList.add('hidden');
 });
@@ -609,6 +662,7 @@ async function showIngredientDetail(id){
         const action = btn.dataset.detailAction;
         if (action === 'edit') {
           closeSheet(detailSheet, detailBackdrop);
+          ingredientDraft = null;
           openIngredientSheetWithData(ingredient);
           return;
         }
@@ -709,17 +763,22 @@ async function showIngredientDetail(id){
   qs('#close-categories-sheet-btn').onclick = () => closeSheet(categoriesSheet, categoriesBackdrop);
   qs('#close-ingredient-detail-sheet-btn').onclick = () => closeSheet(detailSheet, detailBackdrop);
   const printBtn = qs('#print-mercuriale-btn');
-  if (printBtn) printBtn.onclick = () => printProductSheet(ingredient, category, fournisseurs);
+  if (printBtn) printBtn.onclick = () => printMercurialeList(ingredients, categories, fournisseurs);
 
   qs('#open-categories-btn').onclick = () => {
     resetCategorieForm();
     renderCategoriesManager();
     openSheet(categoriesSheet, categoriesBackdrop);
   };
-  qs('#open-ingredient-sheet-btn').onclick = () => {
+  const openIngredientButton = qs('#open-ingredient-sheet-btn');
+  const openIngredientSheetAction = () => {
     if (ingredientDraft) openIngredientSheetWithData({ ...ingredientDraft, offres: ingredientDraft.offres || [] });
     else openIngredientSheetWithData(null);
   };
+  if (openIngredientButton){
+    openIngredientButton.onclick = openIngredientSheetAction;
+    openIngredientButton.addEventListener('touchend', (e) => { e.preventDefault(); openIngredientSheetAction(); }, { passive: false });
+  }
 
   qs('#cancel-ingredient-btn').onclick = () => {
     resetIngredientForm();
