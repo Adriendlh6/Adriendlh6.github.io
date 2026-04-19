@@ -144,11 +144,16 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   body.printing-product .footer,
   body.printing-product .sidebar{display:none !important}
   body.printing-product{background:#fff}
-  body.printing-product .product-print-root{display:block !important}
-  body.printing-product *{visibility:hidden}
   body.printing-product .product-print-root,
-  body.printing-product .product-print-root *{visibility:visible}
-  body.printing-product .product-print-root{position:absolute;inset:0;padding:0;margin:0}
+  body.printing-mercuriale .product-print-root{display:block !important}
+  body.printing-product *,
+  body.printing-mercuriale *{visibility:hidden}
+  body.printing-product .product-print-root,
+  body.printing-product .product-print-root *,
+  body.printing-mercuriale .product-print-root,
+  body.printing-mercuriale .product-print-root *{visibility:visible}
+  body.printing-product .product-print-root,
+  body.printing-mercuriale .product-print-root{position:absolute;inset:0;padding:0;margin:0}
   .print-page{padding:18mm 14mm;color:#111;background:#fff;font-size:12pt}
   .print-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;margin-bottom:8mm}
   .print-header h1{margin:0 0 2mm;font-size:20pt}
@@ -164,4 +169,17 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .print-table thead th{background:#f0f0f0}
   .print-nutrition-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 6mm}
   .print-nutrition-grid div{display:flex;justify-content:space-between;gap:4mm;border-bottom:1px dotted #ccc;padding-bottom:1.2mm}
+}
+
+@media print{
+  body.printing-mercuriale .app-shell,
+  body.printing-mercuriale .sheet-backdrop,
+  body.printing-mercuriale .bottom-sheet,
+  body.printing-mercuriale .topbar,
+  body.printing-mercuriale .footer,
+  body.printing-mercuriale .sidebar{display:none !important}
+  body.printing-mercuriale{background:#fff}
+  .print-page-wide{padding:12mm 10mm}
+  .mercuriale-print-table{font-size:8.8pt}
+  .mercuriale-print-table th,.mercuriale-print-table td{padding:2mm 1.8mm}
 }
