@@ -105,3 +105,69 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .mercuriale-header{align-items:center}
   .bottom-sheet{width:100%;padding:14px 14px 18px}
 }
+.btn-square {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: #eee;
+  font-size: 18px;
+}
+
+.btn-square.danger {
+  background: #ffdddd;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: #eee;
+  border-radius: 8px;
+}
+
+.tab.active {
+  background: #ddd;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.ean-row {
+  display: flex;
+  gap: 8px;
+}
+
+.allergen-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.collapsible {
+  display: none;
+}
+
+.toggle {
+  cursor: pointer;
+}
