@@ -1,128 +1,124 @@
 <section class="card mercuriale-page">
-  <div class="page-head page-head-stack">
+  <div class="page-head">
     <div>
       <h2>Gestion des produits acheté</h2>
-      <p class="subtitle">Mercuriale centralisée, catégories cohérentes et calculs d’achat automatiques.</p>
+      <p class="muted">Produits, offres fournisseurs, nutrition et allergènes.</p>
     </div>
-    <div class="toolbar mercuriale-actions">
-      <button id="open-mercuriale-settings" class="icon-btn" type="button" aria-label="Catégories mercuriale">🏷️ Catégories</button>
-      <button id="open-ingredient-sheet" class="btn primary" type="button">+ Ajouter</button>
+    <div class="icon-actions">
+      <button id="open-categories-btn" class="icon-square-btn" type="button" aria-label="Gérer les catégories" title="Catégories">
+        <span aria-hidden="true">⚙</span>
+      </button>
+      <button id="open-ingredient-sheet-btn" class="icon-square-btn primary" type="button" aria-label="Ajouter un ingrédient" title="Ajouter">
+        <span aria-hidden="true">＋</span>
+      </button>
     </div>
   </div>
 
   <div id="ingredients-list" class="list"></div>
 </section>
 
-<section id="ingredient-sheet" class="bottom-sheet hidden" aria-hidden="true">
-  <div class="sheet-backdrop" data-close-sheet="ingredient-sheet"></div>
+<section id="ingredient-sheet" class="sheet hidden" aria-hidden="true">
+  <div id="sheet-backdrop" class="sheet-backdrop"></div>
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="ingredient-sheet-title">
     <div class="sheet-handle"></div>
-    <div class="sheet-head">
+    <div class="sheet-header">
       <div>
         <h3 id="ingredient-sheet-title">Ajouter un ingrédient</h3>
-        <p class="subtitle">Produit, offres fournisseurs, nutrition et allergènes.</p>
+        <p class="muted">Produit, offres fournisseurs, nutrition et allergènes.</p>
       </div>
-      <button class="icon-btn" type="button" data-close-sheet="ingredient-sheet" aria-label="Fermer">✕</button>
+      <button id="close-ingredient-sheet-btn" class="icon-square-btn" type="button" aria-label="Fermer">✕</button>
     </div>
 
-    <form id="ingredient-form" class="grid">
-      <details class="details" open>
-        <summary>Informations produit</summary>
-        <div class="details-content form-grid">
-          <div class="field"><label>Nom</label><input name="nom" required></div>
-          <div class="field"><label>EAN</label><input name="ean" inputmode="numeric"></div>
-          <div class="field"><label>Catégorie</label><select name="categorie" id="ingredient-categorie-select"><option value="">Sans catégorie</option></select></div>
-          <div class="field"><label>Unité de base</label><select name="uniteBase"><option value="kg">kg</option><option value="piece">pièce</option><option value="l">litre</option></select></div>
-          <div class="field full"><label>Notes</label><textarea name="notes" placeholder="Ex : bio, produit sec, DLC courte…"></textarea></div>
-        </div>
-      </details>
+    <form id="ingredient-form" class="grid" novalidate>
+      <div class="form-grid">
+        <div class="field"><label>Nom</label><input name="nom" required autocomplete="off"></div>
+        <div class="field"><label>Catégorie</label><select name="categorie"></select></div>
+        <div class="field"><label>EAN</label><input name="ean" inputmode="numeric" autocomplete="off"></div>
+        <div class="field"><label>Unité de base</label><select name="uniteBase"><option value="kg">kg</option><option value="piece">pièce</option><option value="l">litre</option></select></div>
+      </div>
 
       <details class="details" open>
         <summary>Offres fournisseurs</summary>
         <div class="details-content grid">
           <div id="offres-editor" class="list"></div>
-          <div class="toolbar toolbar-end"><button id="add-offre-btn" class="btn secondary" type="button">Ajouter une offre</button></div>
+          <div class="toolbar end">
+            <button id="add-offre-btn" class="btn secondary" type="button">Ajouter une offre</button>
+          </div>
         </div>
       </details>
 
       <details class="details">
         <summary>Valeurs nutritionnelles pour 100 g</summary>
         <div class="details-content form-grid">
-          <div class="field"><label>Énergie (kcal)</label><input name="energie" type="number" step="0.01"></div>
-          <div class="field"><label>Matières grasses (g)</label><input name="matieresGrasses" type="number" step="0.01"></div>
-          <div class="field"><label>dont acides gras saturés (g)</label><input name="acidesGrasSatures" type="number" step="0.01"></div>
-          <div class="field"><label>Glucides (g)</label><input name="glucides" type="number" step="0.01"></div>
-          <div class="field"><label>dont sucres (g)</label><input name="sucres" type="number" step="0.01"></div>
-          <div class="field"><label>Fibres (g)</label><input name="fibres" type="number" step="0.01"></div>
-          <div class="field"><label>Protéines (g)</label><input name="proteines" type="number" step="0.01"></div>
-          <div class="field"><label>Sel (g)</label><input name="sel" type="number" step="0.01"></div>
+          <div class="field"><label>Énergie (kJ/kcal)</label><input name="energie" autocomplete="off"></div>
+          <div class="field"><label>Matières grasses</label><input name="matieresGrasses" autocomplete="off"></div>
+          <div class="field"><label>Dont saturés</label><input name="acidesGrasSatures" autocomplete="off"></div>
+          <div class="field"><label>Glucides</label><input name="glucides" autocomplete="off"></div>
+          <div class="field"><label>Dont sucres</label><input name="sucres" autocomplete="off"></div>
+          <div class="field"><label>Protéines</label><input name="proteines" autocomplete="off"></div>
+          <div class="field"><label>Sel</label><input name="sel" autocomplete="off"></div>
+          <div class="field"><label>Fibres</label><input name="fibres" autocomplete="off"></div>
         </div>
       </details>
 
       <details class="details">
         <summary>Allergènes</summary>
-        <div class="details-content checkbox-grid" id="allergenes-grid">
-          <label><input type="checkbox" name="allergenes" value="gluten"> Gluten</label>
-          <label><input type="checkbox" name="allergenes" value="ble"> Blé</label>
-          <label><input type="checkbox" name="allergenes" value="seigle"> Seigle</label>
-          <label><input type="checkbox" name="allergenes" value="orge"> Orge</label>
-          <label><input type="checkbox" name="allergenes" value="avoine"> Avoine</label>
-          <label><input type="checkbox" name="allergenes" value="epeautre"> Épeautre</label>
-          <label><input type="checkbox" name="allergenes" value="crustaces"> Crustacés</label>
-          <label><input type="checkbox" name="allergenes" value="oeufs"> Œufs</label>
-          <label><input type="checkbox" name="allergenes" value="poissons"> Poissons</label>
-          <label><input type="checkbox" name="allergenes" value="arachides"> Arachides</label>
-          <label><input type="checkbox" name="allergenes" value="soja"> Soja</label>
-          <label><input type="checkbox" name="allergenes" value="lait"> Lait</label>
-          <label><input type="checkbox" name="allergenes" value="amandes"> Amandes</label>
-          <label><input type="checkbox" name="allergenes" value="noisettes"> Noisettes</label>
-          <label><input type="checkbox" name="allergenes" value="noix"> Noix</label>
-          <label><input type="checkbox" name="allergenes" value="noix-cajou"> Noix de cajou</label>
-          <label><input type="checkbox" name="allergenes" value="noix-pecan"> Noix de pécan</label>
-          <label><input type="checkbox" name="allergenes" value="pistaches"> Pistaches</label>
-          <label><input type="checkbox" name="allergenes" value="noix-macadamia"> Noix de macadamia</label>
-          <label><input type="checkbox" name="allergenes" value="celeri"> Céleri</label>
-          <label><input type="checkbox" name="allergenes" value="moutarde"> Moutarde</label>
-          <label><input type="checkbox" name="allergenes" value="sesame"> Sésame</label>
-          <label><input type="checkbox" name="allergenes" value="sulfites"> Sulfites</label>
-          <label><input type="checkbox" name="allergenes" value="lupin"> Lupin</label>
-          <label><input type="checkbox" name="allergenes" value="mollusques"> Mollusques</label>
+        <div class="details-content allergen-grid">
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Gluten"> <span>Gluten</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Blé"> <span>Blé</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Seigle"> <span>Seigle</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Orge"> <span>Orge</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Avoine"> <span>Avoine</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Épeautre"> <span>Épeautre</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Crustacés"> <span>Crustacés</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Œufs"> <span>Œufs</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Poissons"> <span>Poissons</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Arachides"> <span>Arachides</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Soja"> <span>Soja</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Lait"> <span>Lait</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Amandes"> <span>Amandes</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Noisettes"> <span>Noisettes</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Noix"> <span>Noix</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Noix de cajou"> <span>Noix de cajou</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Noix de pécan"> <span>Noix de pécan</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Noix du Brésil"> <span>Noix du Brésil</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Pistaches"> <span>Pistaches</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Macadamia"> <span>Macadamia</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Céleri"> <span>Céleri</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Moutarde"> <span>Moutarde</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Sésame"> <span>Sésame</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Sulfites"> <span>Sulfites</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Lupin"> <span>Lupin</span></label>
+          <label class="allergen-item"><input type="checkbox" name="allergenes" value="Mollusques"> <span>Mollusques</span></label>
         </div>
       </details>
 
-      <div class="toolbar toolbar-end sticky-form-actions">
-        <button class="btn secondary" type="button" data-close-sheet="ingredient-sheet">Annuler</button>
+      <div class="toolbar sticky-actions">
+        <button id="cancel-ingredient-btn" class="btn secondary" type="button">Annuler</button>
         <button class="btn primary" type="submit">Enregistrer l’ingrédient</button>
       </div>
     </form>
   </div>
 </section>
 
-<section id="mercuriale-settings-sheet" class="bottom-sheet hidden" aria-hidden="true">
-  <div class="sheet-backdrop" data-close-sheet="mercuriale-settings-sheet"></div>
-  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="mercuriale-settings-title">
+<section id="categories-sheet" class="sheet hidden" aria-hidden="true">
+  <div id="categories-backdrop" class="sheet-backdrop"></div>
+  <div class="sheet-panel small" role="dialog" aria-modal="true" aria-labelledby="categories-sheet-title">
     <div class="sheet-handle"></div>
-    <div class="sheet-head">
+    <div class="sheet-header">
       <div>
-        <h3 id="mercuriale-settings-title">Catégories Mercuriale</h3>
-        <p class="subtitle">Gère les catégories et leurs couleurs de chips.</p>
+        <h3 id="categories-sheet-title">Catégories</h3>
+        <p class="muted">Nom et couleur des chips.</p>
       </div>
-      <button class="icon-btn" type="button" data-close-sheet="mercuriale-settings-sheet" aria-label="Fermer">✕</button>
+      <button id="close-categories-sheet-btn" class="icon-square-btn" type="button" aria-label="Fermer">✕</button>
     </div>
 
-    <form id="categorie-form" class="grid">
-      <div class="form-grid compact-two">
-        <div class="field"><label>Nom de la catégorie</label><input name="nom" required placeholder="Farines"></div>
-        <div class="field"><label>Couleur</label><input name="couleur" type="color" value="#8b5e34"></div>
-      </div>
-      <div class="toolbar toolbar-end">
-        <button class="btn primary" type="submit">Ajouter la catégorie</button>
-      </div>
+    <form id="category-form" class="toolbar category-form" novalidate>
+      <div class="field grow"><label>Nom</label><input name="nom" required autocomplete="off"></div>
+      <div class="field"><label>Couleur</label><input name="couleur" type="color" value="#8b5e34"></div>
+      <div class="field action"><label>&nbsp;</label><button class="btn primary" type="submit">Ajouter</button></div>
     </form>
 
-    <div class="category-list-wrap">
-      <h4>Catégories enregistrées</h4>
-      <div id="categories-list" class="list"></div>
-    </div>
+    <div id="categories-list" class="list"></div>
   </div>
 </section>
