@@ -429,6 +429,8 @@ async function renderMercuriale(){
   };
   qs('#close-categories-sheet-btn').onclick = () => closeSheet(categoriesSheet, categoriesBackdrop);
   qs('#close-ingredient-detail-sheet-btn').onclick = () => closeSheet(detailSheet, detailBackdrop);
+  const printBtn = qs('#print-mercuriale-btn');
+  if (printBtn) printBtn.onclick = () => window.print();
   qs('#open-categories-btn').onclick = () => {
     resetCategorieForm();
     renderCategoriesManager();
