@@ -13,7 +13,8 @@
   --radius:18px;
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+body.no-scroll{position:fixed;overflow:hidden;touch-action:none;left:0;right:0;width:100%;overscroll-behavior:none}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
 .hidden{display:none!important}
@@ -39,21 +40,26 @@ button{cursor:pointer}
 .metric .label{font-size:.92rem;color:var(--muted)}
 .metric .value{margin-top:6px;font-size:1.5rem;font-weight:700}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap}
+.toolbar.end{justify-content:flex-end}
+.toolbar.compact{margin-top:10px}
 .btn{border:1px solid var(--line);background:var(--surface);padding:12px 14px;border-radius:14px}
 .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
 .btn.secondary{background:var(--surface-2)}
 .btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
 .btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
 .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.field{display:flex;flex-direction:column;gap:6px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .field.full{grid-column:1 / -1}
+.field.grow{flex:1}
+.field.action{min-width:140px}
 label{font-weight:600}
-input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:16px;-webkit-text-size-adjust:100%}
+input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:16px !important;appearance:none;-webkit-appearance:none;transform:none;max-height:none}
 textarea{min-height:92px;resize:vertical}
 .table-wrap{overflow:auto}
 table{width:100%;border-collapse:collapse}
 th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 .tag{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.85rem}
+.category-chip{background:color-mix(in srgb, var(--chip) 18%, white);border-color:color-mix(in srgb, var(--chip) 40%, var(--line));color:#4a3320}
 .list{display:grid;gap:10px}
 .item{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .item-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
@@ -66,6 +72,29 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 .details summary::-webkit-details-marker{display:none}
 .details .details-content{padding:0 16px 16px}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35)}
+
+.page-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.icon-actions{display:flex;gap:10px;align-items:center;flex-shrink:0}
+.icon-square-btn{width:48px;height:48px;border-radius:14px;border:1px solid var(--line);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;padding:0}
+.icon-square-btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.offre-card{background:#fcfbf8}
+.allergen-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.allergen-item{display:flex;align-items:center;gap:12px;font-weight:500;min-width:0;white-space:normal}
+.allergen-item input{width:22px;height:22px;margin:0;flex:0 0 auto}
+.allergen-item span{display:block;line-height:1.25;word-break:break-word}
+.category-form{align-items:flex-end;margin-bottom:12px}
+.category-row .item-top{align-items:center}
+.category-ident{display:flex;flex-direction:column;gap:8px}
+
+.sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.sheet-panel{position:relative;width:min(100%,900px);max-height:92vh;background:var(--surface);border-radius:26px 26px 0 0;padding:14px 16px 16px;overflow:auto;overscroll-behavior:contain;box-shadow:var(--shadow)}
+.sheet-panel.small{width:min(100%,760px)}
+.sheet-handle{width:56px;height:6px;border-radius:999px;background:#d7cec1;margin:0 auto 12px}
+.sheet-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+.sticky-actions{position:sticky;bottom:0;background:linear-gradient(to top, rgba(255,255,255,.98), rgba(255,255,255,.92));padding-top:8px;justify-content:space-between}
+.sticky-actions .btn{flex:1}
+
 @media (max-width: 920px){
   .app-shell{display:block}
   .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);transition:.25s;z-index:30;width:min(84vw,320px)}
@@ -75,41 +104,17 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .content{padding:12px 16px 20px}
   .footer{padding:12px 16px 20px}
   .grid.two,.grid.three,.form-grid{grid-template-columns:1fr}
+  .page-head{align-items:center}
+  .allergen-grid{grid-template-columns:1fr}
+  .sheet-panel{padding:14px 14px 16px}
 }
 
-body.sheet-open{overflow:hidden}
-.page-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
-.page-head-stack{flex-direction:column;align-items:stretch}
-.mercuriale-actions{justify-content:flex-start}
-.toolbar-end{justify-content:flex-end}
-.compact-two{grid-template-columns:repeat(2,minmax(0,1fr))}
-.checkbox-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
-.checkbox-grid label{display:flex;align-items:flex-start;gap:10px;font-weight:500;line-height:1.3}.checkbox-grid input[type="checkbox"]{margin-top:2px;flex:0 0 auto}
-.item-top-stack{align-items:stretch}
-.item-title-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.color-tag{background:color-mix(in srgb, var(--tag-color) 20%, white);border-color:color-mix(in srgb, var(--tag-color) 55%, #6b6b6b)}
-.bottom-sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center}
-.sheet-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.38)}
-.sheet-panel{position:relative;width:min(920px,100%);max-height:min(90vh,860px);overflow:auto;background:var(--surface);border-radius:24px 24px 0 0;padding:12px 16px 20px;box-shadow:var(--shadow)}
-.sheet-handle{width:54px;height:6px;border-radius:999px;background:var(--line);margin:0 auto 10px}
-.sheet-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;position:sticky;top:0;background:linear-gradient(var(--surface),var(--surface));padding-bottom:10px;z-index:1}
-.offer-pricing-grid .field{min-width:0}
-.category-item .item-top{align-items:center}
-.category-list-wrap{margin-top:18px}
-.sticky-form-actions{position:sticky;bottom:0;background:linear-gradient(180deg, rgba(255,255,255,0), #fff 24%);padding-top:12px}
-.mercuriale-page .subtitle{max-width:60ch}
-@media (max-width: 920px){
-  .page-head,.compact-two,.checkbox-grid{grid-template-columns:1fr}
-  .mercuriale-actions{display:grid;grid-template-columns:1fr 1fr}
-  .sheet-panel{padding:12px 14px 18px;max-height:92vh}
-  .sheet-head{padding-right:2px}
-  .toolbar-end{justify-content:stretch}
-  .toolbar-end .btn{flex:1}
+@supports (-webkit-touch-callout: none){
+  input,select,textarea{font-size:16px !important;}
 }
-@media (max-width: 640px){
-  .mercuriale-actions{grid-template-columns:1fr}
-  .checkbox-grid{grid-template-columns:1fr}
-  .sheet-panel{border-radius:20px 20px 0 0}
-}
-
-input:focus,select:focus,textarea:focus{font-size:16px}
+input[type=checkbox]{appearance:auto;-webkit-appearance:checkbox;width:22px;height:22px;min-width:22px;padding:0;border-radius:6px}
+.allergen-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;align-items:start}
+.allergen-item{display:grid;grid-template-columns:22px minmax(0,1fr);align-items:start;column-gap:12px;font-weight:500;min-width:0;white-space:normal;margin:0}
+.allergen-item input{grid-column:1;grid-row:1;margin:0;margin-top:2px}
+.allergen-item span{grid-column:2;grid-row:1;display:block;line-height:1.3;word-break:break-word;overflow-wrap:anywhere;text-align:left}
+.icon-square-btn span{line-height:1;display:inline-flex;align-items:center;justify-content:center}
