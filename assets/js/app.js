@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.0.7';
+const APP_VERSION = 'v2.0.8';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -40,6 +40,157 @@ function humanizeSlug(s=''){
   if (!normalized) return '';
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
+
+function normalizeEan13(value=''){
+  const digits = String(value || '').replace(/\D/g, '');
+  if (digits.length === 12) {
+    const checksum = computeEan13Checksum(digits);
+    return digits + String(checksum);
+  }
+  if (digits.length === 13) {
+    const checksum = computeEan13Checksum(digits.slice(0, 12));
+    return checksum === Number(digits[12]) ? digits : '';
+  }
+  return '';
+}
+
+function computeEan13Checksum(base12=''){
+  const digits = String(base12 || '').replace(/\D/g, '').slice(0, 12).split('').map(Number);
+  if (digits.length !== 12) return 0;
+  const sum = digits.reduce((acc, n, idx) => acc + n * (idx % 2 === 0 ? 1 : 3), 0);
+  return (10 - (sum % 10)) % 10;
+}
+
+function ean13Svg(value=''){
+  const ean = normalizeEan13(value);
+  if (!ean) return '<div class="muted">EAN non renseigné ou invalide.</div>';
+  const patterns = {
+    L: {'0':'0001101','1':'0011001','2':'0010011','3':'0111101','4':'0100011','5':'0110001','6':'0101111','7':'0111011','8':'0110111','9':'0001011'},
+    G: {'0':'0100111','1':'0110011','2':'0011011','3':'0100001','4':'0011101','5':'0111001','6':'0000101','7':'0010001','8':'0001001','9':'0010111'},
+    R: {'0':'1110010','1':'1100110','2':'1101100','3':'1000010','4':'1011100','5':'1001110','6':'1010000','7':'1000100','8':'1001000','9':'1110100'}
+  };
+  const parityMap = {
+    '0':'LLLLLL','1':'LLGLGG','2':'LLGGLG','3':'LLGGGL','4':'LGLLGG',
+    '5':'LGGLLG','6':'LGGGLL','7':'LGLGLG','8':'LGLGGL','9':'LGGLGL'
+  };
+  const leftDigits = ean.slice(1,7).split('');
+  const rightDigits = ean.slice(7).split('');
+  const parity = parityMap[ean[0]];
+  let bits = '101';
+  leftDigits.forEach((digit, idx) => { bits += patterns[parity[idx]][digit]; });
+  bits += '01010';
+  rightDigits.forEach(digit => { bits += patterns.R[digit]; });
+  bits += '101';
+  const moduleWidth = 2;
+  const quiet = 10 * moduleWidth;
+  const normalHeight = 84;
+  const guardHeight = 96;
+  const textY = 118;
+  const width = quiet * 2 + bits.length * moduleWidth;
+  let x = quiet;
+  let rects = '';
+  for (let i = 0; i < bits.length; i++) {
+    if (bits[i] === '1') {
+      const isGuard = i < 3 || (i >= 45 && i < 50) || i >= 92;
+      rects += `<rect x="${x}" y="0" width="${moduleWidth}" height="${isGuard ? guardHeight : normalHeight}" fill="#111"/>`;
+    }
+    x += moduleWidth;
+  }
+  return `<svg class="ean-svg" viewBox="0 0 ${width} 124" role="img" aria-label="Code-barres EAN ${ean}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="124" fill="#fff"/>
+    ${rects}
+    <text x="0" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean[0]}</text>
+    <text x="${quiet + 3*moduleWidth}" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean.slice(1,7)}</text>
+    <text x="${quiet + (3+42+5)*moduleWidth}" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean.slice(7)}</text>
+  </svg>`;
+}
+
+function getOrCreatePrintRoot(){
+  let root = document.getElementById('product-print-root');
+  if (!root) {
+    root = document.createElement('section');
+    root.id = 'product-print-root';
+    root.className = 'product-print-root hidden';
+    document.body.appendChild(root);
+  }
+  return root;
+}
+
+function buildProductPrintMarkup(ingredient, category, fournisseurs){
+  const nutrition = ingredient.nutrition || {};
+  const allergenes = (ingredient.allergenes || []).map(humanizeSlug);
+  const offers = (ingredient.offres || []).map(offre => {
+    const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
+    return `<tr>
+      <td>${esc(supplier?.nom || 'Sans fournisseur')}</td>
+      <td>${esc(offre.marque || '-')}</td>
+      <td>${esc(offre.reference || '-')}</td>
+      <td>${esc(offre.quantiteColis || '-')} ${esc(offre.uniteColis || ingredient.uniteBase || 'u')}</td>
+      <td>${String(offre.tva ?? 0).replace('.', ',')}%</td>
+      <td>${offre.prixHTUnite ? euro(offre.prixHTUnite) : '-'}</td>
+      <td>${offre.prixTTCUnite ? euro(offre.prixTTCUnite) : '-'}</td>
+    </tr>`;
+  }).join('');
+  return `
+    <div class="print-page">
+      <header class="print-header">
+        <div>
+          <div class="print-app-name">Copilot boulangerie</div>
+          <h1>Fiche produit</h1>
+          <div class="print-subtitle">Édition du ${new Date().toLocaleDateString('fr-FR')}</div>
+        </div>
+        <div class="print-category-wrap">${categoryChip(category)}</div>
+      </header>
+      <section class="print-grid">
+        <article class="print-card">
+          <div class="detail-label">Nom du produit</div>
+          <div class="detail-value detail-title-value">${esc(ingredient.nom || '-')}</div>
+        </article>
+        <article class="print-card">
+          <div class="detail-label">EAN</div>
+          <div class="print-barcode-wrap">${ean13Svg(ingredient.ean || '')}</div>
+          <div class="print-ean-text monospace">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div>
+        </article>
+      </section>
+      <section class="print-card">
+        <h2>Fournisseurs</h2>
+        ${offers ? `<table class="print-table"><thead><tr><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>Colis</th><th>TVA</th><th>HT unité</th><th>TTC unité</th></tr></thead><tbody>${offers}</tbody></table>` : '<div class="muted">Aucune offre enregistrée.</div>'}
+      </section>
+      <section class="print-two-col">
+        <article class="print-card">
+          <h2>Allergènes</h2>
+          <div class="toolbar chip-row">${allergenes.length ? allergenes.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div>
+        </article>
+        <article class="print-card">
+          <h2>Nutrition pour 100 g</h2>
+          <div class="print-nutrition-grid">
+            <div><strong>Énergie</strong><span>${esc(nutrition.energie || '-')}</span></div>
+            <div><strong>Matières grasses</strong><span>${esc(nutrition.matieresGrasses || '-')}</span></div>
+            <div><strong>Acides gras saturés</strong><span>${esc(nutrition.acidesGrasSatures || '-')}</span></div>
+            <div><strong>Glucides</strong><span>${esc(nutrition.glucides || '-')}</span></div>
+            <div><strong>Sucres</strong><span>${esc(nutrition.sucres || '-')}</span></div>
+            <div><strong>Protéines</strong><span>${esc(nutrition.proteines || '-')}</span></div>
+            <div><strong>Sel</strong><span>${esc(nutrition.sel || '-')}</span></div>
+          </div>
+        </article>
+      </section>
+    </div>`;
+}
+
+function printProductSheet(ingredient, category, fournisseurs){
+  const root = getOrCreatePrintRoot();
+  root.innerHTML = buildProductPrintMarkup(ingredient, category, fournisseurs);
+  root.classList.remove('hidden');
+  document.body.classList.add('printing-product');
+  setTimeout(() => window.print(), 50);
+}
+
+window.addEventListener('afterprint', () => {
+  document.body.classList.remove('printing-product');
+  const root = document.getElementById('product-print-root');
+  if (root) root.classList.add('hidden');
+});
+
 function ingredientCloneForDuplicate(ingredient){
   const copy = JSON.parse(JSON.stringify(ingredient || {}));
   delete copy.id;
@@ -381,9 +532,9 @@ async function showIngredientDetail(id){
               </div>
               <div>
                 <div class="detail-label">EAN</div>
-                <div class="ean-detail-row">
-                  <div class="detail-value monospace">${esc(ingredient.ean || '-')}</div>
-                  <button class="btn secondary" type="button" data-detail-action="scan">Scanner</button>
+                <div class="ean-detail-row ean-visual-block">
+                  <div class="ean-detail-code detail-value monospace">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div>
+                  <div class="ean-visual-wrap">${ean13Svg(ingredient.ean || '')}</div>
                 </div>
               </div>
             </div>
@@ -462,10 +613,11 @@ async function showIngredientDetail(id){
           return;
         }
         if (action === 'print') {
-          window.print();
+          printProductSheet(ingredient, category, fournisseurs);
           return;
         }
         if (action === 'duplicate') {
+          if (!confirm(`Dupliquer ${ingredient.nom} ?`)) return;
           const duplicate = ingredientCloneForDuplicate(ingredient);
           await AppDB.put('ingredients', duplicate);
           ingredients.unshift(duplicate);
@@ -484,11 +636,7 @@ async function showIngredientDetail(id){
           renderIngredients();
           renderDashboard();
           return;
-        }
-        if (action === 'scan') {
-          alert('Scan EAN à venir.');
-        }
-      };
+        }      };
     });
 
     openSheet(detailSheet, detailBackdrop);
@@ -561,7 +709,7 @@ async function showIngredientDetail(id){
   qs('#close-categories-sheet-btn').onclick = () => closeSheet(categoriesSheet, categoriesBackdrop);
   qs('#close-ingredient-detail-sheet-btn').onclick = () => closeSheet(detailSheet, detailBackdrop);
   const printBtn = qs('#print-mercuriale-btn');
-  if (printBtn) printBtn.onclick = () => window.print();
+  if (printBtn) printBtn.onclick = () => printProductSheet(ingredient, category, fournisseurs);
 
   qs('#open-categories-btn').onclick = () => {
     resetCategorieForm();
