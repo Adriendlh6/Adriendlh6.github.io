@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.0.5';
+const APP_VERSION = 'v2.0.7';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -34,6 +34,18 @@ function formatNumberInput(v, decimals=4){
 }
 function esc(s=''){ return String(s).replace(/[&<>\"]/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m])); }
 function slugify(s=''){ return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+
+function humanizeSlug(s=''){
+  const normalized = String(s || '').replace(/-/g, ' ').trim();
+  if (!normalized) return '';
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+function ingredientCloneForDuplicate(ingredient){
+  const copy = JSON.parse(JSON.stringify(ingredient || {}));
+  delete copy.id;
+  copy.nom = `${ingredient?.nom || 'Produit'} (copie)`;
+  return copy;
+}
 
 let scrollLockCount = 0;
 function lockBodyScroll(){
@@ -294,7 +306,7 @@ async function renderMercuriale(){
     ingredientForm.reset();
     offres = [];
     renderCategorySelect('');
-    renderOffers();
+    renderOffres();
     renderAllergenes([]);
   }
 
@@ -315,7 +327,7 @@ async function renderMercuriale(){
     ingredientForm.sel.value = ingredient?.nutrition?.sel || '';
     renderAllergenes(ingredient?.allergenes || []);
     offres = JSON.parse(JSON.stringify(ingredient?.offres || []));
-    renderOffers();
+    renderOffres();
   }
 
   function openIngredientSheetWithData(ingredient){
@@ -323,43 +335,162 @@ async function renderMercuriale(){
     openSheet(ingredientSheet, ingredientBackdrop);
   }
 
-  async function showIngredientDetail(id){
+  
+async function showIngredientDetail(id){
     const ingredient = ingredients.find(item => item.id === id);
     if (!ingredient) return;
     const category = getCategoryById(categories, ingredient.categorieId);
     detailTitle.textContent = ingredient.nom;
     const nutrition = ingredient.nutrition || {};
+    const allergenesLabels = (ingredient.allergenes || []).map(humanizeSlug);
+    const nutritionRows = [
+      ['Énergie', nutrition.energie],
+      ['Matières grasses', nutrition.matieresGrasses],
+      ['Acides gras saturés', nutrition.acidesGrasSatures],
+      ['Glucides', nutrition.glucides],
+      ['Sucres', nutrition.sucres],
+      ['Protéines', nutrition.proteines],
+      ['Sel', nutrition.sel],
+    ];
     detailContent.innerHTML = `
-      <section class="card compact-card">
-        <div class="toolbar chip-row">${categoryChip(category)}</div>
-        <div class="detail-grid">
-          <div><strong>EAN</strong><div class="muted">${esc(ingredient.ean || '-')}</div></div>
-          <div><strong>Unité de base</strong><div class="muted">${esc(ingredient.uniteBase || '-')}</div></div>
+      <section class="detail-panel">
+        <div class="detail-actions-row">
+          <button class="icon-square-btn" type="button" data-detail-action="edit" aria-label="Modifier" title="Modifier">✏️</button>
+          <button class="icon-square-btn" type="button" data-detail-action="print" aria-label="Imprimer" title="Imprimer">🖨️</button>
+          <button class="icon-square-btn" type="button" data-detail-action="duplicate" aria-label="Dupliquer" title="Dupliquer">📄</button>
+          <button class="icon-square-btn danger" type="button" data-detail-action="delete" aria-label="Supprimer" title="Supprimer">🗑️</button>
         </div>
-      </section>
-      <section class="card compact-card">
-        <h4>Offres fournisseurs</h4>
-        <div class="list">${(ingredient.offres || []).length ? ingredient.offres.map(offre => {
-          const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
-          return `<div class="item compact-item"><strong>${esc(supplier?.nom || 'Sans fournisseur')}</strong><div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div><div class="muted">${euro(offre.prixHTUnite || 0)} HT / ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')}</div></div>`;
-        }).join('') : '<div class="notice">Aucune offre enregistrée.</div>'}</div>
-      </section>
-      <section class="card compact-card">
-        <h4>Nutrition</h4>
-        <div class="detail-grid">
-          <div><strong>Énergie</strong><div class="muted">${esc(nutrition.energie || '-')}</div></div>
-          <div><strong>Matières grasses</strong><div class="muted">${esc(nutrition.matieresGrasses || '-')}</div></div>
-          <div><strong>Acides gras saturés</strong><div class="muted">${esc(nutrition.acidesGrasSatures || '-')}</div></div>
-          <div><strong>Glucides</strong><div class="muted">${esc(nutrition.glucides || '-')}</div></div>
-          <div><strong>Sucres</strong><div class="muted">${esc(nutrition.sucres || '-')}</div></div>
-          <div><strong>Protéines</strong><div class="muted">${esc(nutrition.proteines || '-')}</div></div>
-          <div><strong>Sel</strong><div class="muted">${esc(nutrition.sel || '-')}</div></div>
+
+        <div class="detail-tabs" role="tablist" aria-label="Sections produit">
+          <button class="detail-tab active" type="button" data-detail-tab="infos" aria-selected="true">Infos</button>
+          <button class="detail-tab" type="button" data-detail-tab="utilisation" aria-selected="false">Utilisation</button>
+          <button class="detail-tab" type="button" data-detail-tab="consommation" aria-selected="false">Consommation</button>
+          <button class="detail-tab" type="button" data-detail-tab="tracabilites" aria-selected="false">Traçabilités</button>
         </div>
-      </section>
-      <section class="card compact-card">
-        <h4>Allergènes</h4>
-        <div class="toolbar chip-row">${(ingredient.allergenes || []).length ? ingredient.allergenes.map(item => `<span class="tag">${esc(item)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div>
+
+        <div class="detail-tab-panel active" data-detail-panel="infos">
+          <section class="card compact-card">
+            <div class="detail-info-stack">
+              <div>
+                <div class="detail-label">Nom du produit</div>
+                <div class="detail-value detail-title-value">${esc(ingredient.nom || '-')}</div>
+              </div>
+              <div>
+                <div class="detail-label">Catégorie</div>
+                <div class="toolbar chip-row">${categoryChip(category)}</div>
+              </div>
+              <div>
+                <div class="detail-label">EAN</div>
+                <div class="ean-detail-row">
+                  <div class="detail-value monospace">${esc(ingredient.ean || '-')}</div>
+                  <button class="btn secondary" type="button" data-detail-action="scan">Scanner</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card compact-card">
+            <h4>Fournisseurs</h4>
+            <div class="list">
+              ${(ingredient.offres || []).length ? ingredient.offres.map(offre => {
+                const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
+                return `<div class="item compact-item fournisseur-detail-item">
+                  <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
+                  <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
+                  <div class="muted">${esc(offre.quantiteColis || '-') } ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(offre.tva ?? 0).replace('.', ',')}%</div>
+                  <div class="muted">${offre.prixHTUnite ? euro(offre.prixHTUnite) + ' HT / unité' : 'Sans prix unitaire'}${offre.prixTTCUnite ? ' · ' + euro(offre.prixTTCUnite) + ' TTC / unité' : ''}</div>
+                </div>`;
+              }).join('') : '<div class="notice">Aucune offre enregistrée.</div>'}
+            </div>
+          </section>
+
+          <section class="card compact-card">
+            <h4>Allergènes</h4>
+            <div class="toolbar chip-row">${allergenesLabels.length ? allergenesLabels.map(item => `<span class="tag">${esc(item)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div>
+          </section>
+
+          <section class="card compact-card">
+            <details class="details nutrition-details">
+              <summary>Nutrition</summary>
+              <div class="details-content nutrition-grid-detail">
+                ${nutritionRows.map(([label, value]) => `<div><strong>${esc(label)}</strong><div class="muted">${esc(value || '-')}</div></div>`).join('')}
+              </div>
+            </details>
+          </section>
+        </div>
+
+        <div class="detail-tab-panel" data-detail-panel="utilisation">
+          <section class="card compact-card placeholder-card">
+            <h4>Utilisation</h4>
+            <p class="muted">À venir. Cet onglet accueillera les usages en recettes, productions et associations produit.</p>
+          </section>
+        </div>
+
+        <div class="detail-tab-panel" data-detail-panel="consommation">
+          <section class="card compact-card placeholder-card">
+            <h4>Consommation</h4>
+            <p class="muted">À venir. Cet onglet accueillera les volumes consommés, historiques et tendances d’usage.</p>
+          </section>
+        </div>
+
+        <div class="detail-tab-panel" data-detail-panel="tracabilites">
+          <section class="card compact-card placeholder-card">
+            <h4>Traçabilités</h4>
+            <p class="muted">À venir. Cet onglet accueillera lots, DLC, documents et suivi de provenance.</p>
+          </section>
+        </div>
       </section>`;
+
+    qsa('[data-detail-tab]', detailContent).forEach(btn => {
+      btn.onclick = () => {
+        qsa('[data-detail-tab]', detailContent).forEach(item => {
+          item.classList.toggle('active', item === btn);
+          item.setAttribute('aria-selected', item === btn ? 'true' : 'false');
+        });
+        qsa('[data-detail-panel]', detailContent).forEach(panel => {
+          panel.classList.toggle('active', panel.dataset.detailPanel === btn.dataset.detailTab);
+        });
+      };
+    });
+
+    qsa('[data-detail-action]', detailContent).forEach(btn => {
+      btn.onclick = async () => {
+        const action = btn.dataset.detailAction;
+        if (action === 'edit') {
+          closeSheet(detailSheet, detailBackdrop);
+          openIngredientSheetWithData(ingredient);
+          return;
+        }
+        if (action === 'print') {
+          window.print();
+          return;
+        }
+        if (action === 'duplicate') {
+          const duplicate = ingredientCloneForDuplicate(ingredient);
+          await AppDB.put('ingredients', duplicate);
+          ingredients.unshift(duplicate);
+          renderIngredients();
+          renderDashboard();
+          showIngredientDetail(duplicate.id);
+          return;
+        }
+        if (action === 'delete') {
+          if (!confirm(`Supprimer ${ingredient.nom} ?`)) return;
+          if (!confirm('Confirmer la suppression définitive ?')) return;
+          await AppDB.delete('ingredients', ingredient.id);
+          const idx = ingredients.findIndex(item => item.id === ingredient.id);
+          if (idx >= 0) ingredients.splice(idx, 1);
+          closeSheet(detailSheet, detailBackdrop);
+          renderIngredients();
+          renderDashboard();
+          return;
+        }
+        if (action === 'scan') {
+          alert('Scan EAN à venir.');
+        }
+      };
+    });
+
     openSheet(detailSheet, detailBackdrop);
   }
 
@@ -431,6 +562,7 @@ async function renderMercuriale(){
   qs('#close-ingredient-detail-sheet-btn').onclick = () => closeSheet(detailSheet, detailBackdrop);
   const printBtn = qs('#print-mercuriale-btn');
   if (printBtn) printBtn.onclick = () => window.print();
+
   qs('#open-categories-btn').onclick = () => {
     resetCategorieForm();
     renderCategoriesManager();
@@ -451,14 +583,14 @@ async function renderMercuriale(){
       fournisseurId: '', marque: '', reference: '', tva: 5.5, quantiteColis: 1,
       uniteColis: ingredientForm.uniteBase.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
     });
-    renderOffers();
+    renderOffres();
   };
 
   offersEditor.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-remove-offre]');
     if (!btn) return;
     offres.splice(Number(btn.dataset.removeOffre), 1);
-    renderOffers();
+    renderOffres();
   });
   offersEditor.addEventListener('input', (e) => {
     const field = e.target.dataset.offreField;
@@ -472,7 +604,7 @@ async function renderMercuriale(){
     if (field == null || Number.isNaN(idx) || !offres[idx]) return;
     offres[idx][field] = ['quantiteColis','prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','tva'].includes(field) ? num(e.target.value) : e.target.value;
     if (['prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','quantiteColis','tva'].includes(field)) computeOffreFromField(offres[idx], field);
-    renderOffers();
+    renderOffres();
   });
 
   categoriesForm.onsubmit = async (e) => {
