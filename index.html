@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Copilot boulangerie</title>
+  <meta name="theme-color" content="#8b5e34" />
+  <link rel="stylesheet" href="assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">Copilot boulangerie</div>
+      <nav class="nav" id="nav">
+        <button class="nav-link" data-route="dashboard">Dashboard</button>
+        <button class="nav-link" data-route="mercuriale">Mercuriale</button>
+        <button class="nav-link" data-route="recettes">Recettes</button>
+        <button class="nav-link" data-route="fournisseurs">Fournisseurs</button>
+        <button class="nav-link" data-route="simulation">Simulation</button>
+        <button class="nav-link" data-route="parametres">Paramètres</button>
+      </nav>
+      <div class="sidebar-footer">Version v2.0.0</div>
+    </aside>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <button id="menuToggle" class="icon-btn mobile-only" type="button" aria-label="Ouvrir le menu">☰</button>
+        <div>
+          <h1 id="pageTitle">Dashboard</h1>
+          <p class="subtitle">Base modulaire stable avec stockage local IndexedDB</p>
+        </div>
+      </header>
+
+      <main id="app-content" class="content"></main>
+
+      <footer class="footer">
+        <span>Copilot boulangerie</span>
+        <span id="footerVersion">v2.0.0</span>
+      </footer>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="overlay"></div>
+
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

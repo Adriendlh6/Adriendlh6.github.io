@@ -1,0 +1,51 @@
+<section class="card">
+  <h2>Ajouter un ingrédient</h2>
+  <form id="ingredient-form" class="grid">
+    <div class="form-grid">
+      <div class="field"><label>Nom</label><input name="nom" required></div>
+      <div class="field"><label>Catégorie</label><input name="categorie" placeholder="Farines, matières grasses..."></div>
+      <div class="field"><label>EAN</label><input name="ean"></div>
+      <div class="field"><label>Unité de base</label><select name="uniteBase"><option>kg</option><option>piece</option><option>l</option></select></div>
+      <div class="field"><label>TVA</label><select name="tva"><option value="0">0%</option><option value="2.1">2,1%</option><option value="5.5">5,5%</option><option value="10">10%</option><option value="20">20%</option></select></div>
+    </div>
+
+    <details class="details" open>
+      <summary>Offres fournisseurs</summary>
+      <div class="details-content grid">
+        <div id="offres-editor" class="list"></div>
+        <div class="toolbar"><button id="add-offre-btn" class="btn secondary" type="button">Ajouter une offre</button></div>
+      </div>
+    </details>
+
+    <details class="details">
+      <summary>Valeurs nutritionnelles pour 100 g</summary>
+      <div class="details-content form-grid">
+        <div class="field"><label>Énergie</label><input name="energie"></div>
+        <div class="field"><label>Matières grasses</label><input name="matieresGrasses"></div>
+        <div class="field"><label>Glucides</label><input name="glucides"></div>
+        <div class="field"><label>Sucres</label><input name="sucres"></div>
+        <div class="field"><label>Protéines</label><input name="proteines"></div>
+        <div class="field"><label>Sel</label><input name="sel"></div>
+      </div>
+    </details>
+
+    <details class="details">
+      <summary>Allergènes</summary>
+      <div class="details-content toolbar">
+        <label><input type="checkbox" name="allergenes" value="gluten"> Gluten</label>
+        <label><input type="checkbox" name="allergenes" value="lait"> Lait</label>
+        <label><input type="checkbox" name="allergenes" value="oeufs"> Œufs</label>
+        <label><input type="checkbox" name="allergenes" value="soja"> Soja</label>
+        <label><input type="checkbox" name="allergenes" value="fruits-a-coque"> Fruits à coque</label>
+        <label><input type="checkbox" name="allergenes" value="sesame"> Sésame</label>
+      </div>
+    </details>
+
+    <div class="toolbar"><button class="btn primary" type="submit">Enregistrer l’ingrédient</button></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Mercuriale</h2>
+  <div id="ingredients-list" class="list"></div>
+</section>

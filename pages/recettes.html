@@ -1,0 +1,18 @@
+<section class="card">
+  <h2>Créer une recette</h2>
+  <form id="recette-form" class="grid">
+    <div class="form-grid">
+      <div class="field"><label>Nom</label><input name="nom" required></div>
+      <div class="field"><label>Rendement</label><input name="rendement" placeholder="ex: 20 pièces"></div>
+    </div>
+    <div id="recette-lignes" class="list"></div>
+    <div class="toolbar">
+      <button id="add-ligne-btn" class="btn secondary" type="button">Ajouter un ingrédient</button>
+      <button class="btn primary" type="submit">Enregistrer la recette</button>
+    </div>
+  </form>
+</section>
+<section class="card">
+  <h2>Recettes</h2>
+  <div id="recettes-list" class="list"></div>
+</section>

@@ -1,0 +1,78 @@
+:root{
+  --bg:#f6f3ee;
+  --surface:#ffffff;
+  --surface-2:#f0e8db;
+  --line:#e0d6c8;
+  --text:#1f1f1f;
+  --muted:#6e6a63;
+  --brand:#8b5e34;
+  --brand-2:#a87342;
+  --danger:#b33a3a;
+  --ok:#2f7d4a;
+  --shadow:0 10px 30px rgba(0,0,0,.08);
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.app-shell{display:flex;min-height:100vh}
+.sidebar{width:280px;background:#2a1b12;color:#fff;padding:24px 16px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
+.brand{font-size:1.3rem;font-weight:700;padding:8px 12px}
+.nav{display:flex;flex-direction:column;gap:8px}
+.nav-link{background:transparent;border:0;color:#fff;text-align:left;padding:14px 16px;border-radius:14px;transition:.2s}
+.nav-link.active,.nav-link:hover{background:rgba(255,255,255,.12)}
+.sidebar-footer{margin-top:auto;font-size:.9rem;color:rgba(255,255,255,.75);padding:8px 12px}
+.main-shell{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;gap:14px;align-items:flex-start;padding:20px 24px 8px}
+.topbar h1{margin:0;font-size:1.6rem}
+.subtitle{margin:4px 0 0;color:var(--muted)}
+.content{padding:16px 24px 24px;display:grid;gap:16px}
+.footer{padding:12px 24px 24px;color:var(--muted);display:flex;justify-content:space-between}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.card h2,.card h3{margin:0 0 14px}
+.grid{display:grid;gap:14px}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.metric{padding:14px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
+.metric .label{font-size:.92rem;color:var(--muted)}
+.metric .value{margin-top:6px;font-size:1.5rem;font-weight:700}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);padding:12px 14px;border-radius:14px}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.secondary{background:var(--surface-2)}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field.full{grid-column:1 / -1}
+label{font-weight:600}
+input,select,textarea{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#fff}
+textarea{min-height:92px;resize:vertical}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tag{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:.85rem}
+.list{display:grid;gap:10px}
+.item{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.item-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.muted{color:var(--muted)}
+.notice{padding:12px 14px;border-radius:14px;background:#fff8e8;border:1px solid #eadbb5;color:#7b6330}
+.icon-btn{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.mobile-only{display:none}
+.details{border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.details summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:700}
+.details summary::-webkit-details-marker{display:none}
+.details .details-content{padding:0 16px 16px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35)}
+@media (max-width: 920px){
+  .app-shell{display:block}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%);transition:.25s;z-index:30;width:min(84vw,320px)}
+  .sidebar.open{transform:translateX(0)}
+  .mobile-only{display:inline-block}
+  .topbar{padding:16px}
+  .content{padding:12px 16px 20px}
+  .footer{padding:12px 16px 20px}
+  .grid.two,.grid.three,.form-grid{grid-template-columns:1fr}
+}
