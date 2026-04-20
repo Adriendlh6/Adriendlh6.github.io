@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.1.5';
+const APP_VERSION = 'v2.2.4';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -179,28 +179,97 @@ function formatPriceHistoryDate(value){
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
 }
 
-function buildHistoryChartSvg(entries){
-  const values = entries.map(item => Number(item.prixHTUnite)).filter(v => Number.isFinite(v) && v > 0);
-  if (!values.length) return '<div class="muted">Pas encore assez de données pour afficher le graphique.</div>';
-  const width = 420, height = 160, pad = 18;
-  const min = Math.min(...values), max = Math.max(...values);
-  const span = max - min || 1;
-  const points = values.map((v, idx) => {
-    const x = pad + (idx * ((width - pad * 2) / Math.max(values.length - 1, 1)));
-    const y = height - pad - (((v - min) / span) * (height - pad * 2));
-    return `${x},${y}`;
-  }).join(' ');
-  const last = values[values.length - 1];
-  return `<svg class="price-history-chart" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Historique des prix">
-    <rect x="0" y="0" width="${width}" height="${height}" rx="14" fill="#fffaf4" />
-    <line x1="${pad}" y1="${height-pad}" x2="${width-pad}" y2="${height-pad}" stroke="#d7cfbf" stroke-width="1.5"/>
-    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${height-pad}" stroke="#d7cfbf" stroke-width="1.5"/>
-    <polyline fill="none" stroke="#b8742a" stroke-width="3" points="${points}" stroke-linecap="round" stroke-linejoin="round"/>
-    ${points.split(' ').map(pt => `<circle cx="${pt.split(',')[0]}" cy="${pt.split(',')[1]}" r="3.4" fill="#8b5e34"/>`).join('')}
-    <text x="${width-pad}" y="${pad+4}" text-anchor="end" class="price-history-chart-label">${euro(max)}</text>
-    <text x="${width-pad}" y="${height-pad-6}" text-anchor="end" class="price-history-chart-label">${euro(min)}</text>
-    <text x="${width-pad}" y="${height/2}" text-anchor="end" class="price-history-chart-label">Dernier: ${euro(last)}</text>
-  </svg>`;
+function buildPriceHistoryChart(entries, fournisseurs=[]){
+  const safeEntries = (entries || [])
+    .map(entry => ({ ...entry, prixHTUnite: Number(entry.prixHTUnite || 0), prixHTColis: Number(entry.prixHTColis || 0), timestamp: entry.timestamp }))
+    .filter(entry => Number.isFinite(entry.prixHTUnite) && entry.prixHTUnite > 0 && entry.timestamp);
+  if (!safeEntries.length) return '<div class="muted">Pas encore assez de données pour afficher le graphique.</div>';
+
+  const palette = ['#b8742a', '#2f7d32', '#2563eb', '#9333ea', '#dc2626', '#0891b2', '#ca8a04', '#6b7280'];
+  const supplierName = (entry) => {
+    const supplier = fournisseurs.find(f => f.id === entry.fournisseurId);
+    const base = supplier?.nom || 'Sans fournisseur';
+    return entry.marque ? `${base} / ${entry.marque}` : base;
+  };
+
+  const groupsMap = new Map();
+  safeEntries.forEach(entry => {
+    const key = `${entry.fournisseurId || 'none'}__${entry.marque || ''}`;
+    if (!groupsMap.has(key)) {
+      groupsMap.set(key, { key, label: supplierName(entry), entries: [] });
+    }
+    groupsMap.get(key).entries.push(entry);
+  });
+
+  const groups = [...groupsMap.values()].map((group, idx) => ({
+    ...group,
+    color: palette[idx % palette.length],
+    entries: group.entries.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp))
+  }));
+
+  const timestamps = safeEntries.map(entry => new Date(entry.timestamp).getTime()).filter(Number.isFinite);
+  const minTime = Math.min(...timestamps);
+  const maxTime = Math.max(...timestamps);
+  const values = safeEntries.map(entry => entry.prixHTUnite);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const timeSpan = Math.max(maxTime - minTime, 1);
+  const valueSpan = Math.max(maxValue - minValue, 1);
+  const width = 640;
+  const height = 260;
+  const padLeft = 56;
+  const padRight = 18;
+  const padTop = 18;
+  const padBottom = 42;
+  const chartWidth = width - padLeft - padRight;
+  const chartHeight = height - padTop - padBottom;
+  const xAt = (ts) => padLeft + (((ts - minTime) / timeSpan) * chartWidth);
+  const yAt = (val) => padTop + chartHeight - (((val - minValue) / valueSpan) * chartHeight);
+  const tickCount = Math.min(4, Math.max(2, len(groups[0]['entries']) if False else 4));
+  const tickDates = [];
+  for (let i = 0; i <= 3; i++) {
+    tickDates.append(minTime + ((timeSpan / 3) * i));
+  }
+  const tickLabels = tickDates.map(ts => new Intl.DateTimeFormat('fr-FR', { month: '2-digit', year: '2-digit' }).format(new Date(ts)));
+  const yTicks = [minValue, minValue + valueSpan / 2, maxValue];
+
+  const lines = groups.map(group => {
+    const points = group.entries.map(entry => `${xAt(new Date(entry.timestamp).getTime())},${yAt(entry.prixHTUnite)}`).join(' ');
+    const circles = group.entries.map(entry => {
+      const x = xAt(new Date(entry.timestamp).getTime());
+      const y = yAt(entry.prixHTUnite);
+      return `<circle cx="${x}" cy="${y}" r="3.2" fill="${group.color}"/>`;
+    }).join('');
+    return `<polyline fill="none" stroke="${group.color}" stroke-width="3" points="${points}" stroke-linecap="round" stroke-linejoin="round"/>${circles}`;
+  }).join('');
+
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+  const legend = groups.map(group => {
+    const recent = group.entries.filter(entry => new Date(entry.timestamp) >= twelveMonthsAgo);
+    const source = recent.length ? recent : group.entries;
+    const avg = source.reduce((sum, entry) => sum + entry.prixHTUnite, 0) / Math.max(source.length, 1);
+    return `<div class="price-history-legend-item">
+      <span class="price-history-legend-chip" style="background:${group.color}"></span>
+      <div class="price-history-legend-text">
+        <div class="price-history-legend-name">${esc(group.label)}</div>
+        <div class="price-history-legend-meta">Moyenne 12 mois : ${euro(avg)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="price-history-chart-wrap">
+    <svg class="price-history-chart" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Historique des prix par fournisseur">
+      <rect x="0" y="0" width="${width}" height="${height}" rx="14" fill="#fffaf4" />
+      ${yTicks.map(val => `<line x1="${padLeft}" y1="${yAt(val)}" x2="${width-padRight}" y2="${yAt(val)}" stroke="#eadfce" stroke-width="1"/>`).join('')}
+      <line x1="${padLeft}" y1="${padTop}" x2="${padLeft}" y2="${height-padBottom}" stroke="#cdbca7" stroke-width="1.5"/>
+      <line x1="${padLeft}" y1="${height-padBottom}" x2="${width-padRight}" y2="${height-padBottom}" stroke="#cdbca7" stroke-width="1.5"/>
+      ${lines}
+      ${yTicks.map(val => `<text x="${padLeft-8}" y="${yAt(val)+4}" text-anchor="end" class="price-history-chart-label">${euro(val)}</text>`).join('')}
+      ${tickDates.map((ts, idx) => `<text x="${xAt(ts)}" y="${height-16}" text-anchor="middle" class="price-history-chart-label">${tickLabels[idx]}</text>`).join('')}
+    </svg>
+    <div class="price-history-legend">${legend}</div>
+  </div>`;
 }
 
 function snapshotOfferForHistory(offre){
@@ -990,7 +1059,7 @@ async function showIngredientDetail(id){
               </div>
             </div>
             <div data-history-panel="graphique" class="history-panel active">
-              ${buildHistoryChartSvg(historyEntries.slice().reverse())}
+              ${buildPriceHistoryChart(historyEntries.slice().reverse(), fournisseurs)}
             </div>
             <div data-history-panel="liste" class="history-panel hidden">
               ${historyEntries.length ? `<div class="list history-list">${historyEntries.map(entry => {
