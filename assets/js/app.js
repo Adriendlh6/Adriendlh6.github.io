@@ -187,32 +187,6 @@ function appendPriceHistory(previousIngredient, draft){
   return nextHistory;
 }
 
-function buildOfferComparison(offres=[]){
-  const normalized = (Array.isArray(offres) ? offres : []).map((offre, index) => ({
-    ...offre,
-    id: offre?.id || `offre_cmp_${index}`,
-    prixHTUnite: Number(offre?.prixHTUnite),
-    prixHTColis: Number(offre?.prixHTColis),
-  }));
-  const validUnit = normalized.filter(offre => Number.isFinite(offre.prixHTUnite) && offre.prixHTUnite > 0);
-  const validColis = normalized.filter(offre => Number.isFinite(offre.prixHTColis) && offre.prixHTColis > 0);
-  return {
-    bestUnit: validUnit.length ? validUnit.reduce((best, current) => current.prixHTUnite < best.prixHTUnite ? current : best) : null,
-    bestColis: validColis.length ? validColis.reduce((best, current) => current.prixHTColis < best.prixHTColis ? current : best) : null,
-  };
-}
-
-function formatDeltaPercent(bestValue, currentValue){
-  const best = Number(bestValue);
-  const current = Number(currentValue);
-  if (!Number.isFinite(best) || !Number.isFinite(current) || best <= 0 || current <= 0) return '';
-  const delta = ((current - best) / best) * 100;
-  if (Math.abs(delta) < 0.01) return 'Référence';
-  const sign = delta > 0 ? '+' : '';
-  return `${sign}${delta.toFixed(1).replace('.', ',')} %`;
-}
-
-
 function getOrCreatePrintRoot(){
   let root = document.getElementById('product-print-root');
   if (!root) {
@@ -761,7 +735,7 @@ function renderOffers(){
       offersEditor.innerHTML = '<div class="notice">Aucune offre ajoutée.</div>';
       return;
     }
-    offers.forEach((offre, idx) => {
+    offres.forEach((offre, idx) => {
       if (!offre.id) offre.id = `offre_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`;
       if (!('sourcePrincipale' in offre)) offre.sourcePrincipale = idx === 0;
     });
@@ -863,33 +837,31 @@ async function showIngredientDetail(id){
           <div class="muted">${comparison.bestColis ? esc((fournisseurs.find(f => f.id === comparison.bestColis.fournisseurId)?.nom) || 'Sans fournisseur') : 'Aucune offre'}</div>
         </div>
       </div>` : '<div class="notice">Ajoute des prix HT sur les offres pour activer le comparatif.</div>';
-    const offersMarkup = (ingredient.offres || []).length ? ingredient.offres.map((offre, index) => {
-      const safeOffre = offre || {};
-      const supplier = fournisseurs.find(f => f.id === safeOffre.fournisseurId);
-      const displayEan = getOfferDisplayEan(safeOffre);
-      const offerId = safeOffre.id || `offre_cmp_${index}`;
-      const isBestUnit = Boolean(comparison.bestUnit && comparison.bestUnit.id === offerId);
-      const isBestColis = Boolean(comparison.bestColis && comparison.bestColis.id === offerId);
-      const unitDelta = comparison.bestUnit ? formatDeltaPercent(comparison.bestUnit.prixHTUnite, safeOffre.prixHTUnite) : '';
-      const colisDelta = comparison.bestColis ? formatDeltaPercent(comparison.bestColis.prixHTColis, safeOffre.prixHTColis) : '';
+    const offersMarkup = (ingredient.offres || []).length ? ingredient.offres.map(offre => {
+      const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
+      const displayEan = getOfferDisplayEan(offre);
+      const unitDelta = comparison.bestUnit && Number(offre.prixHTUnite) > 0 ? formatDeltaPercent(comparison.bestUnit.prixHTUnite, offre.prixHTUnite) : '';
+      const colisDelta = comparison.bestColis && Number(offre.prixHTColis) > 0 ? formatDeltaPercent(comparison.bestColis.prixHTColis, offre.prixHTColis) : '';
+      const isBestUnit = comparison.bestUnit && comparison.bestUnit.id === offre.id;
+      const isBestColis = comparison.bestColis && comparison.bestColis.id === offre.id;
       return `<div class="item compact-item fournisseur-detail-item">
         <div class="item-top">
           <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
-          <div class="toolbar chip-row">${safeOffre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">Meilleur HT unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">Meilleur HT colis</span>' : ''}</div>
+          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">Meilleur HT unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">Meilleur HT colis</span>' : ''}</div>
         </div>
-        <div class="muted">${esc(safeOffre.marque || '-')} · ${esc(safeOffre.reference || '-')}</div>
+        <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
         ${displayEan ? `<div class="ean-visual-wrap fournisseur-ean-wrap">${ean13Svg(displayEan)}<div class="barcode-number monospace">${esc(displayEan)}</div></div>` : '<div class="muted">EAN non renseigné.</div>'}
-        <div class="muted">${esc(safeOffre.quantiteColis || '-') } ${esc(safeOffre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(safeOffre.tva ?? 0).replace('.', ',')}%</div>
+        <div class="muted">${esc(offre.quantiteColis || '-') } ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(offre.tva ?? 0).replace('.', ',')}%</div>
         <div class="offer-price-grid">
           <div class="offer-price-item">
             <span class="detail-label">HT / unité</span>
-            <strong>${safeOffre.prixHTUnite ? euro(safeOffre.prixHTUnite) : '—'}</strong>
-            <span class="muted">${unitDelta || (safeOffre.prixHTUnite ? 'Sans comparaison' : 'Sans prix')}</span>
+            <strong>${offre.prixHTUnite ? euro(offre.prixHTUnite) : '—'}</strong>
+            <span class="muted">${unitDelta || (isBestUnit ? 'Référence' : 'Sans comparaison')}</span>
           </div>
           <div class="offer-price-item">
             <span class="detail-label">HT / colis</span>
-            <strong>${safeOffre.prixHTColis ? euro(safeOffre.prixHTColis) : '—'}</strong>
-            <span class="muted">${colisDelta || (safeOffre.prixHTColis ? 'Sans comparaison' : 'Sans prix')}</span>
+            <strong>${offre.prixHTColis ? euro(offre.prixHTColis) : '—'}</strong>
+            <span class="muted">${colisDelta || (isBestColis ? 'Référence' : 'Sans comparaison')}</span>
           </div>
         </div>
       </div>`;
@@ -933,6 +905,11 @@ async function showIngredientDetail(id){
           </section>
 
           <section class="card compact-card">
+            <h4>Comparatif des offres</h4>
+            ${comparisonSummaryMarkup}
+          </section>
+
+          <section class="card compact-card">
             <h4>Fournisseurs</h4>
             <div class="list">${offersMarkup}</div>
           </section>
@@ -949,11 +926,6 @@ async function showIngredientDetail(id){
                 ${nutritionRows.map(([label, value]) => `<div><strong>${esc(label)}</strong><div class="muted">${esc(value || '-')}</div></div>`).join('')}
               </div>
             </details>
-          </section>
-
-          <section class="card compact-card">
-            <h4>Comparatif des offres</h4>
-            ${comparisonSummaryMarkup}
           </section>
         </div>
 
@@ -1196,17 +1168,44 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
     closeSheet(ingredientSheet, ingredientBackdrop);
   };
 
-  const addOffreBtn = qs('#add-offre-btn');
-  if (addOffreBtn) addOffreBtn.onclick = (e) => {
-    e.preventDefault();
+  function appendOfferDraft(){
+    if (!Array.isArray(offres)) offres = [];
     offres.push({
       id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      fournisseurId: '', marque: '', ean: '', reference: '', tva: 5.5, quantiteColis: 1,
-      uniteColis: ingredientForm.uniteBase.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
+      fournisseurId: '',
+      marque: '',
+      ean: '',
+      reference: '',
+      tva: 5.5,
+      quantiteColis: 1,
+      uniteColis: ingredientForm?.uniteBase?.value || 'kg',
+      prixHTUnite: 0,
+      prixTTCUnite: 0,
+      prixHTColis: 0,
+      prixTTCColis: 0,
       sourcePrincipale: offres.length === 0,
     });
     renderOffers();
-  };
+  }
+
+  const addOfferBtn = qs('#add-offre-btn');
+  if (addOfferBtn) {
+    addOfferBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      appendOfferDraft();
+    });
+  }
+
+  if (ingredientSheet) {
+    ingredientSheet.addEventListener('click', (e) => {
+      const trigger = e.target.closest('#add-offre-btn, [data-action="add-offre"]');
+      if (!trigger) return;
+      e.preventDefault();
+      e.stopPropagation();
+      appendOfferDraft();
+    });
+  }
 
   offersEditor.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-remove-offre]');
