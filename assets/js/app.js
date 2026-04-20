@@ -204,18 +204,29 @@ function getOrCreateMercurialePrintRoot(){
   return root;
 }
 
+
 function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
+  let lastCategoryKey = null;
   const rows = ingredients.map(ingredient => {
     const category = getCategoryById(categories, ingredient.categorieId);
+    const categoryName = category?.nom || 'Sans catégorie';
+    const categoryColor = category?.couleur || '#d9d2c3';
+    const categoryKey = `${categoryName}__${categoryColor}`;
     const offres = (ingredient.offres || []).length ? (ingredient.offres || []) : [null];
     const eanMarkup = normalizeEan13(ingredient.ean || '')
       ? `<div class="print-ean-block">${ean13Svg(ingredient.ean || '')}<div class="print-ean-number">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div></div>`
       : `<div class="muted">${esc(ingredient.ean || '-')}</div>`;
-    return offres.map((offre, idx) => {
+
+    let block = '';
+    if (categoryKey !== lastCategoryKey) {
+      block += `<tr class="print-category-row"><td colspan="7"><span class="print-category-line" style="--cat-color:${esc(categoryColor)}">${esc(categoryName)}</span></td></tr>`;
+      lastCategoryKey = categoryKey;
+    }
+
+    block += offres.map((offre, idx) => {
       const supplier = offre ? fournisseurs.find(f => f.id === offre.fournisseurId) : null;
       return `<tr class="${idx === 0 ? 'product-first-row' : 'product-sub-row'}">
         <td>${idx === 0 ? esc(ingredient.nom || '-') : ''}</td>
-        <td>${idx === 0 ? esc(category?.nom || 'Sans catégorie') : ''}</td>
         <td>${idx === 0 ? eanMarkup : ''}</td>
         <td>${esc(supplier?.nom || '-')}</td>
         <td>${esc(offre?.marque || '-')}</td>
@@ -224,7 +235,10 @@ function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
         <td>${offre?.prixHTColis ? euro(offre.prixHTColis) : '-'}</td>
       </tr>`;
     }).join('');
+
+    return block;
   }).join('');
+
   return `
     <div class="print-page mercuriale-print-page">
       <header class="print-header">
@@ -238,10 +252,10 @@ function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
         <table class="print-table mercuriale-print-table">
           <thead>
             <tr>
-              <th>Produit</th><th>Catégorie</th><th>EAN</th><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>HT unité</th><th>HT colis</th>
+              <th>Produit</th><th>EAN</th><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>HT unité</th><th>HT colis</th>
             </tr>
           </thead>
-          <tbody>${rows || '<tr><td colspan="8">Aucun produit enregistré.</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="7">Aucun produit enregistré.</td></tr>'}</tbody>
         </table>
       </section>
     </div>`;

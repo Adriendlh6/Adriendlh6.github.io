@@ -185,9 +185,10 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .mercuriale-print-table{font-size:9.2pt}
   .mercuriale-print-table th,.mercuriale-print-table td{padding:2mm}
   .mercuriale-print-table .product-first-row td{border-top:2px solid #999}
+  .mercuriale-print-table .print-category-row td{padding:1.4mm 2mm;border:none;background:transparent}
+  .mercuriale-print-table .print-category-line{display:block;padding:1.4mm 2.4mm;border-radius:999px;background:color-mix(in srgb, var(--cat-color) 18%, white);border:1px solid color-mix(in srgb, var(--cat-color) 45%, white);color:#4a2f18;font-weight:700}
   .mercuriale-print-table .product-sub-row td:first-child,
-  .mercuriale-print-table .product-sub-row td:nth-child(2),
-  .mercuriale-print-table .product-sub-row td:nth-child(3){color:transparent}
+  .mercuriale-print-table .product-sub-row td:nth-child(2){color:transparent}
 }
 
 
@@ -219,7 +220,7 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 @media print{
   .mercuriale-print-table .print-ean-block{min-width:28mm}
   .mercuriale-print-table .print-ean-block .ean-svg{max-width:26mm}
-  .mercuriale-print-table td:nth-child(3){width:32mm}
+  .mercuriale-print-table td:nth-child(2){width:32mm}
 }
 @media (max-width: 920px){
   .mercuriale-toolbar-topline{grid-template-columns:minmax(0,1fr) auto}
