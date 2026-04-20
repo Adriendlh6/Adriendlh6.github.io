@@ -262,3 +262,23 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 .detail-note-card,.detail-comparison-card{display:grid;gap:12px}
 .detail-note-card h4,.detail-comparison-card h4{margin:0}
 .comparison-badge{font-size:.78rem;padding:4px 8px}
+
+
+.fournisseur-detail-item{gap:10px}
+.supplier-primary-block{display:grid;gap:10px}
+.supplier-expandable{border:1px solid var(--line);border-radius:16px;background:var(--surface-2)}
+.supplier-expandable summary{padding:14px 16px;font-weight:700}
+.supplier-expandable .details-content{padding:0 12px 12px}
+.offer-price-lines{display:grid;gap:8px;margin-top:2px}
+.offer-price-line{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 0;border-top:1px solid var(--line-soft)}
+.offer-price-line:first-child{border-top:none}
+.offer-price-line__value{display:inline-flex;align-items:center;gap:8px;font-weight:700}
+.price-trend{display:inline-flex;align-items:center;justify-content:center;width:18px;font-size:1rem;line-height:1}
+.price-trend--hausse{color:#c62828}
+.price-trend--baisse{color:#2e7d32}
+.price-trend--stable{color:#111}
+.source-badge{padding-inline:10px}
+.is-primary-offer{border-color:color-mix(in srgb, var(--brand) 35%, var(--line));box-shadow:0 0 0 1px color-mix(in srgb, var(--brand) 10%, white)}
+@media (max-width: 920px){
+  .offer-price-line{align-items:flex-start;flex-direction:column;gap:6px}
+}
