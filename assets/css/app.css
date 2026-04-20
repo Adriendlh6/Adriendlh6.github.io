@@ -362,3 +362,25 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .history-list-group-count{padding-left:22px}
   .history-list-metrics{grid-template-columns:1fr}
 }
+
+
+.print-chooser{position:fixed;inset:0;z-index:1000}
+.print-chooser-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.38)}
+.print-chooser-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,720px);background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:18px;display:grid;gap:16px;max-height:min(88vh,760px);overflow:auto}
+.print-chooser-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.print-chooser-kicker{font-size:.82rem;color:var(--muted);margin-bottom:4px}
+.print-chooser-head h3{margin:0}
+.print-options-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.print-options-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--bg);display:grid;gap:12px}
+.print-options-card__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.print-inline-check,.print-check-row{display:flex;align-items:center;gap:10px}
+.print-options-checks{display:grid;gap:10px}
+.print-check-row{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.field-label{font-size:.88rem;color:var(--muted);display:block;margin-bottom:6px}
+.print-chooser-actions{display:flex;justify-content:flex-end;gap:10px}
+.small{font-size:.84rem}
+.print-print-meta{display:grid;gap:10px;justify-items:end}
+.print-filter-badge{padding:8px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:.88rem;color:var(--text)}
+.print-section-block{display:grid;gap:12px;margin-top:14px}
+.print-section-title{font-size:1rem;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.04em}
+@media (max-width:720px){.print-options-grid{grid-template-columns:1fr}.print-chooser-dialog{padding:16px}}
