@@ -333,3 +333,12 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 @media (max-width: 560px){
   .fournisseur-detail-item > .offer-price-lines{grid-template-columns:1fr}
 }
+
+
+/* v2.2.5 - historique safe */
+.price-history-chart-wrap{display:grid;gap:12px}
+.price-history-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.price-history-legend-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}
+.price-history-legend-chip{width:12px;height:12px;border-radius:999px;flex:0 0 12px;margin-top:4px}
+.price-history-legend-name{font-weight:700;line-height:1.25}
+.price-history-legend-meta{color:var(--muted);font-size:.9rem;margin-top:2px}
