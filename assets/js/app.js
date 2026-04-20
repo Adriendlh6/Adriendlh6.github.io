@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.0.9';
+const APP_VERSION = 'v2.0.10';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -83,8 +83,9 @@ function ean13Svg(value=''){
   bits += '101';
   const moduleWidth = 2;
   const quiet = 10 * moduleWidth;
-  const normalHeight = 52;
-  const guardHeight = 60;
+  const normalHeight = 84;
+  const guardHeight = 96;
+  const textY = 118;
   const width = quiet * 2 + bits.length * moduleWidth;
   let x = quiet;
   let rects = '';
@@ -95,9 +96,12 @@ function ean13Svg(value=''){
     }
     x += moduleWidth;
   }
-  return `<svg class="ean-svg" viewBox="0 0 ${width} 60" role="img" aria-label="Code-barres EAN ${ean}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="${width}" height="60" fill="#fff"/>
+  return `<svg class="ean-svg" viewBox="0 0 ${width} 124" role="img" aria-label="Code-barres EAN ${ean}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="124" fill="#fff"/>
     ${rects}
+    <text x="0" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean[0]}</text>
+    <text x="${quiet + 3*moduleWidth}" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean.slice(1,7)}</text>
+    <text x="${quiet + (3+42+5)*moduleWidth}" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean.slice(7)}</text>
   </svg>`;
 }
 
@@ -246,43 +250,11 @@ function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
 }
 
 function printMercuriale(ingredients, categories, fournisseurs){
-  const markup = buildMercurialePrintMarkup(ingredients, categories, fournisseurs);
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1280,height=900');
-  if (!printWindow) {
-    alert("Le navigateur a bloqué la fenêtre d'impression. Autorisez les pop-ups pour lancer l'impression.");
-    return;
-  }
-  const printStyles = `
-    @page { size: A4 landscape; margin: 12mm; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: #fff; color: #111; font-family: Inter, Arial, sans-serif; }
-    .print-page { padding: 0; color: #111; background: #fff; font-size: 10.5pt; }
-    .print-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12mm; margin-bottom: 6mm; }
-    .print-header h1 { margin: 0 0 2mm; font-size: 20pt; }
-    .print-app-name { font-weight: 700; font-size: 11pt; }
-    .print-subtitle { color: #444; font-size: 10pt; }
-    .print-card { border: 1px solid #ccc; border-radius: 4mm; padding: 4mm; break-inside: avoid; overflow: visible; }
-    .print-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8pt; }
-    .print-table th, .print-table td { border: 1px solid #ccc; padding: 1.8mm; text-align: left; vertical-align: top; word-break: break-word; overflow-wrap: anywhere; }
-    .print-table thead th { background: #f0f0f0; }
-    .mercuriale-print-table .product-first-row td { border-top: 2px solid #999; }
-    .mercuriale-print-table .product-sub-row td:first-child,
-    .mercuriale-print-table .product-sub-row td:nth-child(2),
-    .mercuriale-print-table .product-sub-row td:nth-child(3) { color: transparent; }
-  `;
-  printWindow.document.open();
-  printWindow.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Impression mercuriale</title><meta name="viewport" content="width=device-width, initial-scale=1"><style>${printStyles}</style></head><body>${markup}</body></html>`);
-  printWindow.document.close();
-  printWindow.focus();
-  const triggerPrint = () => {
-    printWindow.print();
-    printWindow.addEventListener('afterprint', () => printWindow.close(), { once: true });
-  };
-  if (printWindow.document.readyState === 'complete') {
-    setTimeout(triggerPrint, 100);
-  } else {
-    printWindow.addEventListener('load', () => setTimeout(triggerPrint, 100), { once: true });
-  }
+  const root = getOrCreateMercurialePrintRoot();
+  root.innerHTML = buildMercurialePrintMarkup(ingredients, categories, fournisseurs);
+  root.classList.remove('hidden');
+  document.body.classList.add('printing-mercuriale');
+  setTimeout(() => window.print(), 50);
 }
 
 function ingredientCloneForDuplicate(ingredient){
@@ -459,6 +431,25 @@ async function renderMercuriale(){
   const detailContent = qs('#ingredient-detail-content');
   const detailTitle = qs('#ingredient-detail-title');
 
+const mercurialeHeader = qs('.mercuriale-header');
+let selectionBar = qs('#mercuriale-selection-bar');
+if (!selectionBar && mercurialeHeader) {
+  selectionBar = document.createElement('div');
+  selectionBar.id = 'mercuriale-selection-bar';
+  selectionBar.className = 'mercuriale-selection-bar hidden';
+  selectionBar.innerHTML = `
+    <div class="mercuriale-selection-info"><strong id="selection-count">0</strong> sélectionné(s)</div>
+    <div class="mercuriale-selection-actions">
+      <button id="print-selection-btn" class="btn secondary" type="button">Imprimer la sélection</button>
+      <button id="delete-selection-btn" class="btn danger" type="button">Supprimer la sélection</button>
+      <button id="clear-selection-btn" class="btn" type="button">Annuler</button>
+    </div>`;
+  mercurialeHeader.insertAdjacentElement('afterend', selectionBar);
+}
+let selectedIngredientIds = new Set();
+let longPressTimer = null;
+let longPressTriggered = false;
+
   function renderAllergenes(selected=[]){
     const grid = qs('#allergenes-grid');
     grid.innerHTML = MERCURIALE_ALLERGENES.map(name => {
@@ -467,55 +458,108 @@ async function renderMercuriale(){
     }).join('');
   }
 
-  function renderIngredients(){
-    if (!ingredients.length){
-      emptyState.classList.remove('hidden');
-      ingredientsList.innerHTML = '';
-      return;
-    }
-    emptyState.classList.add('hidden');
-    ingredientsList.innerHTML = ingredients.map(ingredient => {
-      const cat = getCategoryById(categories, ingredient.categorieId);
-      const firstOffre = (ingredient.offres || [])[0];
-      const supplier = firstOffre ? fournisseurs.find(f => f.id === firstOffre.fournisseurId) : null;
-      const sub = firstOffre ? `${esc(firstOffre.marque || supplier?.nom || 'Sans fournisseur')} · ${firstOffre.prixHTUnite ? euro(firstOffre.prixHTUnite) + ' HT / ' + esc(firstOffre.uniteColis || ingredient.uniteBase || 'unité') : 'Sans prix'}` : 'Aucune offre fournisseur';
-      return `
-        <article class="item product-card" data-product-id="${ingredient.id}" tabindex="0">
-          <div class="item-top">
-            <div>
-              <strong>${esc(ingredient.nom)}</strong>
-              <div class="toolbar chip-row">${categoryChip(cat)}</div>
-              <div class="muted">EAN : ${esc(ingredient.ean || '-')}</div>
-              <div class="muted">${sub}</div>
-            </div>
-            <button class="btn danger" type="button" data-delete-ingredient="${ingredient.id}">Supprimer</button>
-          </div>
-        </article>`;
-    }).join('');
 
-    qsa('[data-delete-ingredient]').forEach(btn => {
-      btn.onclick = async (e) => {
-        e.stopPropagation();
-        await AppDB.delete('ingredients', btn.dataset.deleteIngredient);
-        const idx = ingredients.findIndex(item => item.id === btn.dataset.deleteIngredient);
-        if (idx >= 0) ingredients.splice(idx, 1);
-        renderIngredients();
-        renderDashboard();
-      };
-    });
+function updateSelectionBar(){
+  if (!selectionBar) return;
+  const hasSelection = selectedIngredientIds.size > 0;
+  selectionBar.classList.toggle('hidden', !hasSelection);
+  const countNode = qs('#selection-count', selectionBar);
+  if (countNode) countNode.textContent = String(selectedIngredientIds.size);
+}
 
-    qsa('.product-card').forEach(card => {
-      card.onclick = () => showIngredientDetail(card.dataset.productId);
-      card.onkeydown = (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          showIngredientDetail(card.dataset.productId);
-        }
-      };
-    });
+function clearSelection(){
+  selectedIngredientIds.clear();
+  renderIngredients();
+  updateSelectionBar();
+}
+
+function toggleIngredientSelection(id){
+  if (selectedIngredientIds.has(id)) selectedIngredientIds.delete(id);
+  else selectedIngredientIds.add(id);
+  renderIngredients();
+  updateSelectionBar();
+}
+
+function startLongPress(card){
+  clearTimeout(longPressTimer);
+  longPressTriggered = false;
+  longPressTimer = setTimeout(() => {
+    longPressTriggered = true;
+    const id = card.dataset.productId;
+    if (id && !selectedIngredientIds.has(id)) selectedIngredientIds.add(id);
+    renderIngredients();
+    updateSelectionBar();
+  }, 420);
+}
+
+function cancelLongPress(){
+  clearTimeout(longPressTimer);
+  longPressTimer = null;
+}
+
+function renderIngredients(){
+  if (!ingredients.length){
+    emptyState.classList.remove('hidden');
+    ingredientsList.innerHTML = '';
+    updateSelectionBar();
+    return;
   }
+  emptyState.classList.add('hidden');
+  ingredientsList.innerHTML = ingredients.map(ingredient => {
+    const cat = getCategoryById(categories, ingredient.categorieId);
+    const firstOffre = (ingredient.offres || [])[0];
+    const supplier = firstOffre ? fournisseurs.find(f => f.id === firstOffre.fournisseurId) : null;
+    const sub = firstOffre ? `${esc(firstOffre.marque || supplier?.nom || 'Sans fournisseur')} · ${firstOffre.prixHTUnite ? euro(firstOffre.prixHTUnite) + ' HT / ' + esc(firstOffre.uniteColis || ingredient.uniteBase || 'unité') : 'Sans prix'}` : 'Aucune offre fournisseur';
+    const isSelected = selectedIngredientIds.has(ingredient.id);
+    return `
+      <article class="item product-card ${isSelected ? 'selected' : ''}" data-product-id="${ingredient.id}" tabindex="0" aria-selected="${isSelected ? 'true' : 'false'}">
+        <div class="item-top">
+          <div>
+            <strong>${esc(ingredient.nom)}</strong>
+            <div class="toolbar chip-row">${categoryChip(cat)}</div>
+            <div class="muted">EAN : ${esc(ingredient.ean || '-')}</div>
+            <div class="muted">${sub}</div>
+          </div>
+        </div>
+      </article>`;
+  }).join('');
 
-  function renderCategorySelect(selected=''){
+  qsa('.product-card').forEach(card => {
+    const id = card.dataset.productId;
+    card.onclick = () => {
+      if (longPressTriggered) {
+        longPressTriggered = false;
+        return;
+      }
+      if (selectedIngredientIds.size > 0) {
+        toggleIngredientSelection(id);
+        return;
+      }
+      showIngredientDetail(id);
+    };
+    card.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (selectedIngredientIds.size > 0) toggleIngredientSelection(id);
+        else showIngredientDetail(id);
+      }
+    };
+    card.addEventListener('touchstart', () => startLongPress(card), { passive: true });
+    card.addEventListener('touchend', cancelLongPress, { passive: true });
+    card.addEventListener('touchmove', cancelLongPress, { passive: true });
+    card.addEventListener('touchcancel', cancelLongPress, { passive: true });
+    card.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      startLongPress(card);
+    });
+    card.addEventListener('mouseup', cancelLongPress);
+    card.addEventListener('mouseleave', cancelLongPress);
+  });
+
+  updateSelectionBar();
+}
+
+function renderCategorySelect(selected=''){
     ingredientCategorySelect.innerHTML = categorieOptions(categories, selected);
   }
 
@@ -627,6 +671,7 @@ async function showIngredientDetail(id){
               <div>
                 <div class="detail-label">EAN</div>
                 <div class="ean-detail-row ean-visual-block">
+                  <div class="ean-detail-code detail-value monospace">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div>
                   <div class="ean-visual-wrap">${ean13Svg(ingredient.ean || '')}</div>
                 </div>
               </div>
@@ -804,6 +849,30 @@ async function showIngredientDetail(id){
   const printBtn = qs('#print-mercuriale-btn');
   if (printBtn) printBtn.onclick = () => printMercuriale(ingredients, categories, fournisseurs);
 
+const printSelectionBtn = qs('#print-selection-btn');
+const deleteSelectionBtn = qs('#delete-selection-btn');
+const clearSelectionBtn = qs('#clear-selection-btn');
+if (printSelectionBtn) printSelectionBtn.onclick = () => {
+  const selected = ingredients.filter(item => selectedIngredientIds.has(item.id));
+  if (!selected.length) return;
+  printMercuriale(selected, categories, fournisseurs);
+};
+if (deleteSelectionBtn) deleteSelectionBtn.onclick = async () => {
+  const selected = ingredients.filter(item => selectedIngredientIds.has(item.id));
+  if (!selected.length) return;
+  if (!confirm(`Supprimer ${selected.length} produit(s) ?`)) return;
+  if (!confirm('Confirmer la suppression définitive de la sélection ?')) return;
+  for (const ingredient of selected) {
+    await AppDB.delete('ingredients', ingredient.id);
+  }
+  for (let i = ingredients.length - 1; i >= 0; i -= 1) {
+    if (selectedIngredientIds.has(ingredients[i].id)) ingredients.splice(i, 1);
+  }
+  clearSelection();
+  renderDashboard();
+};
+if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
+
   qs('#open-categories-btn').onclick = () => {
     resetCategorieForm();
     renderCategoriesManager();
@@ -875,6 +944,7 @@ async function showIngredientDetail(id){
     resetIngredientForm();
     closeSheet(ingredientSheet, ingredientBackdrop);
     renderIngredients();
+    updateSelectionBar();
     renderDashboard();
   };
 
