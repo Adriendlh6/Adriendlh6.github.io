@@ -547,6 +547,11 @@ async function renderMercuriale(){
   const filtersPanel = qs('#mercuriale-filters-panel');
   const filters = { search: '', categorieId: '', fournisseurId: '', sort: 'az' };
 
+
+  function ingredientField(name){
+    return ingredientForm?.elements?.namedItem(name) || qs(`[name="${name}"]`, ingredientForm);
+  }
+
 const mercurialeHeader = qs('.mercuriale-header');
 let selectionBar = qs('#mercuriale-selection-bar');
 if (!selectionBar && mercurialeHeader) {
@@ -704,7 +709,7 @@ function renderCategorySelect(selected=''){
     return {
       id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       fournisseurId: '', marque: '', ean: '', reference: '', tva: 5.5, quantiteColis: 1,
-      uniteColis: ingredientForm?.uniteBase?.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
+      uniteColis: ingredientField('uniteBase')?.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
       sourcePrincipale: offres.length === 0,
     };
   }
@@ -738,11 +743,8 @@ function renderCategorySelect(selected=''){
         event.preventDefault();
         event.stopPropagation();
         const ingredientId = editBtn.getAttribute('data-ingredient-id') || detailSheet?.dataset?.ingredientId || '';
-        const current = ingredients.find(item => item.id === ingredientId) || ingredients.find(item => item.id === currentIngredientId);
-        if (current) {
-          closeSheet(detailSheet, detailBackdrop);
-          openIngredientSheetWithData(current);
-        }
+        const opened = openIngredientEditorById(ingredientId);
+        if (opened) closeSheet(detailSheet, detailBackdrop);
       }
     }, true);
   }
@@ -821,9 +823,11 @@ function renderOffers(){
     ingredientDraft = null;
     ingredientSheetTitle.textContent = 'Ajouter un ingrédient';
     ingredientForm.reset();
+    const unitField = ingredientField('uniteBase');
+    if (unitField && !unitField.value) unitField.value = 'kg';
     offres = [];
     ensureMercurialeActionBindings();
-  renderCategorySelect('');
+    renderCategorySelect('');
     renderOffers();
     renderAllergenes([]);
   }
@@ -832,17 +836,21 @@ function renderOffers(){
     currentIngredientId = ingredient?.id || null;
     ingredientSheetTitle.textContent = ingredient?.id ? 'Modifier un ingrédient' : 'Ajouter un ingrédient';
     ingredientForm.reset();
-    ingredientForm.nom.value = ingredient?.nom || '';
-    ingredientForm.uniteBase.value = ingredient?.uniteBase || 'kg';
-    if (ingredientForm.note) ingredientForm.note.value = ingredient?.note || '';
+    const setField = (name, value='') => {
+      const field = ingredientField(name);
+      if (field) field.value = value;
+    };
+    setField('nom', ingredient?.nom || '');
+    setField('uniteBase', ingredient?.uniteBase || 'kg');
+    setField('note', ingredient?.note || '');
     renderCategorySelect(ingredient?.categorieId || '');
-    ingredientForm.energie.value = ingredient?.nutrition?.energie || '';
-    ingredientForm.matieresGrasses.value = ingredient?.nutrition?.matieresGrasses || '';
-    ingredientForm.acidesGrasSatures.value = ingredient?.nutrition?.acidesGrasSatures || '';
-    ingredientForm.glucides.value = ingredient?.nutrition?.glucides || '';
-    ingredientForm.sucres.value = ingredient?.nutrition?.sucres || '';
-    ingredientForm.proteines.value = ingredient?.nutrition?.proteines || '';
-    ingredientForm.sel.value = ingredient?.nutrition?.sel || '';
+    setField('energie', ingredient?.nutrition?.energie || '');
+    setField('matieresGrasses', ingredient?.nutrition?.matieresGrasses || '');
+    setField('acidesGrasSatures', ingredient?.nutrition?.acidesGrasSatures || '');
+    setField('glucides', ingredient?.nutrition?.glucides || '');
+    setField('sucres', ingredient?.nutrition?.sucres || '');
+    setField('proteines', ingredient?.nutrition?.proteines || '');
+    setField('sel', ingredient?.nutrition?.sel || '');
     renderAllergenes(ingredient?.allergenes || []);
     offres = JSON.parse(JSON.stringify(ingredient?.offres || []));
     renderOffers();
@@ -853,7 +861,17 @@ function renderOffers(){
     openSheet(ingredientSheet, ingredientBackdrop);
   }
 
-  
+  function openIngredientEditorById(ingredientId){
+    const current = ingredients.find(item => item.id === ingredientId) || ingredients.find(item => item.id === currentIngredientId);
+    if (!current) return false;
+    try {
+      openIngredientSheetWithData(current);
+      return true;
+    } catch (error) {
+      console.error('openIngredientEditorById failed', error);
+      return false;
+    }
+  }
 
 async function showIngredientDetail(id){
     const ingredient = ingredients.find(item => item.id === id);
@@ -1063,8 +1081,8 @@ async function showIngredientDetail(id){
           return;
         }
         if (action === 'edit') {
-          closeSheet(detailSheet, detailBackdrop);
-          openIngredientSheetWithData(ingredient);
+          const opened = openIngredientEditorById(ingredient.id);
+          if (opened) closeSheet(detailSheet, detailBackdrop);
           return;
         }
         if (action === 'print') {
@@ -1214,6 +1232,25 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
     if (ingredientDraft) openIngredientSheetWithData({ ...ingredientDraft, offres: ingredientDraft.offres || [] });
     else openIngredientSheetWithData(null);
   };
+
+
+  ingredientSheet.addEventListener('click', (e) => {
+    const btn = e.target.closest('#add-offre-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    addOfferAndRender();
+  });
+
+  detailContent.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-detail-action="edit"]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const ingredientId = btn.getAttribute('data-ingredient-id') || detailSheet?.dataset?.ingredientId || '';
+    const opened = openIngredientEditorById(ingredientId);
+    if (opened) closeSheet(detailSheet, detailBackdrop);
+  });
 
   qs('#cancel-ingredient-btn').onclick = () => {
     resetIngredientForm();
