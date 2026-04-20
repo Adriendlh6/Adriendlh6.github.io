@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.0.10';
+const APP_VERSION = 'v2.0.12';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -208,19 +208,20 @@ function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
   const rows = ingredients.map(ingredient => {
     const category = getCategoryById(categories, ingredient.categorieId);
     const offres = (ingredient.offres || []).length ? (ingredient.offres || []) : [null];
+    const eanMarkup = normalizeEan13(ingredient.ean || '')
+      ? `<div class="print-ean-block">${ean13Svg(ingredient.ean || '')}<div class="print-ean-number">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div></div>`
+      : `<div class="muted">${esc(ingredient.ean || '-')}</div>`;
     return offres.map((offre, idx) => {
       const supplier = offre ? fournisseurs.find(f => f.id === offre.fournisseurId) : null;
       return `<tr class="${idx === 0 ? 'product-first-row' : 'product-sub-row'}">
         <td>${idx === 0 ? esc(ingredient.nom || '-') : ''}</td>
         <td>${idx === 0 ? esc(category?.nom || 'Sans catégorie') : ''}</td>
-        <td>${idx === 0 ? esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-') : ''}</td>
+        <td>${idx === 0 ? eanMarkup : ''}</td>
         <td>${esc(supplier?.nom || '-')}</td>
         <td>${esc(offre?.marque || '-')}</td>
         <td>${esc(offre?.reference || '-')}</td>
         <td>${offre?.prixHTUnite ? euro(offre.prixHTUnite) : '-'}</td>
-        <td>${offre?.prixTTCUnite ? euro(offre.prixTTCUnite) : '-'}</td>
         <td>${offre?.prixHTColis ? euro(offre.prixHTColis) : '-'}</td>
-        <td>${offre?.prixTTCColis ? euro(offre.prixTTCColis) : '-'}</td>
       </tr>`;
     }).join('');
   }).join('');
@@ -237,10 +238,10 @@ function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
         <table class="print-table mercuriale-print-table">
           <thead>
             <tr>
-              <th>Produit</th><th>Catégorie</th><th>EAN</th><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>HT unité</th><th>TTC unité</th><th>HT colis</th><th>TTC colis</th>
+              <th>Produit</th><th>Catégorie</th><th>EAN</th><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>HT unité</th><th>HT colis</th>
             </tr>
           </thead>
-          <tbody>${rows || '<tr><td colspan="10">Aucun produit enregistré.</td></tr>'}</tbody>
+          <tbody>${rows || '<tr><td colspan="8">Aucun produit enregistré.</td></tr>'}</tbody>
         </table>
       </section>
     </div>`;
@@ -431,6 +432,8 @@ async function renderMercuriale(){
   const filterCategorySelect = qs('#mercuriale-filter-category');
   const filterSupplierSelect = qs('#mercuriale-filter-fournisseur');
   const sortSelect = qs('#mercuriale-sort');
+  const filterToggleBtn = qs('#toggle-mercuriale-filters-btn');
+  const filtersPanel = qs('#mercuriale-filters-panel');
   const filters = { search: '', categorieId: '', fournisseurId: '', sort: 'az' };
 
 const mercurialeHeader = qs('.mercuriale-header');
@@ -583,6 +586,13 @@ function renderCategorySelect(selected=''){
     }
     if (sortSelect) sortSelect.value = filters.sort;
     if (searchInput) searchInput.value = filters.search;
+  }
+
+  function updateFiltersToggleState(){
+    if (!filterToggleBtn || !filtersPanel) return;
+    const isOpen = !filtersPanel.classList.contains('hidden');
+    filterToggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    filterToggleBtn.classList.toggle('active', isOpen);
   }
 
   function ingredientUnitSortPrice(ingredient){
@@ -918,6 +928,11 @@ if (deleteSelectionBtn) deleteSelectionBtn.onclick = async () => {
 if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
 
   renderMercurialeFilterControls();
+  updateFiltersToggleState();
+  if (filterToggleBtn && filtersPanel) filterToggleBtn.onclick = () => {
+    filtersPanel.classList.toggle('hidden');
+    updateFiltersToggleState();
+  };
   if (searchInput) searchInput.addEventListener('input', (e) => { filters.search = e.target.value || ''; renderIngredients(); });
   if (filterCategorySelect) filterCategorySelect.addEventListener('change', (e) => { filters.categorieId = e.target.value || ''; renderIngredients(); });
   if (filterSupplierSelect) filterSupplierSelect.addEventListener('change', (e) => { filters.fournisseurId = e.target.value || ''; renderIngredients(); });

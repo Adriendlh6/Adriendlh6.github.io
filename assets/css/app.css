@@ -202,9 +202,25 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 
 
 .mercuriale-toolbar-card{margin:0 0 14px;}
-.mercuriale-toolbar-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;align-items:end;}
+.mercuriale-toolbar-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;}
 .mercuriale-search-field{grid-column:auto;}
 .barcode-number{font-size:14px;line-height:1.2;margin-top:6px;letter-spacing:.16em;text-align:center;}
 .ean-visual-wrap{display:grid;justify-items:center;gap:4px;}
 .ean-svg{max-width:360px;}
 @media (max-width: 920px){.mercuriale-toolbar-grid{grid-template-columns:1fr;}.mercuriale-toolbar-card{padding:14px;}}
+
+
+.mercuriale-toolbar-topline{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.mercuriale-filters-panel{margin-top:12px}
+.icon-square-btn.active{background:var(--surface-2);border-color:var(--brand);color:var(--brand)}
+.print-ean-block{display:grid;justify-items:center;gap:2mm;min-width:36mm}
+.print-ean-block .ean-svg{max-width:34mm;min-width:0;height:auto}
+.print-ean-number{font-size:8pt;letter-spacing:.14em;text-align:center}
+@media print{
+  .mercuriale-print-table .print-ean-block{min-width:28mm}
+  .mercuriale-print-table .print-ean-block .ean-svg{max-width:26mm}
+  .mercuriale-print-table td:nth-child(3){width:32mm}
+}
+@media (max-width: 920px){
+  .mercuriale-toolbar-topline{grid-template-columns:minmax(0,1fr) auto}
+}
