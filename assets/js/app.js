@@ -1,4 +1,23 @@
-/*
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    console.log('App init OK');
+
+    initApp();
+
+  } catch (e) {
+    console.error('Erreur init globale:', e);
+  }
+});
+function initApp() {
+  bindGlobalEvents();
+  renderApp();
+}
+function bindGlobalEvents() {
+  document.addEventListener('click', (e) => {
+    // debug global
+    console.log('click détecté', e.target);
+  });
+}/*
   Correctif ciblé onglet Infos
   - supprime le "/kg" dans les valeurs nutritionnelles (g simples)
   - rétablit la pastille de couleur de catégorie/fournisseur dans l'onglet Infos
