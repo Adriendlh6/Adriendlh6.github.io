@@ -823,18 +823,47 @@ async function showIngredientDetail(id){
       ['Sel', nutrition.sel],
     ];
     const historyEntries = (ingredient.priceHistory || []).slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const comparison = buildOfferComparison(ingredient.offres || []);
+    const comparisonSummaryMarkup = (comparison.bestUnit || comparison.bestColis) ? `
+      <div class="offer-comparison-grid">
+        <div class="offer-comparison-card">
+          <div class="detail-label">Meilleur HT / unité</div>
+          <div class="detail-value">${comparison.bestUnit ? euro(comparison.bestUnit.prixHTUnite) : '—'}</div>
+          <div class="muted">${comparison.bestUnit ? esc((fournisseurs.find(f => f.id === comparison.bestUnit.fournisseurId)?.nom) || 'Sans fournisseur') : 'Aucune offre'}</div>
+        </div>
+        <div class="offer-comparison-card">
+          <div class="detail-label">Meilleur HT / colis</div>
+          <div class="detail-value">${comparison.bestColis ? euro(comparison.bestColis.prixHTColis) : '—'}</div>
+          <div class="muted">${comparison.bestColis ? esc((fournisseurs.find(f => f.id === comparison.bestColis.fournisseurId)?.nom) || 'Sans fournisseur') : 'Aucune offre'}</div>
+        </div>
+      </div>` : '<div class="notice">Ajoute des prix HT sur les offres pour activer le comparatif.</div>';
     const offersMarkup = (ingredient.offres || []).length ? ingredient.offres.map(offre => {
       const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
       const displayEan = getOfferDisplayEan(offre);
+      const unitDelta = comparison.bestUnit && Number(offre.prixHTUnite) > 0 ? formatDeltaPercent(comparison.bestUnit.prixHTUnite, offre.prixHTUnite) : '';
+      const colisDelta = comparison.bestColis && Number(offre.prixHTColis) > 0 ? formatDeltaPercent(comparison.bestColis.prixHTColis, offre.prixHTColis) : '';
+      const isBestUnit = comparison.bestUnit && comparison.bestUnit.id === offre.id;
+      const isBestColis = comparison.bestColis && comparison.bestColis.id === offre.id;
       return `<div class="item compact-item fournisseur-detail-item">
         <div class="item-top">
           <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
-          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}</div>
+          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">Meilleur HT unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">Meilleur HT colis</span>' : ''}</div>
         </div>
         <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
         ${displayEan ? `<div class="ean-visual-wrap fournisseur-ean-wrap">${ean13Svg(displayEan)}<div class="barcode-number monospace">${esc(displayEan)}</div></div>` : '<div class="muted">EAN non renseigné.</div>'}
         <div class="muted">${esc(offre.quantiteColis || '-') } ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(offre.tva ?? 0).replace('.', ',')}%</div>
-        <div class="muted">${offre.prixHTUnite ? euro(offre.prixHTUnite) + ' HT / unité' : 'Sans prix unitaire'}${offre.prixHTColis ? ' · ' + euro(offre.prixHTColis) + ' HT / colis' : ''}</div>
+        <div class="offer-price-grid">
+          <div class="offer-price-item">
+            <span class="detail-label">HT / unité</span>
+            <strong>${offre.prixHTUnite ? euro(offre.prixHTUnite) : '—'}</strong>
+            <span class="muted">${unitDelta || (isBestUnit ? 'Référence' : 'Sans comparaison')}</span>
+          </div>
+          <div class="offer-price-item">
+            <span class="detail-label">HT / colis</span>
+            <strong>${offre.prixHTColis ? euro(offre.prixHTColis) : '—'}</strong>
+            <span class="muted">${colisDelta || (isBestColis ? 'Référence' : 'Sans comparaison')}</span>
+          </div>
+        </div>
       </div>`;
     }).join('') : '<div class="notice">Aucune offre enregistrée.</div>';
     detailContent.innerHTML = `
@@ -873,6 +902,11 @@ async function showIngredientDetail(id){
                 </div>
               </div>
             </div>
+          </section>
+
+          <section class="card compact-card">
+            <h4>Comparatif des offres</h4>
+            ${comparisonSummaryMarkup}
           </section>
 
           <section class="card compact-card">

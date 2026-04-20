@@ -246,3 +246,14 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .detail-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
   .offre-card-header{align-items:flex-start;flex-direction:column}
 }
+
+
+.comparison-badge{background:color-mix(in srgb, #2e7d32 14%, white);border-color:color-mix(in srgb, #2e7d32 32%, white);color:#2e7d32}
+.offer-comparison-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.offer-comparison-card{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--surface-2);display:grid;gap:4px}
+.offer-price-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.offer-price-item{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface-2);display:grid;gap:4px}
+.offer-price-item strong{font-size:1rem}
+@media (max-width: 920px){
+  .offer-comparison-grid,.offer-price-grid{grid-template-columns:1fr}
+}
