@@ -855,6 +855,24 @@ function renderOffers(){
     openSheet(ingredientSheet, ingredientBackdrop);
   }
 
+
+  function formatNutritionValue(key, value){
+    if (value === undefined || value === null || value === '') return '-';
+    const normalized = String(value).trim();
+    const unitMap = {
+      energie: 'kcal',
+      matieresGrasses: 'g/kg',
+      acidesGrasSatures: 'g/kg',
+      glucides: 'g/kg',
+      sucres: 'g/kg',
+      proteines: 'g/kg',
+      sel: 'g/kg',
+    };
+    const unit = unitMap[key] || '';
+    if (!unit) return normalized;
+    return /(kcal|g\/kg|g|kg|l)$/i.test(normalized) ? normalized : `${normalized} ${unit}`;
+  }
+
   
 
 async function showIngredientDetail(id){
@@ -865,13 +883,13 @@ async function showIngredientDetail(id){
     const nutrition = ingredient.nutrition || {};
     const allergenesLabels = (ingredient.allergenes || []).map(humanizeSlug);
     const nutritionRows = [
-      ['Énergie', nutrition.energie],
-      ['Matières grasses', nutrition.matieresGrasses],
-      ['Acides gras saturés', nutrition.acidesGrasSatures],
-      ['Glucides', nutrition.glucides],
-      ['Sucres', nutrition.sucres],
-      ['Protéines', nutrition.proteines],
-      ['Sel', nutrition.sel],
+      ['Énergie', formatNutritionValue('energie', nutrition.energie)],
+      ['Matières grasses', formatNutritionValue('matieresGrasses', nutrition.matieresGrasses)],
+      ['Acides gras saturés', formatNutritionValue('acidesGrasSatures', nutrition.acidesGrasSatures)],
+      ['Glucides', formatNutritionValue('glucides', nutrition.glucides)],
+      ['Sucres', formatNutritionValue('sucres', nutrition.sucres)],
+      ['Protéines', formatNutritionValue('proteines', nutrition.proteines)],
+      ['Sel', formatNutritionValue('sel', nutrition.sel)],
     ];
     const historyEntries = (ingredient.priceHistory || []).slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
     const primaryOffer = getPrimaryOffer(ingredient);
