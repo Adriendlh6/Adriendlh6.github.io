@@ -207,19 +207,28 @@ function getOrCreateMercurialePrintRoot(){
 
 function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
   let lastCategoryKey = null;
-  const rows = ingredients.map(ingredient => {
+  const sortedIngredients = [...ingredients].sort((a, b) => {
+    const catA = getCategoryById(categories, a.categorieId)?.nom || 'Sans catégorie';
+    const catB = getCategoryById(categories, b.categorieId)?.nom || 'Sans catégorie';
+    const byCategory = catA.localeCompare(catB, 'fr', { sensitivity: 'base' });
+    if (byCategory !== 0) return byCategory;
+    return (a.nom || '').localeCompare(b.nom || '', 'fr', { sensitivity: 'base' });
+  });
+
+  const rows = sortedIngredients.map(ingredient => {
     const category = getCategoryById(categories, ingredient.categorieId);
     const categoryName = category?.nom || 'Sans catégorie';
     const categoryColor = category?.couleur || '#d9d2c3';
     const categoryKey = `${categoryName}__${categoryColor}`;
     const offres = (ingredient.offres || []).length ? (ingredient.offres || []) : [null];
-    const eanMarkup = normalizeEan13(ingredient.ean || '')
-      ? `<div class="print-ean-block">${ean13Svg(ingredient.ean || '')}<div class="print-ean-number">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div></div>`
+    const normalizedEan = normalizeEan13(ingredient.ean || '');
+    const eanMarkup = normalizedEan
+      ? `<div class="print-ean-block">${ean13Svg(normalizedEan)}<div class="print-ean-number">${esc(normalizedEan)}</div></div>`
       : `<div class="muted">${esc(ingredient.ean || '-')}</div>`;
 
     let block = '';
     if (categoryKey !== lastCategoryKey) {
-      block += `<tr class="print-category-row"><td colspan="7"><span class="print-category-line" style="--cat-color:${esc(categoryColor)}">${esc(categoryName)}</span></td></tr>`;
+      block += `<tr class="print-category-row"><td colspan="6"><span class="print-category-line" style="--cat-color:${esc(categoryColor)}">${esc(categoryName)}</span></td></tr>`;
       lastCategoryKey = categoryKey;
     }
 
