@@ -257,14 +257,3 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 @media (max-width: 920px){
   .offer-comparison-grid,.offer-price-grid{grid-template-columns:1fr}
 }
-
-
-/* v2.1.3 detail product offer comparison polish */
-.detail-note-card{margin-top:0}
-.comparison-badge.discreet{padding:2px 8px;font-size:.72rem;line-height:1.15;background:color-mix(in srgb, #2e7d32 10%, white);border-color:color-mix(in srgb, #2e7d32 24%, white);color:#2e7d32}
-.offer-comparison-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.offer-comparison-card{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--surface-2)}
-.fournisseur-detail-item .chip-row{gap:6px;align-items:center;justify-content:flex-end}
-@media (max-width: 720px){
-  .offer-comparison-grid{grid-template-columns:1fr}
-}

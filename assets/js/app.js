@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.1.3';
+const APP_VERSION = 'v2.1';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -186,6 +186,32 @@ function appendPriceHistory(previousIngredient, draft){
   }
   return nextHistory;
 }
+
+function buildOfferComparison(offres=[]){
+  const normalized = (Array.isArray(offres) ? offres : []).map((offre, index) => ({
+    ...offre,
+    id: offre?.id || `offre_cmp_${index}`,
+    prixHTUnite: Number(offre?.prixHTUnite),
+    prixHTColis: Number(offre?.prixHTColis),
+  }));
+  const validUnit = normalized.filter(offre => Number.isFinite(offre.prixHTUnite) && offre.prixHTUnite > 0);
+  const validColis = normalized.filter(offre => Number.isFinite(offre.prixHTColis) && offre.prixHTColis > 0);
+  return {
+    bestUnit: validUnit.length ? validUnit.reduce((best, current) => current.prixHTUnite < best.prixHTUnite ? current : best) : null,
+    bestColis: validColis.length ? validColis.reduce((best, current) => current.prixHTColis < best.prixHTColis ? current : best) : null,
+  };
+}
+
+function formatDeltaPercent(bestValue, currentValue){
+  const best = Number(bestValue);
+  const current = Number(currentValue);
+  if (!Number.isFinite(best) || !Number.isFinite(current) || best <= 0 || current <= 0) return '';
+  const delta = ((current - best) / best) * 100;
+  if (Math.abs(delta) < 0.01) return 'Référence';
+  const sign = delta > 0 ? '+' : '';
+  return `${sign}${delta.toFixed(1).replace('.', ',')} %`;
+}
+
 
 function getOrCreatePrintRoot(){
   let root = document.getElementById('product-print-root');
@@ -547,11 +573,6 @@ async function renderMercuriale(){
   const filtersPanel = qs('#mercuriale-filters-panel');
   const filters = { search: '', categorieId: '', fournisseurId: '', sort: 'az' };
 
-
-  function ingredientField(name){
-    return ingredientForm?.elements?.namedItem(name) || qs(`[name="${name}"]`, ingredientForm);
-  }
-
 const mercurialeHeader = qs('.mercuriale-header');
 let selectionBar = qs('#mercuriale-selection-bar');
 if (!selectionBar && mercurialeHeader) {
@@ -704,51 +725,6 @@ function renderCategorySelect(selected=''){
     if (searchInput) searchInput.value = filters.search;
   }
 
-
-  function createEmptyOffer(){
-    return {
-      id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      fournisseurId: '', marque: '', ean: '', reference: '', tva: 5.5, quantiteColis: 1,
-      uniteColis: ingredientField('uniteBase')?.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
-      sourcePrincipale: offres.length === 0,
-    };
-  }
-
-  function addOfferAndRender(){
-    offres.push(createEmptyOffer());
-    renderOffers();
-  }
-
-  function ensureMercurialeActionBindings(){
-    if (document.body.dataset.mercurialeBindingsReady === '1') return;
-    document.body.dataset.mercurialeBindingsReady = '1';
-    document.addEventListener('click', (event) => {
-      const addOfferBtn = event.target.closest('#add-offre-btn');
-      if (addOfferBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        addOfferAndRender();
-        return;
-      }
-      const openIngredientBtn = event.target.closest('#open-ingredient-sheet-btn');
-      if (openIngredientBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        if (ingredientDraft) openIngredientSheetWithData({ ...ingredientDraft, offres: ingredientDraft.offres || [] });
-        else openIngredientSheetWithData(null);
-        return;
-      }
-      const editBtn = event.target.closest('[data-detail-action="edit"]');
-      if (editBtn) {
-        event.preventDefault();
-        event.stopPropagation();
-        const ingredientId = editBtn.getAttribute('data-ingredient-id') || detailSheet?.dataset?.ingredientId || '';
-        const opened = openIngredientEditorById(ingredientId);
-        if (opened) closeSheet(detailSheet, detailBackdrop);
-      }
-    }, true);
-  }
-
   function updateFiltersToggleState(){
     if (!filterToggleBtn || !filtersPanel) return;
     const isOpen = !filtersPanel.classList.contains('hidden');
@@ -823,10 +799,7 @@ function renderOffers(){
     ingredientDraft = null;
     ingredientSheetTitle.textContent = 'Ajouter un ingrédient';
     ingredientForm.reset();
-    const unitField = ingredientField('uniteBase');
-    if (unitField && !unitField.value) unitField.value = 'kg';
     offres = [];
-    ensureMercurialeActionBindings();
     renderCategorySelect('');
     renderOffers();
     renderAllergenes([]);
@@ -836,21 +809,17 @@ function renderOffers(){
     currentIngredientId = ingredient?.id || null;
     ingredientSheetTitle.textContent = ingredient?.id ? 'Modifier un ingrédient' : 'Ajouter un ingrédient';
     ingredientForm.reset();
-    const setField = (name, value='') => {
-      const field = ingredientField(name);
-      if (field) field.value = value;
-    };
-    setField('nom', ingredient?.nom || '');
-    setField('uniteBase', ingredient?.uniteBase || 'kg');
-    setField('note', ingredient?.note || '');
+    ingredientForm.nom.value = ingredient?.nom || '';
+    ingredientForm.uniteBase.value = ingredient?.uniteBase || 'kg';
+    if (ingredientForm.note) ingredientForm.note.value = ingredient?.note || '';
     renderCategorySelect(ingredient?.categorieId || '');
-    setField('energie', ingredient?.nutrition?.energie || '');
-    setField('matieresGrasses', ingredient?.nutrition?.matieresGrasses || '');
-    setField('acidesGrasSatures', ingredient?.nutrition?.acidesGrasSatures || '');
-    setField('glucides', ingredient?.nutrition?.glucides || '');
-    setField('sucres', ingredient?.nutrition?.sucres || '');
-    setField('proteines', ingredient?.nutrition?.proteines || '');
-    setField('sel', ingredient?.nutrition?.sel || '');
+    ingredientForm.energie.value = ingredient?.nutrition?.energie || '';
+    ingredientForm.matieresGrasses.value = ingredient?.nutrition?.matieresGrasses || '';
+    ingredientForm.acidesGrasSatures.value = ingredient?.nutrition?.acidesGrasSatures || '';
+    ingredientForm.glucides.value = ingredient?.nutrition?.glucides || '';
+    ingredientForm.sucres.value = ingredient?.nutrition?.sucres || '';
+    ingredientForm.proteines.value = ingredient?.nutrition?.proteines || '';
+    ingredientForm.sel.value = ingredient?.nutrition?.sel || '';
     renderAllergenes(ingredient?.allergenes || []);
     offres = JSON.parse(JSON.stringify(ingredient?.offres || []));
     renderOffers();
@@ -861,24 +830,13 @@ function renderOffers(){
     openSheet(ingredientSheet, ingredientBackdrop);
   }
 
-  function openIngredientEditorById(ingredientId){
-    const current = ingredients.find(item => item.id === ingredientId) || ingredients.find(item => item.id === currentIngredientId);
-    if (!current) return false;
-    try {
-      openIngredientSheetWithData(current);
-      return true;
-    } catch (error) {
-      console.error('openIngredientEditorById failed', error);
-      return false;
-    }
-  }
+  
 
 async function showIngredientDetail(id){
     const ingredient = ingredients.find(item => item.id === id);
     if (!ingredient) return;
     const category = getCategoryById(categories, ingredient.categorieId);
     detailTitle.textContent = ingredient.nom;
-    detailSheet.dataset.ingredientId = ingredient.id;
     const nutrition = ingredient.nutrition || {};
     const allergenesLabels = (ingredient.allergenes || []).map(humanizeSlug);
     const nutritionRows = [
@@ -905,31 +863,33 @@ async function showIngredientDetail(id){
           <div class="muted">${comparison.bestColis ? esc((fournisseurs.find(f => f.id === comparison.bestColis.fournisseurId)?.nom) || 'Sans fournisseur') : 'Aucune offre'}</div>
         </div>
       </div>` : '<div class="notice">Ajoute des prix HT sur les offres pour activer le comparatif.</div>';
-    const offersMarkup = (ingredient.offres || []).length ? ingredient.offres.map(offre => {
-      const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
-      const displayEan = getOfferDisplayEan(offre);
-      const unitDelta = comparison.bestUnit && Number(offre.prixHTUnite) > 0 ? formatDeltaPercent(comparison.bestUnit.prixHTUnite, offre.prixHTUnite) : '';
-      const colisDelta = comparison.bestColis && Number(offre.prixHTColis) > 0 ? formatDeltaPercent(comparison.bestColis.prixHTColis, offre.prixHTColis) : '';
-      const isBestUnit = comparison.bestUnit && comparison.bestUnit.id === offre.id;
-      const isBestColis = comparison.bestColis && comparison.bestColis.id === offre.id;
+    const offersMarkup = (ingredient.offres || []).length ? ingredient.offres.map((offre, index) => {
+      const safeOffre = offre || {};
+      const supplier = fournisseurs.find(f => f.id === safeOffre.fournisseurId);
+      const displayEan = getOfferDisplayEan(safeOffre);
+      const offerId = safeOffre.id || `offre_cmp_${index}`;
+      const isBestUnit = Boolean(comparison.bestUnit && comparison.bestUnit.id === offerId);
+      const isBestColis = Boolean(comparison.bestColis && comparison.bestColis.id === offerId);
+      const unitDelta = comparison.bestUnit ? formatDeltaPercent(comparison.bestUnit.prixHTUnite, safeOffre.prixHTUnite) : '';
+      const colisDelta = comparison.bestColis ? formatDeltaPercent(comparison.bestColis.prixHTColis, safeOffre.prixHTColis) : '';
       return `<div class="item compact-item fournisseur-detail-item">
         <div class="item-top">
           <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
-          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">Meilleur HT unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">Meilleur HT colis</span>' : ''}</div>
+          <div class="toolbar chip-row">${safeOffre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">Meilleur HT unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">Meilleur HT colis</span>' : ''}</div>
         </div>
-        <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
+        <div class="muted">${esc(safeOffre.marque || '-')} · ${esc(safeOffre.reference || '-')}</div>
         ${displayEan ? `<div class="ean-visual-wrap fournisseur-ean-wrap">${ean13Svg(displayEan)}<div class="barcode-number monospace">${esc(displayEan)}</div></div>` : '<div class="muted">EAN non renseigné.</div>'}
-        <div class="muted">${esc(offre.quantiteColis || '-') } ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(offre.tva ?? 0).replace('.', ',')}%</div>
+        <div class="muted">${esc(safeOffre.quantiteColis || '-') } ${esc(safeOffre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(safeOffre.tva ?? 0).replace('.', ',')}%</div>
         <div class="offer-price-grid">
           <div class="offer-price-item">
             <span class="detail-label">HT / unité</span>
-            <strong>${offre.prixHTUnite ? euro(offre.prixHTUnite) : '—'}</strong>
-            <span class="muted">${unitDelta || (isBestUnit ? 'Référence' : 'Sans comparaison')}</span>
+            <strong>${safeOffre.prixHTUnite ? euro(safeOffre.prixHTUnite) : '—'}</strong>
+            <span class="muted">${unitDelta || (safeOffre.prixHTUnite ? 'Sans comparaison' : 'Sans prix')}</span>
           </div>
           <div class="offer-price-item">
             <span class="detail-label">HT / colis</span>
-            <strong>${offre.prixHTColis ? euro(offre.prixHTColis) : '—'}</strong>
-            <span class="muted">${colisDelta || (isBestColis ? 'Référence' : 'Sans comparaison')}</span>
+            <strong>${safeOffre.prixHTColis ? euro(safeOffre.prixHTColis) : '—'}</strong>
+            <span class="muted">${colisDelta || (safeOffre.prixHTColis ? 'Sans comparaison' : 'Sans prix')}</span>
           </div>
         </div>
       </div>`;
@@ -937,7 +897,7 @@ async function showIngredientDetail(id){
     detailContent.innerHTML = `
       <section class="detail-panel">
         <div class="detail-actions-row">
-          <button class="icon-square-btn" type="button" data-detail-action="edit" data-ingredient-id="${ingredient.id}" aria-label="Modifier" title="Modifier">✏️</button>
+          <button class="icon-square-btn" type="button" data-detail-action="edit" aria-label="Modifier" title="Modifier">✏️</button>
           <button class="icon-square-btn" type="button" data-detail-action="print" aria-label="Imprimer" title="Imprimer">🖨️</button>
           <button class="icon-square-btn" type="button" data-detail-action="duplicate" aria-label="Dupliquer" title="Dupliquer">📄</button>
           <button class="icon-square-btn danger" type="button" data-detail-action="delete" aria-label="Supprimer" title="Supprimer">🗑️</button>
@@ -973,11 +933,6 @@ async function showIngredientDetail(id){
           </section>
 
           <section class="card compact-card">
-            <h4>Comparatif des offres</h4>
-            ${comparisonSummaryMarkup}
-          </section>
-
-          <section class="card compact-card">
             <h4>Fournisseurs</h4>
             <div class="list">${offersMarkup}</div>
           </section>
@@ -994,6 +949,11 @@ async function showIngredientDetail(id){
                 ${nutritionRows.map(([label, value]) => `<div><strong>${esc(label)}</strong><div class="muted">${esc(value || '-')}</div></div>`).join('')}
               </div>
             </details>
+          </section>
+
+          <section class="card compact-card">
+            <h4>Comparatif des offres</h4>
+            ${comparisonSummaryMarkup}
           </section>
         </div>
 
@@ -1081,8 +1041,8 @@ async function showIngredientDetail(id){
           return;
         }
         if (action === 'edit') {
-          const opened = openIngredientEditorById(ingredient.id);
-          if (opened) closeSheet(detailSheet, detailBackdrop);
+          closeSheet(detailSheet, detailBackdrop);
+          openIngredientSheetWithData(ingredient);
           return;
         }
         if (action === 'print') {
@@ -1226,41 +1186,26 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
     renderCategoriesManager();
     openSheet(categoriesSheet, categoriesBackdrop);
   };
-  const openIngredientBtn = qs('#open-ingredient-sheet-btn');
-  if (openIngredientBtn) openIngredientBtn.onclick = (e) => {
-    e.preventDefault();
+  qs('#open-ingredient-sheet-btn').onclick = () => {
     if (ingredientDraft) openIngredientSheetWithData({ ...ingredientDraft, offres: ingredientDraft.offres || [] });
     else openIngredientSheetWithData(null);
   };
-
-
-  ingredientSheet.addEventListener('click', (e) => {
-    const btn = e.target.closest('#add-offre-btn');
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    addOfferAndRender();
-  });
-
-  detailContent.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-detail-action="edit"]');
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const ingredientId = btn.getAttribute('data-ingredient-id') || detailSheet?.dataset?.ingredientId || '';
-    const opened = openIngredientEditorById(ingredientId);
-    if (opened) closeSheet(detailSheet, detailBackdrop);
-  });
 
   qs('#cancel-ingredient-btn').onclick = () => {
     resetIngredientForm();
     closeSheet(ingredientSheet, ingredientBackdrop);
   };
 
-  const addOfferBtn = qs('#add-offre-btn');
-  if (addOfferBtn) addOfferBtn.onclick = (e) => {
+  const addOffreBtn = qs('#add-offre-btn');
+  if (addOffreBtn) addOffreBtn.onclick = (e) => {
     e.preventDefault();
-    addOfferAndRender();
+    offres.push({
+      id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      fournisseurId: '', marque: '', ean: '', reference: '', tva: 5.5, quantiteColis: 1,
+      uniteColis: ingredientForm.uniteBase.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
+      sourcePrincipale: offres.length === 0,
+    });
+    renderOffers();
   };
 
   offersEditor.addEventListener('click', (e) => {
