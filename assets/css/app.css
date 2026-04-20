@@ -285,69 +285,50 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 }
 
 
-/* v2.1.7 - compact supplier cards in detail infos */
-.fournisseur-detail-item{padding:12px 14px}
-.fournisseur-detail-item .item-top{margin-bottom:2px}
+/* v2.1.8b - supplier cards in detail infos: barcode on top, prices below */
+.fournisseur-detail-item{
+  display:grid;
+  gap:10px;
+  padding:12px 14px;
+}
+.fournisseur-detail-item .item-top{margin-bottom:0}
 .fournisseur-detail-item .muted{line-height:1.25}
 .fournisseur-detail-item .detail-label{margin-bottom:0}
 .fournisseur-detail-item .ean-visual-wrap.fournisseur-ean-wrap{
-  display:flex;
+  display:grid;
+  justify-items:center;
   align-items:center;
-  justify-content:center;
-  min-height:100%;
-  padding:8px 10px;
+  padding:4px 8px 0;
 }
 .fournisseur-detail-item .ean-visual-wrap.fournisseur-ean-wrap .ean-svg{
-  max-width:180px;
+  max-width:220px;
 }
 .fournisseur-detail-item .barcode-number{font-size:11px;margin-top:4px}
-.fournisseur-detail-item > .muted,
 .fournisseur-detail-item > .offer-price-lines{
-  grid-column:1;
-}
-.fournisseur-detail-item > .ean-visual-wrap.fournisseur-ean-wrap,
-.fournisseur-detail-item > .muted:has(+ .offer-price-lines){
-  grid-column:2;
-}
-.fournisseur-detail-item{
   display:grid;
-  grid-template-columns:minmax(0,1.3fr) minmax(150px,0.9fr);
-  grid-template-areas:
-    "top top"
-    "meta ean"
-    "prices ean";
-  column-gap:14px;
-  row-gap:8px;
-  align-items:start;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:0;
 }
-.fournisseur-detail-item > .item-top{grid-area:top}
-.fournisseur-detail-item > .muted{grid-area:meta}
-.fournisseur-detail-item > .ean-visual-wrap.fournisseur-ean-wrap{grid-area:ean}
-.fournisseur-detail-item > .offer-price-lines{grid-area:prices;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:0}
 .fournisseur-detail-item .offer-price-line{
   border-top:none;
   border:1px solid var(--line-soft);
   border-radius:12px;
   background:color-mix(in srgb, var(--surface-2) 80%, white);
   padding:8px 10px;
-  min-height:56px;
+  min-height:58px;
   flex-direction:column;
   align-items:flex-start;
   justify-content:center;
   gap:4px;
 }
 .fournisseur-detail-item .offer-price-line__value{gap:6px}
-@media (max-width: 920px){
-  .fournisseur-detail-item{
-    grid-template-columns:1fr;
-    grid-template-areas:
-      "top"
-      "ean"
-      "meta"
-      "prices";
-  }
-  .fournisseur-detail-item > .offer-price-lines{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .fournisseur-detail-item .ean-visual-wrap.fournisseur-ean-wrap .ean-svg{max-width:200px}
+.fournisseur-detail-item .comparison-badge{
+  font-size:.68rem;
+  padding:2px 6px;
+  border-radius:999px;
+  align-self:flex-start;
+  opacity:.88;
 }
 @media (max-width: 560px){
   .fournisseur-detail-item > .offer-price-lines{grid-template-columns:1fr}
