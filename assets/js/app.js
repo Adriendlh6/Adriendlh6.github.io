@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.2.4';
+const APP_VERSION = 'v2.2.5';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -930,16 +930,16 @@ function renderOffers(){
     const normalized = String(value).trim();
     const unitMap = {
       energie: 'kcal',
-      matieresGrasses: 'g/kg',
-      acidesGrasSatures: 'g/kg',
-      glucides: 'g/kg',
-      sucres: 'g/kg',
-      proteines: 'g/kg',
-      sel: 'g/kg',
+      matieresGrasses: 'g',
+      acidesGrasSatures: 'g',
+      glucides: 'g',
+      sucres: 'g',
+      proteines: 'g',
+      sel: 'g',
     };
     const unit = unitMap[key] || '';
     if (!unit) return normalized;
-    return /(kcal|g\/kg|g|kg|l)$/i.test(normalized) ? normalized : `${normalized} ${unit}`;
+    return /(kcal|g|kg|l)$/i.test(normalized) ? normalized : `${normalized} ${unit}`;
   }
 
   
@@ -1033,7 +1033,7 @@ async function showIngredientDetail(id){
 
           <section class="card compact-card">
             <details class="details nutrition-details">
-              <summary>Nutrition</summary>
+              <summary>Nutrition <span class="muted">(pour 100g)</span></summary>
               <div class="details-content nutrition-grid-detail">
                 ${nutritionRows.map(([label, value]) => `<div><strong>${esc(label)}</strong><div class="muted">${esc(value || '-')}</div></div>`).join('')}
               </div>
