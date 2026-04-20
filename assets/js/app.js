@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.2.6';
+const APP_VERSION = 'v2.3.0';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -378,6 +378,119 @@ function appendPriceHistory(previousIngredient, draft){
   return nextHistory;
 }
 
+
+function getOrCreateProductPrintChooser(){
+  let root = document.getElementById('product-print-chooser');
+  if (!root) {
+    root = document.createElement('div');
+    root.id = 'product-print-chooser';
+    root.className = 'print-chooser hidden';
+    root.innerHTML = `
+      <div class="print-chooser-backdrop hidden" data-print-chooser-close></div>
+      <section class="print-chooser-dialog hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="product-print-chooser-title">
+        <div class="print-chooser-head">
+          <div>
+            <div class="print-chooser-kicker">Impression produit</div>
+            <h3 id="product-print-chooser-title">Choisir les informations à imprimer</h3>
+          </div>
+          <button type="button" class="icon-square-btn" aria-label="Fermer" title="Fermer" data-print-chooser-close>✕</button>
+        </div>
+        <div class="print-chooser-body"></div>
+      </section>`;
+    document.body.appendChild(root);
+  }
+  return {
+    root,
+    backdrop: root.querySelector('.print-chooser-backdrop'),
+    dialog: root.querySelector('.print-chooser-dialog'),
+    body: root.querySelector('.print-chooser-body')
+  };
+}
+
+function openProductPrintChooser(ingredient, category, fournisseurs){
+  const chooser = getOrCreateProductPrintChooser();
+  const offers = ingredient.offres || [];
+  const supplierChoices = offers.map(offre => {
+    const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
+    const labelBase = supplier?.nom || 'Sans fournisseur';
+    const label = offre.marque ? `${labelBase} / ${offre.marque}` : labelBase;
+    return `<option value="${esc(offre.fournisseurId || '')}">${esc(label)}</option>`;
+  }).join('');
+  chooser.body.innerHTML = `
+    <form id="product-print-options-form" class="print-options-form">
+      <div class="print-options-grid">
+        <section class="print-options-card">
+          <div class="print-options-card__head">
+            <h4>Sections</h4>
+            <label class="print-inline-check"><input type="checkbox" id="print-all-sections" checked> Tout sélectionner</label>
+          </div>
+          <div class="print-options-checks">
+            <label class="print-check-row"><input type="checkbox" name="sections" value="infos" checked> <span>Infos</span></label>
+            <label class="print-check-row"><input type="checkbox" name="sections" value="historique" checked> <span>Historique</span></label>
+            <label class="print-check-row"><input type="checkbox" name="sections" value="utilisation"> <span>Utilisation</span></label>
+            <label class="print-check-row"><input type="checkbox" name="sections" value="tracabilites"> <span>Traçabilités</span></label>
+          </div>
+        </section>
+        <section class="print-options-card">
+          <h4>Fournisseurs</h4>
+          <label class="field-label" for="print-supplier-filter">Choix à imprimer</label>
+          <select id="print-supplier-filter" name="supplierFilter" class="input">
+            <option value="all">Tous les fournisseurs</option>
+            ${supplierChoices}
+          </select>
+          <p class="muted small">Le filtre fournisseur s'applique aux offres affichées et à l'historique des prix.</p>
+        </section>
+      </div>
+      <div class="print-chooser-actions">
+        <button type="button" class="btn secondary" data-print-chooser-close>Annuler</button>
+        <button type="submit" class="btn">Imprimer</button>
+      </div>
+    </form>`;
+
+  const close = () => closeProductPrintChooser();
+  chooser.root.querySelectorAll('[data-print-chooser-close]').forEach(el => el.onclick = close);
+  chooser.root.classList.remove('hidden');
+  chooser.backdrop.classList.remove('hidden');
+  chooser.dialog.classList.remove('hidden');
+  chooser.dialog.setAttribute('aria-hidden', 'false');
+  lockBodyScroll();
+
+  const allToggle = chooser.root.querySelector('#print-all-sections');
+  const sectionChecks = [...chooser.root.querySelectorAll('input[name="sections"]')];
+  const syncToggle = () => {
+    const checked = sectionChecks.filter(el => el.checked).length;
+    allToggle.checked = checked === sectionChecks.length;
+    allToggle.indeterminate = checked > 0 && checked < sectionChecks.length
+  };
+  allToggle.onchange = () => {
+    sectionChecks.forEach(el => el.checked = allToggle.checked);
+    allToggle.indeterminate = false;
+  };
+  sectionChecks.forEach(el => el.onchange = syncToggle);
+  syncToggle();
+
+  chooser.root.querySelector('#product-print-options-form').onsubmit = (event) => {
+    event.preventDefault();
+    const selectedSections = sectionChecks.filter(el => el.checked).map(el => el.value);
+    if (!selectedSections.length) {
+      alert('Sélectionne au moins une section à imprimer.');
+      return;
+    }
+    const supplierFilter = chooser.root.querySelector('#print-supplier-filter')?.value || 'all';
+    closeProductPrintChooser();
+    printProductSheet(ingredient, category, fournisseurs, { sections: selectedSections, supplierFilter });
+  };
+}
+
+function closeProductPrintChooser(){
+  const chooser = getOrCreateProductPrintChooser();
+  chooser.root.classList.add('hidden');
+  chooser.backdrop.classList.add('hidden');
+  chooser.dialog.classList.add('hidden');
+  chooser.dialog.setAttribute('aria-hidden', 'true');
+  unlockBodyScroll();
+}
+
 function getOrCreatePrintRoot(){
   let root = document.getElementById('product-print-root');
   if (!root) {
@@ -389,10 +502,14 @@ function getOrCreatePrintRoot(){
   return root;
 }
 
-function buildProductPrintMarkup(ingredient, category, fournisseurs){
+function buildProductPrintMarkup(ingredient, category, fournisseurs, options={}){
+  const sections = Array.isArray(options.sections) && options.sections.length ? options.sections : ['infos'];
+  const supplierFilter = options.supplierFilter || 'all';
   const nutrition = ingredient.nutrition || {};
   const allergenes = (ingredient.allergenes || []).map(humanizeSlug);
-  const offers = (ingredient.offres || []).map(offre => {
+  const filteredOffers = (ingredient.offres || []).filter(offre => supplierFilter === 'all' || String(offre.fournisseurId || '') === String(supplierFilter));
+  const filteredHistory = (ingredient.priceHistory || []).filter(entry => supplierFilter === 'all' || String(entry.fournisseurId || '') === String(supplierFilter));
+  const offers = filteredOffers.map(offre => {
     const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
     return `<tr>
       <td>${esc(supplier?.nom || 'Sans fournisseur')}</td>
@@ -401,9 +518,102 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs){
       <td>${esc(offre.quantiteColis || '-')} ${esc(offre.uniteColis || ingredient.uniteBase || 'u')}</td>
       <td>${String(offre.tva ?? 0).replace('.', ',')}%</td>
       <td>${offre.prixHTUnite ? euro(offre.prixHTUnite) : '-'}</td>
-      <td>${offre.prixTTCUnite ? euro(offre.prixTTCUnite) : '-'}</td>
+      <td>${offre.prixHTColis ? euro(offre.prixHTColis) : '-'}</td>
     </tr>`;
   }).join('');
+  const historyRows = filteredHistory.slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(entry => {
+    const supplier = fournisseurs.find(f => f.id === entry.fournisseurId);
+    return `<tr>
+      <td>${formatPriceHistoryDate(entry.timestamp)}</td>
+      <td>${esc(supplier?.nom || 'Sans fournisseur')}</td>
+      <td>${esc(entry.marque || '-')}</td>
+      <td>${entry.prixHTUnite ? euro(entry.prixHTUnite) : '-'}</td>
+      <td>${entry.prixHTColis ? euro(entry.prixHTColis) : '-'}</td>
+    </tr>`;
+  }).join('');
+  const sectionMarkup = [];
+
+  if (sections.includes('infos')) {
+    sectionMarkup.push(`
+      <section class="print-section-block">
+        <div class="print-section-title">Infos</div>
+        <section class="print-grid">
+          <article class="print-card">
+            <div class="detail-label">Nom du produit</div>
+            <div class="detail-value detail-title-value">${esc(ingredient.nom || '-')}</div>
+            <div class="detail-label">Catégorie</div>
+            <div class="print-category-wrap">${categoryChip(category)}</div>
+          </article>
+          <article class="print-card">
+            <div class="detail-label">EAN</div>
+            <div class="print-barcode-wrap">${ean13Svg(getIngredientPrimaryEan(ingredient))}</div>
+            <div class="print-ean-text monospace">${esc(getIngredientPrimaryEan(ingredient) || '-')}</div>
+          </article>
+        </section>
+        <section class="print-card">
+          <h2>Fournisseurs</h2>
+          ${offers ? `<table class="print-table"><thead><tr><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>Colis</th><th>TVA</th><th>HT unité</th><th>HT colis</th></tr></thead><tbody>${offers}</tbody></table>` : '<div class="muted">Aucune offre enregistrée pour ce filtre.</div>'}
+        </section>
+        <section class="print-two-col">
+          <article class="print-card">
+            <h2>Allergènes</h2>
+            <div class="toolbar chip-row">${allergenes.length ? allergenes.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div>
+          </article>
+          <article class="print-card">
+            <h2>Nutrition pour 100 g</h2>
+            <div class="print-nutrition-grid">
+              <div><strong>Énergie</strong><span>${esc(formatNutritionValue('energie', nutrition.energie))}</span></div>
+              <div><strong>Matières grasses</strong><span>${esc(formatNutritionValue('matieresGrasses', nutrition.matieresGrasses))}</span></div>
+              <div><strong>Acides gras saturés</strong><span>${esc(formatNutritionValue('acidesGrasSatures', nutrition.acidesGrasSatures))}</span></div>
+              <div><strong>Glucides</strong><span>${esc(formatNutritionValue('glucides', nutrition.glucides))}</span></div>
+              <div><strong>Sucres</strong><span>${esc(formatNutritionValue('sucres', nutrition.sucres))}</span></div>
+              <div><strong>Protéines</strong><span>${esc(formatNutritionValue('proteines', nutrition.proteines))}</span></div>
+              <div><strong>Sel</strong><span>${esc(formatNutritionValue('sel', nutrition.sel))}</span></div>
+            </div>
+          </article>
+        </section>
+        ${ingredient.note ? `<section class="print-card"><h2>Note</h2><div>${esc(ingredient.note)}</div></section>` : ''}
+      </section>`);
+  }
+
+  if (sections.includes('historique')) {
+    sectionMarkup.push(`
+      <section class="print-section-block">
+        <div class="print-section-title">Historique</div>
+        <section class="print-card">
+          <h2>Historique des prix</h2>
+          ${historyRows ? `<table class="print-table"><thead><tr><th>Date</th><th>Fournisseur</th><th>Marque</th><th>HT unité</th><th>HT colis</th></tr></thead><tbody>${historyRows}</tbody></table>` : '<div class="muted">Aucun historique de prix pour ce filtre.</div>'}
+        </section>
+        <section class="print-card">
+          <h2>Historique des achats</h2>
+          <div class="muted">En cours de développement.</div>
+        </section>
+      </section>`);
+  }
+
+  if (sections.includes('utilisation')) {
+    sectionMarkup.push(`
+      <section class="print-section-block">
+        <div class="print-section-title">Utilisation</div>
+        <section class="print-card"><div class="muted">En cours de développement.</div></section>
+      </section>`);
+  }
+
+  if (sections.includes('tracabilites')) {
+    sectionMarkup.push(`
+      <section class="print-section-block">
+        <div class="print-section-title">Traçabilités</div>
+        <section class="print-card"><div class="muted">En cours de développement.</div></section>
+      </section>`);
+  }
+
+  const supplierLabel = supplierFilter === 'all'
+    ? 'Tous les fournisseurs'
+    : (() => {
+        const supplier = fournisseurs.find(f => String(f.id) === String(supplierFilter));
+        return supplier?.nom || 'Fournisseur sélectionné';
+      })();
+
   return `
     <div class="print-page">
       <header class="print-header">
@@ -412,51 +622,29 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs){
           <h1>Fiche produit</h1>
           <div class="print-subtitle">Édition du ${new Date().toLocaleDateString('fr-FR')}</div>
         </div>
-        <div class="print-category-wrap">${categoryChip(category)}</div>
+        <div class="print-print-meta">
+          <div class="print-category-wrap">${categoryChip(category)}</div>
+          <div class="print-filter-badge">${esc(supplierLabel)}</div>
+        </div>
       </header>
-      <section class="print-grid">
-        <article class="print-card">
-          <div class="detail-label">Nom du produit</div>
-          <div class="detail-value detail-title-value">${esc(ingredient.nom || '-')}</div>
-        </article>
-        <article class="print-card">
-          <div class="detail-label">EAN</div>
-          <div class="print-barcode-wrap">${ean13Svg(getIngredientPrimaryEan(ingredient))}</div>
-          <div class="print-ean-text monospace">${esc(getIngredientPrimaryEan(ingredient) || '-')}</div>
-        </article>
-      </section>
-      <section class="print-card">
-        <h2>Fournisseurs</h2>
-        ${offers ? `<table class="print-table"><thead><tr><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>Colis</th><th>TVA</th><th>HT unité</th><th>TTC unité</th></tr></thead><tbody>${offers}</tbody></table>` : '<div class="muted">Aucune offre enregistrée.</div>'}
-      </section>
-      <section class="print-two-col">
-        <article class="print-card">
-          <h2>Allergènes</h2>
-          <div class="toolbar chip-row">${allergenes.length ? allergenes.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div>
-        </article>
-        <article class="print-card">
-          <h2>Nutrition pour 100 g</h2>
-          <div class="print-nutrition-grid">
-            <div><strong>Énergie</strong><span>${esc(nutrition.energie || '-')}</span></div>
-            <div><strong>Matières grasses</strong><span>${esc(nutrition.matieresGrasses || '-')}</span></div>
-            <div><strong>Acides gras saturés</strong><span>${esc(nutrition.acidesGrasSatures || '-')}</span></div>
-            <div><strong>Glucides</strong><span>${esc(nutrition.glucides || '-')}</span></div>
-            <div><strong>Sucres</strong><span>${esc(nutrition.sucres || '-')}</span></div>
-            <div><strong>Protéines</strong><span>${esc(nutrition.proteines || '-')}</span></div>
-            <div><strong>Sel</strong><span>${esc(nutrition.sel || '-')}</span></div>
-          </div>
-        </article>
-      </section>
+      ${sectionMarkup.join('')}
     </div>`;
 }
 
-function printProductSheet(ingredient, category, fournisseurs){
+function printProductSheet(ingredient, category, fournisseurs, options={}){
   const root = getOrCreatePrintRoot();
-  root.innerHTML = buildProductPrintMarkup(ingredient, category, fournisseurs);
+  root.innerHTML = buildProductPrintMarkup(ingredient, category, fournisseurs, options);
   root.classList.remove('hidden');
   document.body.classList.add('printing-product');
   setTimeout(() => window.print(), 50);
 }
+
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    const chooser = document.getElementById('product-print-chooser');
+    if (chooser && !chooser.classList.contains('hidden')) closeProductPrintChooser();
+  }
+});
 
 window.addEventListener('afterprint', () => {
   document.body.classList.remove('printing-product');
@@ -465,6 +653,8 @@ window.addEventListener('afterprint', () => {
   if (root) root.classList.add('hidden');
   const mercurialeRoot = document.getElementById('mercuriale-print-root');
   if (mercurialeRoot) mercurialeRoot.classList.add('hidden');
+  const chooser = document.getElementById('product-print-chooser');
+  if (chooser) chooser.classList.add('hidden');
 });
 
 
@@ -1201,7 +1391,7 @@ async function showIngredientDetail(id){
           return;
         }
         if (action === 'print') {
-          printProductSheet(ingredient, category, fournisseurs);
+          openProductPrintChooser(ingredient, category, fournisseurs);
           return;
         }
         if (action === 'duplicate') {
