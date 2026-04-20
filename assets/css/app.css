@@ -199,3 +199,12 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .mercuriale-selection-bar{flex-direction:column;align-items:stretch}
   .mercuriale-selection-actions{display:grid;grid-template-columns:1fr;gap:8px}
 }
+
+
+.mercuriale-toolbar-card{margin:0 0 14px;}
+.mercuriale-toolbar-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;align-items:end;}
+.mercuriale-search-field{grid-column:auto;}
+.barcode-number{font-size:14px;line-height:1.2;margin-top:6px;letter-spacing:.16em;text-align:center;}
+.ean-visual-wrap{display:grid;justify-items:center;gap:4px;}
+.ean-svg{max-width:360px;}
+@media (max-width: 920px){.mercuriale-toolbar-grid{grid-template-columns:1fr;}.mercuriale-toolbar-card{padding:14px;}}

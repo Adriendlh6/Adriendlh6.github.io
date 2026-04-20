@@ -22,6 +22,7 @@ function qs(sel, root=document){ return root.querySelector(sel); }
 function qsa(sel, root=document){ return [...root.querySelectorAll(sel)]; }
 function euro(v){ return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(Number(v||0)); }
 function num(v){ return Number(v||0); }
+function safePrice(v){ const n = Number(v); return Number.isFinite(n) && n > 0 ? n : Number.POSITIVE_INFINITY; }
 function round(v, decimals=4){
   const n = Number(v || 0);
   if (!Number.isFinite(n)) return 0;
@@ -83,9 +84,8 @@ function ean13Svg(value=''){
   bits += '101';
   const moduleWidth = 2;
   const quiet = 10 * moduleWidth;
-  const normalHeight = 84;
-  const guardHeight = 96;
-  const textY = 118;
+  const normalHeight = 62;
+  const guardHeight = 74;
   const width = quiet * 2 + bits.length * moduleWidth;
   let x = quiet;
   let rects = '';
@@ -96,12 +96,9 @@ function ean13Svg(value=''){
     }
     x += moduleWidth;
   }
-  return `<svg class="ean-svg" viewBox="0 0 ${width} 124" role="img" aria-label="Code-barres EAN ${ean}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="${width}" height="124" fill="#fff"/>
+  return `<svg class="ean-svg" viewBox="0 0 ${width} 78" role="img" aria-label="Code-barres EAN ${ean}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${width}" height="78" fill="#fff"/>
     ${rects}
-    <text x="0" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean[0]}</text>
-    <text x="${quiet + 3*moduleWidth}" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean.slice(1,7)}</text>
-    <text x="${quiet + (3+42+5)*moduleWidth}" y="${textY}" font-size="18" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#111">${ean.slice(7)}</text>
   </svg>`;
 }
 
@@ -430,6 +427,11 @@ async function renderMercuriale(){
   const ingredientSheetTitle = qs('#ingredient-sheet-title');
   const detailContent = qs('#ingredient-detail-content');
   const detailTitle = qs('#ingredient-detail-title');
+  const searchInput = qs('#mercuriale-search');
+  const filterCategorySelect = qs('#mercuriale-filter-category');
+  const filterSupplierSelect = qs('#mercuriale-filter-fournisseur');
+  const sortSelect = qs('#mercuriale-sort');
+  const filters = { search: '', categorieId: '', fournisseurId: '', sort: 'az' };
 
 const mercurialeHeader = qs('.mercuriale-header');
 let selectionBar = qs('#mercuriale-selection-bar');
@@ -498,14 +500,23 @@ function cancelLongPress(){
 }
 
 function renderIngredients(){
+  const visibleIngredients = getVisibleIngredients();
   if (!ingredients.length){
     emptyState.classList.remove('hidden');
     ingredientsList.innerHTML = '';
     updateSelectionBar();
     return;
   }
+  if (!visibleIngredients.length){
+    emptyState.classList.remove('hidden');
+    emptyState.textContent = 'Aucun produit ne correspond à la recherche.';
+    ingredientsList.innerHTML = '';
+    updateSelectionBar();
+    return;
+  }
   emptyState.classList.add('hidden');
-  ingredientsList.innerHTML = ingredients.map(ingredient => {
+  emptyState.textContent = 'Aucun produit enregistré.';
+  ingredientsList.innerHTML = visibleIngredients.map(ingredient => {
     const cat = getCategoryById(categories, ingredient.categorieId);
     const firstOffre = (ingredient.offres || [])[0];
     const supplier = firstOffre ? fournisseurs.find(f => f.id === firstOffre.fournisseurId) : null;
@@ -561,6 +572,40 @@ function renderIngredients(){
 
 function renderCategorySelect(selected=''){
     ingredientCategorySelect.innerHTML = categorieOptions(categories, selected);
+  }
+
+  function renderMercurialeFilterControls(){
+    if (filterCategorySelect) {
+      filterCategorySelect.innerHTML = `<option value="">Toutes les catégories</option>${categories.map(cat => `<option value="${cat.id}" ${filters.categorieId === cat.id ? 'selected' : ''}>${esc(cat.nom)}</option>`).join('')}`;
+    }
+    if (filterSupplierSelect) {
+      filterSupplierSelect.innerHTML = `<option value="">Tous les fournisseurs</option>${fournisseurs.map(f => `<option value="${f.id}" ${filters.fournisseurId === f.id ? 'selected' : ''}>${esc(f.nom)}</option>`).join('')}`;
+    }
+    if (sortSelect) sortSelect.value = filters.sort;
+    if (searchInput) searchInput.value = filters.search;
+  }
+
+  function ingredientUnitSortPrice(ingredient){
+    const prices = (ingredient.offres || []).map(offre => safePrice(offre.prixHTUnite));
+    const best = Math.min(...prices, Number.POSITIVE_INFINITY);
+    return Number.isFinite(best) ? best : Number.POSITIVE_INFINITY;
+  }
+
+  function getVisibleIngredients(){
+    const search = (filters.search || '').trim().toLowerCase();
+    let visible = ingredients.filter(ingredient => {
+      const matchesSearch = !search || `${ingredient.nom || ''} ${(ingredient.ean || '')}`.toLowerCase().includes(search);
+      const matchesCategory = !filters.categorieId || ingredient.categorieId === filters.categorieId;
+      const matchesSupplier = !filters.fournisseurId || (ingredient.offres || []).some(offre => offre.fournisseurId === filters.fournisseurId);
+      return matchesSearch && matchesCategory && matchesSupplier;
+    });
+    visible.sort((a, b) => {
+      if (filters.sort === 'za') return String(b.nom || '').localeCompare(String(a.nom || ''), 'fr', { sensitivity: 'base' });
+      if (filters.sort === 'price-asc') return ingredientUnitSortPrice(a) - ingredientUnitSortPrice(b) || String(a.nom || '').localeCompare(String(b.nom || ''), 'fr', { sensitivity: 'base' });
+      if (filters.sort === 'price-desc') return ingredientUnitSortPrice(b) - ingredientUnitSortPrice(a) || String(a.nom || '').localeCompare(String(b.nom || ''), 'fr', { sensitivity: 'base' });
+      return String(a.nom || '').localeCompare(String(b.nom || ''), 'fr', { sensitivity: 'base' });
+    });
+    return visible;
   }
 
   function renderOffers(){
@@ -671,8 +716,7 @@ async function showIngredientDetail(id){
               <div>
                 <div class="detail-label">EAN</div>
                 <div class="ean-detail-row ean-visual-block">
-                  <div class="ean-detail-code detail-value monospace">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div>
-                  <div class="ean-visual-wrap">${ean13Svg(ingredient.ean || '')}</div>
+                  <div class="ean-visual-wrap">${ean13Svg(ingredient.ean || '')}<div class="barcode-number monospace">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div></div>
                 </div>
               </div>
             </div>
@@ -872,6 +916,12 @@ if (deleteSelectionBtn) deleteSelectionBtn.onclick = async () => {
   renderDashboard();
 };
 if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
+
+  renderMercurialeFilterControls();
+  if (searchInput) searchInput.addEventListener('input', (e) => { filters.search = e.target.value || ''; renderIngredients(); });
+  if (filterCategorySelect) filterCategorySelect.addEventListener('change', (e) => { filters.categorieId = e.target.value || ''; renderIngredients(); });
+  if (filterSupplierSelect) filterSupplierSelect.addEventListener('change', (e) => { filters.fournisseurId = e.target.value || ''; renderIngredients(); });
+  if (sortSelect) sortSelect.addEventListener('change', (e) => { filters.sort = e.target.value || 'az'; renderIngredients(); });
 
   qs('#open-categories-btn').onclick = () => {
     resetCategorieForm();

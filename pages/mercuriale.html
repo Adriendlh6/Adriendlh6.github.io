@@ -17,6 +17,36 @@
     </div>
   </div>
 
+  <section class="card mercuriale-toolbar-card">
+    <div class="mercuriale-toolbar-grid">
+      <div class="field mercuriale-search-field">
+        <label for="mercuriale-search">Recherche</label>
+        <input id="mercuriale-search" type="search" placeholder="Nom ou EAN" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="mercuriale-filter-category">Catégorie</label>
+        <select id="mercuriale-filter-category">
+          <option value="">Toutes les catégories</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="mercuriale-filter-fournisseur">Fournisseur</label>
+        <select id="mercuriale-filter-fournisseur">
+          <option value="">Tous les fournisseurs</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="mercuriale-sort">Tri</label>
+        <select id="mercuriale-sort">
+          <option value="az">A à Z</option>
+          <option value="za">Z à A</option>
+          <option value="price-asc">Prix unit. croissant</option>
+          <option value="price-desc">Prix unit. décroissant</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
   <div id="ingredients-empty" class="notice hidden">Aucun produit enregistré.</div>
   <div id="ingredients-list" class="list product-list"></div>
 </section>
