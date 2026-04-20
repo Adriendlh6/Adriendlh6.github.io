@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.2.5';
+const APP_VERSION = 'v2.2.6';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -176,7 +176,78 @@ function formatPriceHistoryDate(value){
   if (!value) return '-';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
-  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
+  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }).format(d);
+}
+
+function localDayStamp(date = new Date()){
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function buildPriceHistoryList(entries, fournisseurs=[]){
+  const safeEntries = (entries || [])
+    .map(entry => ({ ...entry, prixHTUnite: Number(entry.prixHTUnite || 0), prixHTColis: Number(entry.prixHTColis || 0) }))
+    .filter(entry => entry.timestamp && (entry.prixHTUnite > 0 || entry.prixHTColis > 0));
+  if (!safeEntries.length) return '<div class="notice">Pas encore d’historique de prix.</div>';
+
+  const palette = ['#b8742a', '#2f7d32', '#2563eb', '#9333ea', '#dc2626', '#0891b2', '#ca8a04', '#6b7280'];
+  const groupsMap = new Map();
+  safeEntries.forEach(entry => {
+    const key = `${entry.fournisseurId || 'none'}__${entry.marque || ''}`;
+    if (!groupsMap.has(key)) {
+      const supplier = fournisseurs.find(f => f.id === entry.fournisseurId);
+      const base = supplier?.nom || 'Sans fournisseur';
+      groupsMap.set(key, {
+        key,
+        color: palette[groupsMap.size % palette.length],
+        label: entry.marque ? `${base} / ${entry.marque}` : base,
+        entries: []
+      });
+    }
+    groupsMap.get(key).entries.push(entry);
+  });
+
+  const groups = [...groupsMap.values()].map(group => ({
+    ...group,
+    entries: group.entries.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+  }));
+
+  return `<div class="history-list-groups">${groups.map(group => {
+    const avgEntries = group.entries.filter(entry => {
+      const d = new Date(entry.timestamp);
+      return Number.isFinite(d.getTime()) && ((Date.now() - d.getTime()) / (1000*60*60*24)) <= 365;
+    });
+    const avg = avgEntries.length ? avgEntries.reduce((sum, entry) => sum + (entry.prixHTUnite || 0), 0) / avgEntries.length : 0;
+    return `<section class="history-list-group">
+      <div class="history-list-group-head">
+        <div class="history-list-group-title-wrap">
+          <span class="price-history-legend-chip" style="background:${group.color}"></span>
+          <div>
+            <div class="history-list-group-title">${esc(group.label)}</div>
+            <div class="history-list-group-sub">Moyenne 12 mois : ${euro(avg)}</div>
+          </div>
+        </div>
+        <div class="history-list-group-count">${group.entries.length} relevé${group.entries.length > 1 ? 's' : ''}</div>
+      </div>
+      <div class="history-list-rows">
+        ${group.entries.map(entry => `<article class="history-list-row">
+          <div class="history-list-date">${formatPriceHistoryDate(entry.timestamp)}</div>
+          <div class="history-list-metrics">
+            <div class="history-metric-box">
+              <span class="history-metric-label">HT unité</span>
+              <strong>${euro(entry.prixHTUnite)}</strong>
+            </div>
+            <div class="history-metric-box">
+              <span class="history-metric-label">HT colis</span>
+              <strong>${euro(entry.prixHTColis)}</strong>
+            </div>
+          </div>
+        </article>`).join('')}
+      </div>
+    </section>`;
+  }).join('')}</div>`;
 }
 
 function buildPriceHistoryChart(entries, fournisseurs=[]){
@@ -299,7 +370,7 @@ function appendPriceHistory(previousIngredient, draft){
         id: `hist_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         ingredientId: draft.id,
         offerId: offre.id,
-        timestamp: new Date().toISOString(),
+        timestamp: localDayStamp(),
         ...snapshot
       });
     }
@@ -1062,19 +1133,7 @@ async function showIngredientDetail(id){
               ${buildPriceHistoryChart(historyEntries.slice().reverse(), fournisseurs)}
             </div>
             <div data-history-panel="liste" class="history-panel hidden">
-              ${historyEntries.length ? `<div class="list history-list">${historyEntries.map(entry => {
-                const supplier = fournisseurs.find(f => f.id === entry.fournisseurId);
-                return `<div class="item compact-item">
-                  <div class="item-top">
-                    <div><strong>${esc(supplier?.nom || 'Sans fournisseur')}</strong><div class="muted">${esc(entry.marque || '-')} · ${esc(entry.reference || '-')}</div></div>
-                    <div class="muted">${formatPriceHistoryDate(entry.timestamp)}</div>
-                  </div>
-                  <div class="history-prices-row">
-                    <span>${euro(entry.prixHTUnite)} HT / unité</span>
-                    <span>${euro(entry.prixHTColis)} HT / colis</span>
-                  </div>
-                </div>`;
-              }).join('')}</div>` : '<div class="notice">Pas encore d’historique de prix.</div>'}
+              ${buildPriceHistoryList(historyEntries, fournisseurs)}
             </div>
           </section>
 
