@@ -23,6 +23,31 @@ function qsa(sel, root=document){ return [...root.querySelectorAll(sel)]; }
 function euro(v){ return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(Number(v||0)); }
 function num(v){ return Number(v||0); }
 function safePrice(v){ const n = Number(v); return Number.isFinite(n) && n > 0 ? n : Number.POSITIVE_INFINITY; }
+
+function buildOfferComparison(offres=[]){
+  const valid = (offres || []).filter(Boolean).map(offre => ({
+    ...offre,
+    prixHTUnite: Number(offre.prixHTUnite || 0),
+    prixHTColis: Number(offre.prixHTColis || 0),
+  }));
+  let bestUnit = null;
+  let bestColis = null;
+  for (const offre of valid){
+    if (offre.prixHTUnite > 0 && (!bestUnit || offre.prixHTUnite < bestUnit.prixHTUnite)) bestUnit = offre;
+    if (offre.prixHTColis > 0 && (!bestColis || offre.prixHTColis < bestColis.prixHTColis)) bestColis = offre;
+  }
+  return { bestUnit, bestColis };
+}
+
+function formatDeltaPercent(bestValue, currentValue){
+  const best = Number(bestValue || 0);
+  const current = Number(currentValue || 0);
+  if (!(best > 0) || !(current > 0)) return '';
+  const delta = ((current - best) / best) * 100;
+  if (Math.abs(delta) < 0.05) return 'Même prix';
+  const rounded = Math.round(delta * 10) / 10;
+  return rounded > 0 ? `+${String(rounded).replace('.', ',')} %` : `${String(rounded).replace('.', ',')} %`;
+}
 function round(v, decimals=4){
   const n = Number(v || 0);
   if (!Number.isFinite(n)) return 0;
