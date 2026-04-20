@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.1.5';
+const APP_VERSION = 'v2.2';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -125,32 +125,6 @@ function ean13Svg(value=''){
     <rect width="${width}" height="78" fill="#fff"/>
     ${rects}
   </svg>`;
-}
-
-
-function getOfferTrend(ingredient, offre, field){
-  const current = Number(offre?.[field] || 0);
-  if (!(current > 0)) return 'flat';
-  const history = (ingredient?.priceHistory || [])
-    .filter(entry => entry.offerId === offre.id && Number(entry[field] || 0) > 0)
-    .sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-  const previousDifferent = history.find(entry => Math.abs(Number(entry[field] || 0) - current) > 0.0001);
-  if (!previousDifferent) return 'flat';
-  const prev = Number(previousDifferent[field] || 0);
-  if (!(prev > 0)) return 'flat';
-  if (current > prev) return 'up';
-  if (current < prev) return 'down';
-  return 'flat';
-}
-
-function trendArrowMarkup(direction){
-  const map = {
-    up: { symbol: '↗', label: 'Hausse' },
-    down: { symbol: '↘', label: 'Baisse' },
-    flat: { symbol: '→', label: 'Stable' },
-  };
-  const item = map[direction] || map.flat;
-  return `<span class="price-trend price-trend--${item.label.toLowerCase()}" aria-label="${item.label}" title="${item.label}">${item.symbol}</span>`;
 }
 
 function getPrimaryOffer(ingredient){
@@ -855,24 +829,6 @@ function renderOffers(){
     openSheet(ingredientSheet, ingredientBackdrop);
   }
 
-
-  function formatNutritionValue(key, value){
-    if (value === undefined || value === null || value === '') return '-';
-    const normalized = String(value).trim();
-    const unitMap = {
-      energie: 'kcal',
-      matieresGrasses: 'g/kg',
-      acidesGrasSatures: 'g/kg',
-      glucides: 'g/kg',
-      sucres: 'g/kg',
-      proteines: 'g/kg',
-      sel: 'g/kg',
-    };
-    const unit = unitMap[key] || '';
-    if (!unit) return normalized;
-    return /(kcal|g\/kg|g|kg|l)$/i.test(normalized) ? normalized : `${normalized} ${unit}`;
-  }
-
   
 
 async function showIngredientDetail(id){
@@ -883,45 +839,58 @@ async function showIngredientDetail(id){
     const nutrition = ingredient.nutrition || {};
     const allergenesLabels = (ingredient.allergenes || []).map(humanizeSlug);
     const nutritionRows = [
-      ['Énergie', formatNutritionValue('energie', nutrition.energie)],
-      ['Matières grasses', formatNutritionValue('matieresGrasses', nutrition.matieresGrasses)],
-      ['Acides gras saturés', formatNutritionValue('acidesGrasSatures', nutrition.acidesGrasSatures)],
-      ['Glucides', formatNutritionValue('glucides', nutrition.glucides)],
-      ['Sucres', formatNutritionValue('sucres', nutrition.sucres)],
-      ['Protéines', formatNutritionValue('proteines', nutrition.proteines)],
-      ['Sel', formatNutritionValue('sel', nutrition.sel)],
+      ['Énergie', nutrition.energie],
+      ['Matières grasses', nutrition.matieresGrasses],
+      ['Acides gras saturés', nutrition.acidesGrasSatures],
+      ['Glucides', nutrition.glucides],
+      ['Sucres', nutrition.sucres],
+      ['Protéines', nutrition.proteines],
+      ['Sel', nutrition.sel],
     ];
     const historyEntries = (ingredient.priceHistory || []).slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
-    const primaryOffer = getPrimaryOffer(ingredient);
-    const otherOffers = (ingredient.offres || []).filter(offre => !primaryOffer || offre.id !== primaryOffer.id);
-    const renderOfferCard = (offre, { primary=false } = {}) => {
+    const comparison = buildOfferComparison(ingredient.offres || []);
+    const comparisonSummaryMarkup = (comparison.bestUnit || comparison.bestColis) ? `
+      <div class="offer-comparison-grid">
+        <div class="offer-comparison-card">
+          <div class="detail-label">Meilleur HT / unité</div>
+          <div class="detail-value">${comparison.bestUnit ? euro(comparison.bestUnit.prixHTUnite) : '—'}</div>
+          <div class="muted">${comparison.bestUnit ? esc((fournisseurs.find(f => f.id === comparison.bestUnit.fournisseurId)?.nom) || 'Sans fournisseur') : 'Aucune offre'}</div>
+        </div>
+        <div class="offer-comparison-card">
+          <div class="detail-label">Meilleur HT / colis</div>
+          <div class="detail-value">${comparison.bestColis ? euro(comparison.bestColis.prixHTColis) : '—'}</div>
+          <div class="muted">${comparison.bestColis ? esc((fournisseurs.find(f => f.id === comparison.bestColis.fournisseurId)?.nom) || 'Sans fournisseur') : 'Aucune offre'}</div>
+        </div>
+      </div>` : '<div class="notice">Ajoute des prix HT sur les offres pour activer le comparatif.</div>';
+    const offersMarkup = (ingredient.offres || []).length ? ingredient.offres.map(offre => {
       const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
       const displayEan = getOfferDisplayEan(offre);
-      const unitTrend = getOfferTrend(ingredient, offre, 'prixHTUnite');
-      const colisTrend = getOfferTrend(ingredient, offre, 'prixHTColis');
-      return `<div class="item compact-item fournisseur-detail-item${primary ? ' is-primary-offer' : ''}">
+      const unitDelta = comparison.bestUnit && Number(offre.prixHTUnite) > 0 ? formatDeltaPercent(comparison.bestUnit.prixHTUnite, offre.prixHTUnite) : '';
+      const colisDelta = comparison.bestColis && Number(offre.prixHTColis) > 0 ? formatDeltaPercent(comparison.bestColis.prixHTColis, offre.prixHTColis) : '';
+      const isBestUnit = comparison.bestUnit && comparison.bestUnit.id === offre.id;
+      const isBestColis = comparison.bestColis && comparison.bestColis.id === offre.id;
+      return `<div class="item compact-item fournisseur-detail-item">
         <div class="item-top">
-          <div>
-            <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
-            <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
-          </div>
-          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Principale</span>' : ''}</div>
+          <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
+          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">◎ Unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">◎ Colis</span>' : ''}</div>
         </div>
+        <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
         ${displayEan ? `<div class="ean-visual-wrap fournisseur-ean-wrap">${ean13Svg(displayEan)}<div class="barcode-number monospace">${esc(displayEan)}</div></div>` : '<div class="muted">EAN non renseigné.</div>'}
-        <div class="muted">${esc(offre.quantiteColis || '-')} ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(offre.tva ?? 0).replace('.', ',')}%</div>
-        <div class="offer-price-lines">
-          <div class="offer-price-line"><span class="detail-label">Prix HT unitaire</span><span class="offer-price-line__value">${trendArrowMarkup(unitTrend)} ${offre.prixHTUnite ? euro(offre.prixHTUnite) : '—'}</span></div>
-          <div class="offer-price-line"><span class="detail-label">Prix HT colis</span><span class="offer-price-line__value">${trendArrowMarkup(colisTrend)} ${offre.prixHTColis ? euro(offre.prixHTColis) : '—'}</span></div>
+        <div class="muted">${esc(offre.quantiteColis || '-') } ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(offre.tva ?? 0).replace('.', ',')}%</div>
+        <div class="offer-price-grid">
+          <div class="offer-price-item">
+            <span class="detail-label">HT / unité</span>
+            <strong>${offre.prixHTUnite ? euro(offre.prixHTUnite) : '—'}</strong>
+            <span class="muted">${unitDelta || (isBestUnit ? 'Référence' : 'Sans comparaison')}</span>
+          </div>
+          <div class="offer-price-item">
+            <span class="detail-label">HT / colis</span>
+            <strong>${offre.prixHTColis ? euro(offre.prixHTColis) : '—'}</strong>
+            <span class="muted">${colisDelta || (isBestColis ? 'Référence' : 'Sans comparaison')}</span>
+          </div>
         </div>
       </div>`;
-    };
-    const offersMarkup = primaryOffer ? `
-      <div class="supplier-primary-block">
-        <div class="detail-label">Fournisseur principal</div>
-        ${renderOfferCard(primaryOffer, { primary: true })}
-      </div>
-      ${otherOffers.length ? `<details class="details supplier-expandable"><summary>Autres fournisseurs (${otherOffers.length})</summary><div class="details-content"><div class="list">${otherOffers.map(offre => renderOfferCard(offre)).join('')}</div></div></details>` : ''}
-    ` : '<div class="notice">Aucune offre enregistrée.</div>';
+    }).join('') : '<div class="notice">Aucune offre enregistrée.</div>';
     detailContent.innerHTML = `
       <section class="detail-panel">
         <div class="detail-actions-row">
@@ -933,9 +902,8 @@ async function showIngredientDetail(id){
 
         <div class="detail-tabs" role="tablist" aria-label="Sections produit">
           <button class="detail-tab active" type="button" data-detail-tab="infos" aria-selected="true">Infos</button>
-          <button class="detail-tab" type="button" data-detail-tab="historique" aria-selected="false">Historique</button>
+          <button class="detail-tab" type="button" data-detail-tab="historique" aria-selected="false">Historique & achats</button>
           <button class="detail-tab" type="button" data-detail-tab="utilisation" aria-selected="false">Utilisation</button>
-          <button class="detail-tab" type="button" data-detail-tab="consommation" aria-selected="false">Consommation</button>
           <button class="detail-tab" type="button" data-detail-tab="tracabilites" aria-selected="false">Traçabilités</button>
         </div>
 
@@ -979,6 +947,11 @@ async function showIngredientDetail(id){
               <button class="btn secondary" type="button" data-detail-action="save-note">Enregistrer la note</button>
             </div>
           </section>
+
+          <section class="card compact-card detail-comparison-card">
+            <h4>Comparatif des offres</h4>
+            ${comparisonSummaryMarkup}
+          </section>
         </div>
 
         <div class="detail-tab-panel" data-detail-panel="historique">
@@ -1009,19 +982,23 @@ async function showIngredientDetail(id){
               }).join('')}</div>` : '<div class="notice">Pas encore d’historique de prix.</div>'}
             </div>
           </section>
+
+          <section class="card compact-card">
+            <div class="item-top">
+              <h4>Historique des achats</h4>
+              <div class="toolbar">
+                <button class="btn secondary active" type="button" disabled>Graphique</button>
+                <button class="btn secondary" type="button" disabled>Liste</button>
+              </div>
+            </div>
+            <div class="notice">En cours de développement.</div>
+          </section>
         </div>
 
         <div class="detail-tab-panel" data-detail-panel="utilisation">
           <section class="card compact-card placeholder-card">
             <h4>Utilisation</h4>
             <p class="muted">À venir. Cet onglet accueillera les usages en recettes, productions et associations produit.</p>
-          </section>
-        </div>
-
-        <div class="detail-tab-panel" data-detail-panel="consommation">
-          <section class="card compact-card placeholder-card">
-            <h4>Consommation</h4>
-            <p class="muted">À venir. Cet onglet accueillera les volumes consommés, historiques et tendances d’usage.</p>
           </section>
         </div>
 
