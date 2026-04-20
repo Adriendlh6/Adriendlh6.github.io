@@ -185,8 +185,10 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .mercuriale-print-table{font-size:9.2pt}
   .mercuriale-print-table th,.mercuriale-print-table td{padding:2mm}
   .mercuriale-print-table .product-first-row td{border-top:2px solid #999}
-  .mercuriale-print-table .print-category-row td{padding:1.4mm 2mm;border:none;background:transparent}
-  .mercuriale-print-table .print-category-line{display:block;padding:1.4mm 2.4mm;border-radius:999px;background:color-mix(in srgb, var(--cat-color) 18%, white);border:1px solid color-mix(in srgb, var(--cat-color) 45%, white);color:#4a2f18;font-weight:700}
+  .mercuriale-print-table .print-category-row td{padding:1.2mm 0 1.6mm;border:none;background:transparent}
+  .mercuriale-print-table .print-category-band{display:flex;align-items:center;gap:2mm;padding:1.6mm 2.2mm;border-radius:2.4mm;background:color-mix(in srgb, var(--cat-color) 22%, white);border:1px solid color-mix(in srgb, var(--cat-color) 46%, white);color:#3e2a18;font-weight:700}
+  .mercuriale-print-table .print-category-band__dot{display:inline-block;width:3.2mm;height:3.2mm;border-radius:999px;background:var(--cat-color);border:1px solid color-mix(in srgb, var(--cat-color) 72%, black)}
+  .mercuriale-print-table .print-category-band__label{line-height:1.1}
   .mercuriale-print-table .product-sub-row td:first-child,
   .mercuriale-print-table .product-sub-row td:nth-child(2){color:transparent}
 }
@@ -224,4 +226,23 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 }
 @media (max-width: 920px){
   .mercuriale-toolbar-topline{grid-template-columns:minmax(0,1fr) auto}
+}
+
+
+.form-grid-span-full{grid-column:1 / -1}
+.offre-card-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.primary-source-toggle{display:flex;align-items:center;gap:8px;font-weight:600}
+.source-badge{background:color-mix(in srgb, var(--brand) 14%, white);border-color:color-mix(in srgb, var(--brand) 35%, white);color:var(--brand)}
+.detail-note-input{width:100%;border:1px solid var(--line);border-radius:14px;padding:12px 14px;resize:vertical;background:var(--surface-2);font:inherit}
+.history-panel.hidden{display:none}
+.history-list{display:grid;gap:10px}
+.history-prices-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;color:var(--muted);font-weight:600}
+.price-history-chart{width:100%;height:auto;display:block}
+.price-history-chart-label{font-size:11px;fill:#6f6251}
+.fournisseur-ean-wrap .ean-svg{max-width:220px;min-width:0}
+.fournisseur-ean-wrap .barcode-number{font-size:12px;letter-spacing:.12em}
+.detail-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width: 920px){
+  .detail-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .offre-card-header{align-items:flex-start;flex-direction:column}
 }

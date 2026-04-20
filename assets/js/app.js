@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.0.12';
+const APP_VERSION = 'v2.1';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -102,6 +102,91 @@ function ean13Svg(value=''){
   </svg>`;
 }
 
+function getPrimaryOffer(ingredient){
+  const offers = (ingredient?.offres || []);
+  return offers.find(offre => offre.sourcePrincipale) || offers[0] || null;
+}
+
+function getIngredientSearchTokens(ingredient){
+  const offerTokens = (ingredient?.offres || []).flatMap(offre => [offre.ean, offre.marque, offre.reference]).filter(Boolean).join(' ');
+  return `${ingredient?.nom || ''} ${offerTokens}`.toLowerCase();
+}
+
+function getOfferDisplayEan(offre=''){
+  return normalizeEan13(offre?.ean || '') || String(offre?.ean || '').replace(/\s+/g, '');
+}
+
+function getIngredientPrimaryEan(ingredient){
+  const offer = getPrimaryOffer(ingredient);
+  return getOfferDisplayEan(offer || {});
+}
+
+function formatPriceHistoryDate(value){
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
+}
+
+function buildHistoryChartSvg(entries){
+  const values = entries.map(item => Number(item.prixHTUnite)).filter(v => Number.isFinite(v) && v > 0);
+  if (!values.length) return '<div class="muted">Pas encore assez de données pour afficher le graphique.</div>';
+  const width = 420, height = 160, pad = 18;
+  const min = Math.min(...values), max = Math.max(...values);
+  const span = max - min || 1;
+  const points = values.map((v, idx) => {
+    const x = pad + (idx * ((width - pad * 2) / Math.max(values.length - 1, 1)));
+    const y = height - pad - (((v - min) / span) * (height - pad * 2));
+    return `${x},${y}`;
+  }).join(' ');
+  const last = values[values.length - 1];
+  return `<svg class="price-history-chart" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Historique des prix">
+    <rect x="0" y="0" width="${width}" height="${height}" rx="14" fill="#fffaf4" />
+    <line x1="${pad}" y1="${height-pad}" x2="${width-pad}" y2="${height-pad}" stroke="#d7cfbf" stroke-width="1.5"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${height-pad}" stroke="#d7cfbf" stroke-width="1.5"/>
+    <polyline fill="none" stroke="#b8742a" stroke-width="3" points="${points}" stroke-linecap="round" stroke-linejoin="round"/>
+    ${points.split(' ').map(pt => `<circle cx="${pt.split(',')[0]}" cy="${pt.split(',')[1]}" r="3.4" fill="#8b5e34"/>`).join('')}
+    <text x="${width-pad}" y="${pad+4}" text-anchor="end" class="price-history-chart-label">${euro(max)}</text>
+    <text x="${width-pad}" y="${height-pad-6}" text-anchor="end" class="price-history-chart-label">${euro(min)}</text>
+    <text x="${width-pad}" y="${height/2}" text-anchor="end" class="price-history-chart-label">Dernier: ${euro(last)}</text>
+  </svg>`;
+}
+
+function snapshotOfferForHistory(offre){
+  return {
+    fournisseurId: offre?.fournisseurId || '',
+    marque: offre?.marque || '',
+    reference: offre?.reference || '',
+    ean: offre?.ean || '',
+    sourcePrincipale: Boolean(offre?.sourcePrincipale),
+    prixHTUnite: round(offre?.prixHTUnite, 4),
+    prixTTCUnite: round(offre?.prixTTCUnite, 4),
+    prixHTColis: round(offre?.prixHTColis, 4),
+    prixTTCColis: round(offre?.prixTTCColis, 4),
+  };
+}
+
+function appendPriceHistory(previousIngredient, draft){
+  const previousHistory = Array.isArray(previousIngredient?.priceHistory) ? previousIngredient.priceHistory : [];
+  const previousById = new Map((previousIngredient?.offres || []).map(offre => [offre.id, snapshotOfferForHistory(offre)]));
+  const nextHistory = [...previousHistory];
+  for (const offre of (draft.offres || [])){
+    const snapshot = snapshotOfferForHistory(offre);
+    const before = previousById.get(offre.id);
+    const changed = !before || JSON.stringify(before) !== JSON.stringify(snapshot);
+    if (changed){
+      nextHistory.unshift({
+        id: `hist_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        ingredientId: draft.id,
+        offerId: offre.id,
+        timestamp: new Date().toISOString(),
+        ...snapshot
+      });
+    }
+  }
+  return nextHistory;
+}
+
 function getOrCreatePrintRoot(){
   let root = document.getElementById('product-print-root');
   if (!root) {
@@ -145,8 +230,8 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs){
         </article>
         <article class="print-card">
           <div class="detail-label">EAN</div>
-          <div class="print-barcode-wrap">${ean13Svg(ingredient.ean || '')}</div>
-          <div class="print-ean-text monospace">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div>
+          <div class="print-barcode-wrap">${ean13Svg(getIngredientPrimaryEan(ingredient))}</div>
+          <div class="print-ean-text monospace">${esc(getIngredientPrimaryEan(ingredient) || '-')}</div>
         </article>
       </section>
       <section class="print-card">
@@ -221,14 +306,14 @@ function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
     const categoryColor = category?.couleur || '#d9d2c3';
     const categoryKey = `${categoryName}__${categoryColor}`;
     const offres = (ingredient.offres || []).length ? (ingredient.offres || []) : [null];
-    const normalizedEan = normalizeEan13(ingredient.ean || '');
+    const normalizedEan = getIngredientPrimaryEan(ingredient);
     const eanMarkup = normalizedEan
       ? `<div class="print-ean-block">${ean13Svg(normalizedEan)}<div class="print-ean-number">${esc(normalizedEan)}</div></div>`
       : `<div class="muted">${esc(ingredient.ean || '-')}</div>`;
 
     let block = '';
     if (categoryKey !== lastCategoryKey) {
-      block += `<tr class="print-category-row"><td colspan="6"><span class="print-category-line" style="--cat-color:${esc(categoryColor)}">${esc(categoryName)}</span></td></tr>`;
+      block += `<tr class="print-category-row"><td colspan="7"><div class="print-category-band" style="--cat-color:${esc(categoryColor)}"><span class="print-category-band__dot"></span><span class="print-category-band__label">${esc(categoryName)}</span></div></td></tr>`;
       lastCategoryKey = categoryKey;
     }
 
@@ -282,6 +367,9 @@ function ingredientCloneForDuplicate(ingredient){
   const copy = JSON.parse(JSON.stringify(ingredient || {}));
   delete copy.id;
   copy.nom = `${ingredient?.nom || 'Produit'} (copie)`;
+  copy.note = ingredient?.note || '';
+  copy.priceHistory = Array.isArray(ingredient?.priceHistory) ? ingredient.priceHistory.slice(0, 50) : [];
+  copy.offres = (copy.offres || []).map(offre => ({ ...offre, id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` }));
   return copy;
 }
 
@@ -412,8 +500,8 @@ function getIngredientDraft(form, currentIngredientId){
     id: currentIngredientId || undefined,
     nom: data.nom || '',
     categorieId: data.categorieId || '',
-    ean: data.ean || '',
     uniteBase: data.uniteBase || 'kg',
+    note: data.note || '',
     nutrition: {
       energie: data.energie || '',
       matieresGrasses: data.matieresGrasses || '',
@@ -627,7 +715,7 @@ function renderCategorySelect(selected=''){
   function getVisibleIngredients(){
     const search = (filters.search || '').trim().toLowerCase();
     let visible = ingredients.filter(ingredient => {
-      const matchesSearch = !search || `${ingredient.nom || ''} ${(ingredient.ean || '')}`.toLowerCase().includes(search);
+      const matchesSearch = !search || getIngredientSearchTokens(ingredient).includes(search);
       const matchesCategory = !filters.categorieId || ingredient.categorieId === filters.categorieId;
       const matchesSupplier = !filters.fournisseurId || (ingredient.offres || []).some(offre => offre.fournisseurId === filters.fournisseurId);
       return matchesSearch && matchesCategory && matchesSupplier;
@@ -641,24 +729,38 @@ function renderCategorySelect(selected=''){
     return visible;
   }
 
-  function renderOffers(){
+  
+function renderOffers(){
     if (!offres.length){
       offersEditor.innerHTML = '<div class="notice">Aucune offre ajoutée.</div>';
       return;
     }
+    offers.forEach((offre, idx) => {
+      if (!offre.id) offre.id = `offre_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`;
+      if (!('sourcePrincipale' in offre)) offre.sourcePrincipale = idx === 0;
+    });
+    if (!offres.some(offre => offre.sourcePrincipale) && offres[0]) offres[0].sourcePrincipale = true;
     offersEditor.innerHTML = offres.map((offre, idx) => `
       <div class="item offre-card" data-offre-index="${idx}">
+        <div class="offre-card-header">
+          <div class="detail-value">Offre ${idx + 1}</div>
+          <label class="primary-source-toggle">
+            <input type="radio" name="source-principale" data-offre-field="sourcePrincipale" data-index="${idx}" ${offre.sourcePrincipale ? 'checked' : ''}>
+            <span>Source principale</span>
+          </label>
+        </div>
         <div class="form-grid">
           <div class="field"><label>Fournisseur</label><select data-offre-field="fournisseurId" data-index="${idx}">${fournisseurOptions(fournisseurs, offre.fournisseurId)}</select></div>
           <div class="field"><label>Marque</label><input data-offre-field="marque" data-index="${idx}" value="${esc(offre.marque || '')}" autocomplete="off"></div>
+          <div class="field"><label>EAN marque / produit</label><input data-offre-field="ean" data-index="${idx}" value="${esc(offre.ean || '')}" inputmode="numeric" autocomplete="off"></div>
           <div class="field"><label>Référence</label><input data-offre-field="reference" data-index="${idx}" value="${esc(offre.reference || '')}" autocomplete="off"></div>
           <div class="field"><label>TVA</label><select data-offre-field="tva" data-index="${idx}">${tvaOptions(offre.tva ?? '5.5')}</select></div>
-          <div class="field"><label>Quantité colis</label><input type="number" min="0" step="0.001" data-offre-field="quantiteColis" data-index="${idx}" value="${formatNumberInput(offre.quantiteColis)}" inputmode="decimal"></div>
+          <div class="field"><label>Quantité colis</label><input type="text" inputmode="decimal" data-offre-field="quantiteColis" data-index="${idx}" value="${formatNumberInput(offre.quantiteColis)}"></div>
           <div class="field"><label>Unité colis</label><select data-offre-field="uniteColis" data-index="${idx}"><option value="kg" ${offre.uniteColis==='kg'?'selected':''}>kg</option><option value="piece" ${offre.uniteColis==='piece'?'selected':''}>pièce</option><option value="l" ${offre.uniteColis==='l'?'selected':''}>l</option></select></div>
-          <div class="field"><label>Prix HT unité</label><input type="number" min="0" step="0.0001" data-offre-field="prixHTUnite" data-index="${idx}" value="${formatNumberInput(offre.prixHTUnite)}" inputmode="decimal"></div>
-          <div class="field"><label>Prix TTC unité</label><input type="number" min="0" step="0.0001" data-offre-field="prixTTCUnite" data-index="${idx}" value="${formatNumberInput(offre.prixTTCUnite)}" inputmode="decimal"></div>
-          <div class="field"><label>Prix HT colis</label><input type="number" min="0" step="0.0001" data-offre-field="prixHTColis" data-index="${idx}" value="${formatNumberInput(offre.prixHTColis)}" inputmode="decimal"></div>
-          <div class="field"><label>Prix TTC colis</label><input type="number" min="0" step="0.0001" data-offre-field="prixTTCColis" data-index="${idx}" value="${formatNumberInput(offre.prixTTCColis)}" inputmode="decimal"></div>
+          <div class="field"><label>Prix HT unité</label><input type="text" inputmode="decimal" data-offre-field="prixHTUnite" data-index="${idx}" value="${formatNumberInput(offre.prixHTUnite)}"></div>
+          <div class="field"><label>Prix TTC unité</label><input type="text" inputmode="decimal" data-offre-field="prixTTCUnite" data-index="${idx}" value="${formatNumberInput(offre.prixTTCUnite)}"></div>
+          <div class="field"><label>Prix HT colis</label><input type="text" inputmode="decimal" data-offre-field="prixHTColis" data-index="${idx}" value="${formatNumberInput(offre.prixHTColis)}"></div>
+          <div class="field"><label>Prix TTC colis</label><input type="text" inputmode="decimal" data-offre-field="prixTTCColis" data-index="${idx}" value="${formatNumberInput(offre.prixTTCColis)}"></div>
         </div>
         <div class="toolbar toolbar-end" style="margin-top:12px">
           <button class="btn danger" type="button" data-remove-offre="${idx}">Supprimer l’offre</button>
@@ -682,8 +784,8 @@ function renderCategorySelect(selected=''){
     ingredientSheetTitle.textContent = ingredient?.id ? 'Modifier un ingrédient' : 'Ajouter un ingrédient';
     ingredientForm.reset();
     ingredientForm.nom.value = ingredient?.nom || '';
-    ingredientForm.ean.value = ingredient?.ean || '';
     ingredientForm.uniteBase.value = ingredient?.uniteBase || 'kg';
+    if (ingredientForm.note) ingredientForm.note.value = ingredient?.note || '';
     renderCategorySelect(ingredient?.categorieId || '');
     ingredientForm.energie.value = ingredient?.nutrition?.energie || '';
     ingredientForm.matieresGrasses.value = ingredient?.nutrition?.matieresGrasses || '';
@@ -703,6 +805,7 @@ function renderCategorySelect(selected=''){
   }
 
   
+
 async function showIngredientDetail(id){
     const ingredient = ingredients.find(item => item.id === id);
     if (!ingredient) return;
@@ -719,6 +822,21 @@ async function showIngredientDetail(id){
       ['Protéines', nutrition.proteines],
       ['Sel', nutrition.sel],
     ];
+    const historyEntries = (ingredient.priceHistory || []).slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const offersMarkup = (ingredient.offres || []).length ? ingredient.offres.map(offre => {
+      const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
+      const displayEan = getOfferDisplayEan(offre);
+      return `<div class="item compact-item fournisseur-detail-item">
+        <div class="item-top">
+          <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
+          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}</div>
+        </div>
+        <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
+        ${displayEan ? `<div class="ean-visual-wrap fournisseur-ean-wrap">${ean13Svg(displayEan)}<div class="barcode-number monospace">${esc(displayEan)}</div></div>` : '<div class="muted">EAN non renseigné.</div>'}
+        <div class="muted">${esc(offre.quantiteColis || '-') } ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(offre.tva ?? 0).replace('.', ',')}%</div>
+        <div class="muted">${offre.prixHTUnite ? euro(offre.prixHTUnite) + ' HT / unité' : 'Sans prix unitaire'}${offre.prixHTColis ? ' · ' + euro(offre.prixHTColis) + ' HT / colis' : ''}</div>
+      </div>`;
+    }).join('') : '<div class="notice">Aucune offre enregistrée.</div>';
     detailContent.innerHTML = `
       <section class="detail-panel">
         <div class="detail-actions-row">
@@ -730,6 +848,7 @@ async function showIngredientDetail(id){
 
         <div class="detail-tabs" role="tablist" aria-label="Sections produit">
           <button class="detail-tab active" type="button" data-detail-tab="infos" aria-selected="true">Infos</button>
+          <button class="detail-tab" type="button" data-detail-tab="historique" aria-selected="false">Historique</button>
           <button class="detail-tab" type="button" data-detail-tab="utilisation" aria-selected="false">Utilisation</button>
           <button class="detail-tab" type="button" data-detail-tab="consommation" aria-selected="false">Consommation</button>
           <button class="detail-tab" type="button" data-detail-tab="tracabilites" aria-selected="false">Traçabilités</button>
@@ -747,9 +866,10 @@ async function showIngredientDetail(id){
                 <div class="toolbar chip-row">${categoryChip(category)}</div>
               </div>
               <div>
-                <div class="detail-label">EAN</div>
-                <div class="ean-detail-row ean-visual-block">
-                  <div class="ean-visual-wrap">${ean13Svg(ingredient.ean || '')}<div class="barcode-number monospace">${esc(normalizeEan13(ingredient.ean || '') || ingredient.ean || '-')}</div></div>
+                <div class="detail-label">Note</div>
+                <textarea id="ingredient-note-inline" class="detail-note-input" rows="4" placeholder="Ajouter une note rapide...">${esc(ingredient.note || '')}</textarea>
+                <div class="toolbar toolbar-end" style="margin-top:10px">
+                  <button class="btn secondary" type="button" data-detail-action="save-note">Enregistrer la note</button>
                 </div>
               </div>
             </div>
@@ -757,17 +877,7 @@ async function showIngredientDetail(id){
 
           <section class="card compact-card">
             <h4>Fournisseurs</h4>
-            <div class="list">
-              ${(ingredient.offres || []).length ? ingredient.offres.map(offre => {
-                const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
-                return `<div class="item compact-item fournisseur-detail-item">
-                  <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
-                  <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
-                  <div class="muted">${esc(offre.quantiteColis || '-') } ${esc(offre.uniteColis || ingredient.uniteBase || 'unité')} · TVA ${String(offre.tva ?? 0).replace('.', ',')}%</div>
-                  <div class="muted">${offre.prixHTUnite ? euro(offre.prixHTUnite) + ' HT / unité' : 'Sans prix unitaire'}${offre.prixTTCUnite ? ' · ' + euro(offre.prixTTCUnite) + ' TTC / unité' : ''}</div>
-                </div>`;
-              }).join('') : '<div class="notice">Aucune offre enregistrée.</div>'}
-            </div>
+            <div class="list">${offersMarkup}</div>
           </section>
 
           <section class="card compact-card">
@@ -782,6 +892,36 @@ async function showIngredientDetail(id){
                 ${nutritionRows.map(([label, value]) => `<div><strong>${esc(label)}</strong><div class="muted">${esc(value || '-')}</div></div>`).join('')}
               </div>
             </details>
+          </section>
+        </div>
+
+        <div class="detail-tab-panel" data-detail-panel="historique">
+          <section class="card compact-card">
+            <div class="item-top">
+              <h4>Historique des prix</h4>
+              <div class="toolbar">
+                <button class="btn secondary active" type="button" data-history-mode="graphique">Graphique</button>
+                <button class="btn secondary" type="button" data-history-mode="liste">Liste</button>
+              </div>
+            </div>
+            <div data-history-panel="graphique" class="history-panel active">
+              ${buildHistoryChartSvg(historyEntries.slice().reverse())}
+            </div>
+            <div data-history-panel="liste" class="history-panel hidden">
+              ${historyEntries.length ? `<div class="list history-list">${historyEntries.map(entry => {
+                const supplier = fournisseurs.find(f => f.id === entry.fournisseurId);
+                return `<div class="item compact-item">
+                  <div class="item-top">
+                    <div><strong>${esc(supplier?.nom || 'Sans fournisseur')}</strong><div class="muted">${esc(entry.marque || '-')} · ${esc(entry.reference || '-')}</div></div>
+                    <div class="muted">${formatPriceHistoryDate(entry.timestamp)}</div>
+                  </div>
+                  <div class="history-prices-row">
+                    <span>${euro(entry.prixHTUnite)} HT / unité</span>
+                    <span>${euro(entry.prixHTColis)} HT / colis</span>
+                  </div>
+                </div>`;
+              }).join('')}</div>` : '<div class="notice">Pas encore d’historique de prix.</div>'}
+            </div>
           </section>
         </div>
 
@@ -819,9 +959,25 @@ async function showIngredientDetail(id){
       };
     });
 
+    qsa('[data-history-mode]', detailContent).forEach(btn => {
+      btn.onclick = () => {
+        qsa('[data-history-mode]', detailContent).forEach(item => item.classList.toggle('active', item === btn));
+        qsa('[data-history-panel]', detailContent).forEach(panel => panel.classList.toggle('hidden', panel.dataset.historyPanel !== btn.dataset.historyMode));
+      };
+    });
+
     qsa('[data-detail-action]', detailContent).forEach(btn => {
       btn.onclick = async () => {
         const action = btn.dataset.detailAction;
+        if (action === 'save-note') {
+          const textarea = qs('#ingredient-note-inline', detailContent);
+          ingredient.note = textarea?.value || '';
+          await AppDB.put('ingredients', ingredient);
+          const idx = ingredients.findIndex(item => item.id === ingredient.id);
+          if (idx >= 0) ingredients[idx] = ingredient;
+          renderIngredients();
+          return;
+        }
         if (action === 'edit') {
           closeSheet(detailSheet, detailBackdrop);
           openIngredientSheetWithData(ingredient);
@@ -833,6 +989,7 @@ async function showIngredientDetail(id){
         }
         if (action === 'duplicate') {
           if (!confirm(`Dupliquer ${ingredient.nom} ?`)) return;
+          if (!confirm('Confirmer la duplication du produit ?')) return;
           const duplicate = ingredientCloneForDuplicate(ingredient);
           await AppDB.put('ingredients', duplicate);
           ingredients.unshift(duplicate);
@@ -851,7 +1008,8 @@ async function showIngredientDetail(id){
           renderIngredients();
           renderDashboard();
           return;
-        }      };
+        }
+      };
     });
 
     openSheet(detailSheet, detailBackdrop);
@@ -978,8 +1136,10 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
 
   qs('#add-offre-btn').onclick = () => {
     offres.push({
-      fournisseurId: '', marque: '', reference: '', tva: 5.5, quantiteColis: 1,
+      id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      fournisseurId: '', marque: '', ean: '', reference: '', tva: 5.5, quantiteColis: 1,
       uniteColis: ingredientForm.uniteBase.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
+      sourcePrincipale: offres.length === 0,
     });
     renderOffers();
   };
@@ -994,15 +1154,35 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
     const field = e.target.dataset.offreField;
     const idx = Number(e.target.dataset.index);
     if (field == null || Number.isNaN(idx) || !offres[idx]) return;
-    offres[idx][field] = ['quantiteColis','prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','tva'].includes(field) ? num(e.target.value) : e.target.value;
+    if (field === 'sourcePrincipale') return;
+    offres[idx][field] = ['quantiteColis','prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','tva'].includes(field)
+      ? e.target.value
+      : e.target.value;
   });
   offersEditor.addEventListener('change', (e) => {
     const field = e.target.dataset.offreField;
     const idx = Number(e.target.dataset.index);
     if (field == null || Number.isNaN(idx) || !offres[idx]) return;
-    offres[idx][field] = ['quantiteColis','prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','tva'].includes(field) ? num(e.target.value) : e.target.value;
-    if (['prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','quantiteColis','tva'].includes(field)) computeOffreFromField(offres[idx], field);
-    renderOffers();
+    if (field === 'sourcePrincipale') {
+      offres.forEach((offre, index) => { offre.sourcePrincipale = index === idx; });
+      renderOffers();
+      return;
+    }
+    const numericFields = ['quantiteColis','prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','tva'];
+    offres[idx][field] = numericFields.includes(field) ? num(String(e.target.value).replace(',', '.')) : e.target.value;
+    if (numericFields.includes(field)) {
+      computeOffreFromField(offres[idx], field);
+      const card = e.target.closest('[data-offre-index]');
+      if (card) {
+        ['prixHTUnite','prixTTCUnite','prixHTColis','prixTTCColis','quantiteColis'].forEach(key => {
+          const target = qs(`[data-offre-field="${key}"][data-index="${idx}"]`, card);
+          if (target && target !== e.target) target.value = formatNumberInput(offres[idx][key]);
+        });
+        const tvaSelect = qs(`[data-offre-field="tva"][data-index="${idx}"]`, card);
+        if (tvaSelect) tvaSelect.value = String(offres[idx].tva ?? 5.5);
+      }
+      return;
+    }
   });
 
   categoriesForm.onsubmit = async (e) => {
@@ -1023,8 +1203,22 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
 
   ingredientForm.onsubmit = async (e) => {
     e.preventDefault();
+    const previous = ingredients.find(item => item.id === currentIngredientId) || null;
     const draft = getIngredientDraft(ingredientForm, currentIngredientId);
-    draft.offres = JSON.parse(JSON.stringify(offres));
+    draft.offres = JSON.parse(JSON.stringify(offres)).map((offre, idx) => ({
+      ...offre,
+      id: offre.id || `offre_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`,
+      ean: getOfferDisplayEan(offre),
+      tva: num(offre.tva),
+      quantiteColis: num(offre.quantiteColis),
+      prixHTUnite: num(offre.prixHTUnite),
+      prixTTCUnite: num(offre.prixTTCUnite),
+      prixHTColis: num(offre.prixHTColis),
+      prixTTCColis: num(offre.prixTTCColis),
+      sourcePrincipale: Boolean(offre.sourcePrincipale)
+    }));
+    if (!draft.offres.some(offre => offre.sourcePrincipale) && draft.offres[0]) draft.offres[0].sourcePrincipale = true;
+    draft.priceHistory = appendPriceHistory(previous, draft);
     await AppDB.put('ingredients', draft);
     const existingIndex = ingredients.findIndex(item => item.id === draft.id);
     if (existingIndex >= 0) ingredients[existingIndex] = draft;
