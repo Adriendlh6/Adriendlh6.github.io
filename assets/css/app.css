@@ -342,3 +342,23 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 .price-history-legend-chip{width:12px;height:12px;border-radius:999px;flex:0 0 12px;margin-top:4px}
 .price-history-legend-name{font-weight:700;line-height:1.25}
 .price-history-legend-meta{color:var(--muted);font-size:.9rem;margin-top:2px}
+
+.history-list-groups{display:grid;gap:12px}
+.history-list-group{border:1px solid var(--line);border-radius:14px;background:var(--surface-2);overflow:hidden}
+.history-list-group-head{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.history-list-group-title-wrap{display:flex;align-items:flex-start;gap:10px}
+.history-list-group-title{font-weight:800;line-height:1.2}
+.history-list-group-sub,.history-list-group-count{color:var(--muted);font-size:.9rem}
+.history-list-rows{display:grid}
+.history-list-row{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:12px 14px;border-top:1px dashed var(--line)}
+.history-list-rows .history-list-row:first-child{border-top:0}
+.history-list-date{font-weight:700;color:var(--text)}
+.history-list-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.history-metric-box{padding:10px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;gap:4px}
+.history-metric-label{font-size:.78rem;color:var(--muted)}
+@media (max-width: 640px){
+  .history-list-group-head,.history-list-row{grid-template-columns:1fr;display:grid}
+  .history-list-group-head{justify-content:stretch}
+  .history-list-group-count{padding-left:22px}
+  .history-list-metrics{grid-template-columns:1fr}
+}
