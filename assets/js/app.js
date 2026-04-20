@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.1.3';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -164,25 +164,6 @@ function snapshotOfferForHistory(offre){
     prixHTColis: round(offre?.prixHTColis, 4),
     prixTTCColis: round(offre?.prixTTCColis, 4),
   };
-}
-
-
-function buildOfferComparison(offres=[]){
-  const validUnit = offres.filter(offre => Number(offre.prixHTUnite) > 0);
-  const validColis = offres.filter(offre => Number(offre.prixHTColis) > 0);
-  const bestUnit = validUnit.length ? validUnit.reduce((best, offre) => Number(offre.prixHTUnite) < Number(best.prixHTUnite) ? offre : best) : null;
-  const bestColis = validColis.length ? validColis.reduce((best, offre) => Number(offre.prixHTColis) < Number(best.prixHTColis) ? offre : best) : null;
-  return { bestUnit, bestColis };
-}
-
-function formatDeltaPercent(best, current){
-  const bestValue = Number(best);
-  const currentValue = Number(current);
-  if (!(bestValue > 0) || !(currentValue > 0)) return '';
-  if (Math.abs(currentValue - bestValue) < 1e-9) return 'Référence';
-  const delta = ((currentValue - bestValue) / bestValue) * 100;
-  const sign = delta > 0 ? '+' : '';
-  return `${sign}${delta.toFixed(1).replace('.', ',')} %`;
 }
 
 function appendPriceHistory(previousIngredient, draft){
@@ -718,6 +699,54 @@ function renderCategorySelect(selected=''){
     if (searchInput) searchInput.value = filters.search;
   }
 
+
+  function createEmptyOffer(){
+    return {
+      id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      fournisseurId: '', marque: '', ean: '', reference: '', tva: 5.5, quantiteColis: 1,
+      uniteColis: ingredientForm?.uniteBase?.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
+      sourcePrincipale: offres.length === 0,
+    };
+  }
+
+  function addOfferAndRender(){
+    offres.push(createEmptyOffer());
+    renderOffers();
+  }
+
+  function ensureMercurialeActionBindings(){
+    if (document.body.dataset.mercurialeBindingsReady === '1') return;
+    document.body.dataset.mercurialeBindingsReady = '1';
+    document.addEventListener('click', (event) => {
+      const addOfferBtn = event.target.closest('#add-offre-btn');
+      if (addOfferBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        addOfferAndRender();
+        return;
+      }
+      const openIngredientBtn = event.target.closest('#open-ingredient-sheet-btn');
+      if (openIngredientBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (ingredientDraft) openIngredientSheetWithData({ ...ingredientDraft, offres: ingredientDraft.offres || [] });
+        else openIngredientSheetWithData(null);
+        return;
+      }
+      const editBtn = event.target.closest('[data-detail-action="edit"]');
+      if (editBtn) {
+        event.preventDefault();
+        event.stopPropagation();
+        const ingredientId = editBtn.getAttribute('data-ingredient-id') || detailSheet?.dataset?.ingredientId || '';
+        const current = ingredients.find(item => item.id === ingredientId) || ingredients.find(item => item.id === currentIngredientId);
+        if (current) {
+          closeSheet(detailSheet, detailBackdrop);
+          openIngredientSheetWithData(current);
+        }
+      }
+    }, true);
+  }
+
   function updateFiltersToggleState(){
     if (!filterToggleBtn || !filtersPanel) return;
     const isOpen = !filtersPanel.classList.contains('hidden');
@@ -793,7 +822,8 @@ function renderOffers(){
     ingredientSheetTitle.textContent = 'Ajouter un ingrédient';
     ingredientForm.reset();
     offres = [];
-    renderCategorySelect('');
+    ensureMercurialeActionBindings();
+  renderCategorySelect('');
     renderOffers();
     renderAllergenes([]);
   }
@@ -830,6 +860,7 @@ async function showIngredientDetail(id){
     if (!ingredient) return;
     const category = getCategoryById(categories, ingredient.categorieId);
     detailTitle.textContent = ingredient.nom;
+    detailSheet.dataset.ingredientId = ingredient.id;
     const nutrition = ingredient.nutrition || {};
     const allergenesLabels = (ingredient.allergenes || []).map(humanizeSlug);
     const nutritionRows = [
@@ -866,7 +897,7 @@ async function showIngredientDetail(id){
       return `<div class="item compact-item fournisseur-detail-item">
         <div class="item-top">
           <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
-          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge discreet" title="Meilleur HT unité">◎ Unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge discreet" title="Meilleur HT colis">◎ Colis</span>' : ''}</div>
+          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">Meilleur HT unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">Meilleur HT colis</span>' : ''}</div>
         </div>
         <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
         ${displayEan ? `<div class="ean-visual-wrap fournisseur-ean-wrap">${ean13Svg(displayEan)}<div class="barcode-number monospace">${esc(displayEan)}</div></div>` : '<div class="muted">EAN non renseigné.</div>'}
@@ -888,7 +919,7 @@ async function showIngredientDetail(id){
     detailContent.innerHTML = `
       <section class="detail-panel">
         <div class="detail-actions-row">
-          <button class="icon-square-btn" type="button" data-detail-action="edit" aria-label="Modifier" title="Modifier">✏️</button>
+          <button class="icon-square-btn" type="button" data-detail-action="edit" data-ingredient-id="${ingredient.id}" aria-label="Modifier" title="Modifier">✏️</button>
           <button class="icon-square-btn" type="button" data-detail-action="print" aria-label="Imprimer" title="Imprimer">🖨️</button>
           <button class="icon-square-btn" type="button" data-detail-action="duplicate" aria-label="Dupliquer" title="Dupliquer">📄</button>
           <button class="icon-square-btn danger" type="button" data-detail-action="delete" aria-label="Supprimer" title="Supprimer">🗑️</button>
@@ -913,7 +944,19 @@ async function showIngredientDetail(id){
                 <div class="detail-label">Catégorie</div>
                 <div class="toolbar chip-row">${categoryChip(category)}</div>
               </div>
+              <div>
+                <div class="detail-label">Note</div>
+                <textarea id="ingredient-note-inline" class="detail-note-input" rows="4" placeholder="Ajouter une note rapide...">${esc(ingredient.note || '')}</textarea>
+                <div class="toolbar toolbar-end" style="margin-top:10px">
+                  <button class="btn secondary" type="button" data-detail-action="save-note">Enregistrer la note</button>
+                </div>
+              </div>
             </div>
+          </section>
+
+          <section class="card compact-card">
+            <h4>Comparatif des offres</h4>
+            ${comparisonSummaryMarkup}
           </section>
 
           <section class="card compact-card">
@@ -933,19 +976,6 @@ async function showIngredientDetail(id){
                 ${nutritionRows.map(([label, value]) => `<div><strong>${esc(label)}</strong><div class="muted">${esc(value || '-')}</div></div>`).join('')}
               </div>
             </details>
-          </section>
-
-          <section class="card compact-card detail-note-card">
-            <h4>Note</h4>
-            <textarea id="ingredient-note-inline" class="detail-note-input" rows="4" placeholder="Ajouter une note rapide...">${esc(ingredient.note || '')}</textarea>
-            <div class="toolbar toolbar-end" style="margin-top:10px">
-              <button class="btn secondary" type="button" data-detail-action="save-note">Enregistrer la note</button>
-            </div>
-          </section>
-
-          <section class="card compact-card">
-            <h4>Comparatif des offres</h4>
-            ${comparisonSummaryMarkup}
           </section>
         </div>
 
@@ -1173,34 +1203,27 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
   if (filterSupplierSelect) filterSupplierSelect.addEventListener('change', (e) => { filters.fournisseurId = e.target.value || ''; renderIngredients(); });
   if (sortSelect) sortSelect.addEventListener('change', (e) => { filters.sort = e.target.value || 'az'; renderIngredients(); });
 
-  const openCategoriesBtn = qs('#open-categories-btn');
-  if (openCategoriesBtn) openCategoriesBtn.onclick = () => {
+  qs('#open-categories-btn').onclick = () => {
     resetCategorieForm();
     renderCategoriesManager();
     openSheet(categoriesSheet, categoriesBackdrop);
   };
-
-  const openIngredientSheetBtn = qs('#open-ingredient-sheet-btn');
-  if (openIngredientSheetBtn) openIngredientSheetBtn.onclick = () => {
+  const openIngredientBtn = qs('#open-ingredient-sheet-btn');
+  if (openIngredientBtn) openIngredientBtn.onclick = (e) => {
+    e.preventDefault();
     if (ingredientDraft) openIngredientSheetWithData({ ...ingredientDraft, offres: ingredientDraft.offres || [] });
     else openIngredientSheetWithData(null);
   };
 
-  const cancelIngredientBtn = qs('#cancel-ingredient-btn');
-  if (cancelIngredientBtn) cancelIngredientBtn.onclick = () => {
+  qs('#cancel-ingredient-btn').onclick = () => {
     resetIngredientForm();
     closeSheet(ingredientSheet, ingredientBackdrop);
   };
 
-  const addOffreBtn = qs('#add-offre-btn');
-  if (addOffreBtn) addOffreBtn.onclick = () => {
-    offres.push({
-      id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      fournisseurId: '', marque: '', ean: '', reference: '', tva: 5.5, quantiteColis: 1,
-      uniteColis: ingredientForm.uniteBase.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
-      sourcePrincipale: offres.length === 0,
-    });
-    renderOffers();
+  const addOfferBtn = qs('#add-offre-btn');
+  if (addOfferBtn) addOfferBtn.onclick = (e) => {
+    e.preventDefault();
+    addOfferAndRender();
   };
 
   offersEditor.addEventListener('click', (e) => {
@@ -1208,19 +1231,6 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
     if (!btn) return;
     offres.splice(Number(btn.dataset.removeOffre), 1);
     renderOffers();
-  });
-
-  ingredientSheet.addEventListener('click', (e) => {
-    if (e.target.closest('#add-offre-btn')) {
-      e.preventDefault();
-      offres.push({
-        id: `offre_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        fournisseurId: '', marque: '', ean: '', reference: '', tva: 5.5, quantiteColis: 1,
-        uniteColis: ingredientForm.uniteBase.value || 'kg', prixHTUnite: 0, prixTTCUnite: 0, prixHTColis: 0, prixTTCColis: 0,
-        sourcePrincipale: offres.length === 0,
-      });
-      renderOffers();
-    }
   });
   offersEditor.addEventListener('input', (e) => {
     const field = e.target.dataset.offreField;
