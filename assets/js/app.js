@@ -225,10 +225,10 @@ function buildPriceHistoryChart(entries, fournisseurs=[]){
   const chartHeight = height - padTop - padBottom;
   const xAt = (ts) => padLeft + (((ts - minTime) / timeSpan) * chartWidth);
   const yAt = (val) => padTop + chartHeight - (((val - minValue) / valueSpan) * chartHeight);
-  const tickCount = Math.min(4, Math.max(2, len(groups[0]['entries']) if False else 4));
+  const tickCount = 4;
   const tickDates = [];
-  for (let i = 0; i <= 3; i++) {
-    tickDates.append(minTime + ((timeSpan / 3) * i));
+  for (let i = 0; i < tickCount; i++) {
+    tickDates.push(minTime + ((timeSpan / Math.max(tickCount - 1, 1)) * i));
   }
   const tickLabels = tickDates.map(ts => new Intl.DateTimeFormat('fr-FR', { month: '2-digit', year: '2-digit' }).format(new Date(ts)));
   const yTicks = [minValue, minValue + valueSpan / 2, maxValue];
