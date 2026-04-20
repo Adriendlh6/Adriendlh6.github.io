@@ -257,3 +257,8 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 @media (max-width: 920px){
   .offer-comparison-grid,.offer-price-grid{grid-template-columns:1fr}
 }
+
+
+.detail-note-card,.detail-comparison-card{display:grid;gap:12px}
+.detail-note-card h4,.detail-comparison-card h4{margin:0}
+.comparison-badge{font-size:.78rem;padding:4px 8px}

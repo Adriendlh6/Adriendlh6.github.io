@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.1.4';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -642,7 +642,7 @@ function renderIngredients(){
           <div>
             <strong>${esc(ingredient.nom)}</strong>
             <div class="toolbar chip-row">${categoryChip(cat)}</div>
-            <div class="muted">EAN : ${esc(ingredient.ean || '-')}</div>
+            <div class="muted">EAN : ${esc(getIngredientPrimaryEan(ingredient) || '-')}</div>
             <div class="muted">${sub}</div>
           </div>
         </div>
@@ -847,7 +847,7 @@ async function showIngredientDetail(id){
       return `<div class="item compact-item fournisseur-detail-item">
         <div class="item-top">
           <div class="detail-value">${esc(supplier?.nom || 'Sans fournisseur')}</div>
-          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">Meilleur HT unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">Meilleur HT colis</span>' : ''}</div>
+          <div class="toolbar chip-row">${offre.sourcePrincipale ? '<span class="tag source-badge">Source principale</span>' : ''}${isBestUnit ? '<span class="tag comparison-badge">◎ Unité</span>' : ''}${isBestColis ? '<span class="tag comparison-badge">◎ Colis</span>' : ''}</div>
         </div>
         <div class="muted">${esc(offre.marque || '-')} · ${esc(offre.reference || '-')}</div>
         ${displayEan ? `<div class="ean-visual-wrap fournisseur-ean-wrap">${ean13Svg(displayEan)}<div class="barcode-number monospace">${esc(displayEan)}</div></div>` : '<div class="muted">EAN non renseigné.</div>'}
@@ -894,19 +894,7 @@ async function showIngredientDetail(id){
                 <div class="detail-label">Catégorie</div>
                 <div class="toolbar chip-row">${categoryChip(category)}</div>
               </div>
-              <div>
-                <div class="detail-label">Note</div>
-                <textarea id="ingredient-note-inline" class="detail-note-input" rows="4" placeholder="Ajouter une note rapide...">${esc(ingredient.note || '')}</textarea>
-                <div class="toolbar toolbar-end" style="margin-top:10px">
-                  <button class="btn secondary" type="button" data-detail-action="save-note">Enregistrer la note</button>
-                </div>
-              </div>
             </div>
-          </section>
-
-          <section class="card compact-card">
-            <h4>Comparatif des offres</h4>
-            ${comparisonSummaryMarkup}
           </section>
 
           <section class="card compact-card">
@@ -926,6 +914,19 @@ async function showIngredientDetail(id){
                 ${nutritionRows.map(([label, value]) => `<div><strong>${esc(label)}</strong><div class="muted">${esc(value || '-')}</div></div>`).join('')}
               </div>
             </details>
+          </section>
+
+          <section class="card compact-card detail-note-card">
+            <h4>Note</h4>
+            <textarea id="ingredient-note-inline" class="detail-note-input" rows="4" placeholder="Ajouter une note rapide...">${esc(ingredient.note || '')}</textarea>
+            <div class="toolbar toolbar-end" style="margin-top:10px">
+              <button class="btn secondary" type="button" data-detail-action="save-note">Enregistrer la note</button>
+            </div>
+          </section>
+
+          <section class="card compact-card detail-comparison-card">
+            <h4>Comparatif des offres</h4>
+            ${comparisonSummaryMarkup}
           </section>
         </div>
 
