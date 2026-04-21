@@ -364,124 +364,78 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 }
 
 
-.print-chooser{position:fixed;inset:0;z-index:1000}
-.print-chooser-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.38)}
-.print-chooser-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,720px);background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:18px;display:grid;gap:16px;max-height:min(88vh,760px);overflow:auto}
+/* === Print chooser modal === */
+.print-chooser{
+  position:fixed;inset:0;
+  /* z-index supérieur au bottom-sheet (60) et à l'overlay sidebar (30) */
+  z-index:1100;
+  /* le conteneur lui-même ne doit pas bloquer les clics quand caché */
+}
+.print-chooser.hidden{pointer-events:none}
+.print-chooser-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.44);z-index:1101}
+.print-chooser-dialog{
+  position:fixed;
+  left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(92vw,680px);
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.22);
+  padding:20px;
+  display:grid;gap:18px;
+  max-height:min(90vh,760px);
+  overflow:auto;
+  z-index:1102;
+}
 .print-chooser-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 .print-chooser-kicker{font-size:.82rem;color:var(--muted);margin-bottom:4px}
-.print-chooser-head h3{margin:0}
+.print-chooser-head h3{margin:0;font-size:1.1rem;line-height:1.25}
 .print-options-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.print-options-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--bg);display:grid;gap:12px}
-.print-options-card__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.print-inline-check,.print-check-row{display:flex;align-items:center;gap:10px}
-.print-options-checks{display:grid;gap:10px}
+.print-options-card{
+  border:1px solid var(--line);border-radius:16px;
+  padding:14px;background:var(--bg);
+  display:grid;gap:10px;
+  align-content:start;
+}
+.print-options-card h4{margin:0;font-size:.95rem;line-height:1.2}
+.print-options-card__head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.print-options-checks{display:grid;gap:8px}
+/* Lignes checkbox : label en flex row, texte aligné correctement */
+.print-inline-check,.print-check-row{
+  display:flex;align-items:center;
+  gap:10px;line-height:1.3;
+  font-weight:normal;
+}
+.print-inline-check input[type="checkbox"],
+.print-check-row input[type="checkbox"],
+.print-inline-check input[type="radio"],
+.print-check-row input[type="radio"]{
+  flex:0 0 auto;
+  width:16px;height:16px;
+  margin:0;
+  cursor:pointer;
+}
+.print-inline-check span,.print-check-row span{
+  flex:1;
+  display:block;
+  line-height:1.3;
+  vertical-align:middle;
+}
 .print-check-row{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-.field-label{font-size:.88rem;color:var(--muted);display:block;margin-bottom:6px}
-.print-chooser-actions{display:flex;justify-content:flex-end;gap:10px}
+.field-label{font-size:.88rem;color:var(--muted);display:block;margin-bottom:6px;font-weight:600}
+.print-chooser-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
+.print-chooser-actions .btn{min-height:44px;padding:10px 18px}
 .small{font-size:.84rem}
 .print-print-meta{display:grid;gap:10px;justify-items:end}
 .print-filter-badge{padding:8px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:.88rem;color:var(--text)}
 .print-section-block{display:grid;gap:12px;margin-top:14px}
 .print-section-title{font-size:1rem;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.04em}
-@media (max-width:720px){.print-options-grid{grid-template-columns:1fr}.print-chooser-dialog{padding:16px}}
-/* PATCH v2.3.1 — Pop-up impression produit
-   À ajouter à la fin de assets/css/app.css
-*/
-
-#print-product-modal {
-  position: fixed;
-  inset: 0;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.42);
-  z-index: 1200;
+@media (max-width:680px){
+  .print-options-grid{grid-template-columns:1fr}
+  .print-chooser-dialog{padding:16px;gap:14px;width:calc(100vw - 24px)}
+  .print-chooser-actions{flex-direction:row}
 }
 
-#print-product-modal.is-open {
-  display: flex;
-}
-
-body.modal-open {
-  overflow: hidden;
-}
-
-.print-product-modal__panel,
-#print-product-modal .modal-panel,
-#print-product-modal .popup-panel {
-  width: min(560px, 100%);
-  max-height: 90vh;
-  overflow: auto;
-  border-radius: 16px;
-  background: #fff;
-  padding: 18px;
-  box-sizing: border-box;
-}
-
-.print-product-modal__title,
-#print-product-modal h3,
-#print-product-modal h2 {
-  margin: 0 0 14px 0;
-}
-
-.print-product-modal__group,
-#print-product-modal fieldset {
-  border: 0;
-  padding: 0;
-  margin: 0 0 14px 0;
-  min-width: 0;
-}
-
-.print-product-modal__legend,
-#print-product-modal legend {
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.print-product-option,
-#print-product-modal .checkbox-row,
-#print-product-modal .print-option-row,
-#print-product-modal label:has(input[type="checkbox"]),
-#print-product-modal label:has(input[type="radio"]) {
-  display: grid;
-  grid-template-columns: 20px 1fr;
-  align-items: center;
-  gap: 10px;
-  margin: 8px 0;
-  line-height: 1.3;
-}
-
-#print-product-modal input[type="checkbox"],
-#print-product-modal input[type="radio"] {
-  margin: 0;
-  width: 16px;
-  height: 16px;
-}
-
-#print-product-modal .supplier-select-row {
-  margin-top: 10px;
-}
-
-#print-product-modal select {
-  width: 100%;
-  min-height: 40px;
-  box-sizing: border-box;
-}
-
-.print-product-modal__actions,
-#print-product-modal .modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-#print-product-cancel,
-#print-product-confirm,
-#print-product-close {
-  min-height: 40px;
-}
 /* Patch v2.3.2 — impression Mercuriale : code-barres compacts par source */
 .print-ean-number{display:none !important}
 .print-ean-block--compact{min-width:24mm !important;gap:0 !important}
