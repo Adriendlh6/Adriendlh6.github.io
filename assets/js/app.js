@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.3.4';
+const APP_VERSION = 'v2.3.6';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -380,25 +380,25 @@ function appendPriceHistory(previousIngredient, draft){
 
 
 function getOrCreateProductPrintChooser(){
-  // Toujours recréer proprement pour éviter l'accumulation de listeners
   let root = document.getElementById('product-print-chooser');
-  if (root) root.remove();
-  root = document.createElement('div');
-  root.id = 'product-print-chooser';
-  root.className = 'print-chooser hidden';
-  root.innerHTML = `
-    <div class="print-chooser-backdrop hidden"></div>
-    <section class="print-chooser-dialog hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="product-print-chooser-title">
-      <div class="print-chooser-head">
-        <div>
-          <div class="print-chooser-kicker">Impression produit</div>
-          <h3 id="product-print-chooser-title">Choisir les informations à imprimer</h3>
+  if (!root) {
+    root = document.createElement('div');
+    root.id = 'product-print-chooser';
+    root.className = 'print-chooser hidden';
+    root.innerHTML = `
+      <div class="print-chooser-backdrop hidden" data-print-chooser-close></div>
+      <section class="print-chooser-dialog hidden" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="product-print-chooser-title">
+        <div class="print-chooser-head">
+          <div>
+            <div class="print-chooser-kicker">Impression produit</div>
+            <h3 id="product-print-chooser-title">Choisir les informations à imprimer</h3>
+          </div>
+          <button type="button" class="icon-square-btn" aria-label="Fermer" title="Fermer" data-print-chooser-close>✕</button>
         </div>
-        <button type="button" class="icon-square-btn" id="print-chooser-close-btn" aria-label="Fermer" title="Fermer">✕</button>
-      </div>
-      <div class="print-chooser-body"></div>
-    </section>`;
-  document.body.appendChild(root);
+        <div class="print-chooser-body"></div>
+      </section>`;
+    document.body.appendChild(root);
+  }
   return {
     root,
     backdrop: root.querySelector('.print-chooser-backdrop'),
@@ -416,69 +416,61 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
     const label = offre.marque ? `${labelBase} / ${offre.marque}` : labelBase;
     return `<option value="${esc(offre.fournisseurId || '')}">${esc(label)}</option>`;
   }).join('');
-
   chooser.body.innerHTML = `
-    <div class="print-options-grid">
-      <section class="print-options-card">
-        <div class="print-options-card__head">
-          <h4>Sections</h4>
-          <label class="print-inline-check">
-            <input type="checkbox" id="print-all-sections" checked>
-            <span>Tout sélectionner</span>
-          </label>
-        </div>
-        <div class="print-options-checks">
-          <label class="print-check-row"><input type="checkbox" name="sections" value="infos" checked><span>Infos</span></label>
-          <label class="print-check-row"><input type="checkbox" name="sections" value="historique" checked><span>Historique</span></label>
-          <label class="print-check-row"><input type="checkbox" name="sections" value="utilisation"><span>Utilisation</span></label>
-          <label class="print-check-row"><input type="checkbox" name="sections" value="tracabilites"><span>Traçabilités</span></label>
-        </div>
-      </section>
-      <section class="print-options-card">
-        <h4>Fournisseurs</h4>
-        <label class="field-label" for="print-supplier-filter">Choix à imprimer</label>
-        <select id="print-supplier-filter">
-          <option value="all">Tous les fournisseurs</option>
-          ${supplierChoices}
-        </select>
-        <p class="muted small">Le filtre fournisseur s'applique aux offres affichées et à l'historique des prix.</p>
-      </section>
-    </div>
-    <div class="print-chooser-actions">
-      <button type="button" class="btn secondary" id="print-chooser-cancel-btn">Annuler</button>
-      <button type="button" class="btn primary" id="print-chooser-confirm-btn">🖨️ Imprimer</button>
-    </div>`;
+    <form id="product-print-options-form" class="print-options-form">
+      <div class="print-options-grid">
+        <section class="print-options-card">
+          <div class="print-options-card__head">
+            <h4>Sections</h4>
+            <label class="print-inline-check"><input type="checkbox" id="print-all-sections" checked> Tout sélectionner</label>
+          </div>
+          <div class="print-options-checks">
+            <label class="print-check-row"><input type="checkbox" name="sections" value="infos" checked> <span>Infos</span></label>
+            <label class="print-check-row"><input type="checkbox" name="sections" value="historique" checked> <span>Historique</span></label>
+            <label class="print-check-row"><input type="checkbox" name="sections" value="utilisation"> <span>Utilisation</span></label>
+            <label class="print-check-row"><input type="checkbox" name="sections" value="tracabilites"> <span>Traçabilités</span></label>
+          </div>
+        </section>
+        <section class="print-options-card">
+          <h4>Fournisseurs</h4>
+          <label class="field-label" for="print-supplier-filter">Choix à imprimer</label>
+          <select id="print-supplier-filter" name="supplierFilter" class="input">
+            <option value="all">Tous les fournisseurs</option>
+            ${supplierChoices}
+          </select>
+          <p class="muted small">Le filtre fournisseur s'applique aux offres affichées et à l'historique des prix.</p>
+        </section>
+      </div>
+      <div class="print-chooser-actions">
+        <button type="button" class="btn secondary" data-print-chooser-close>Annuler</button>
+        <button type="submit" class="btn">Imprimer</button>
+      </div>
+    </form>`;
 
-  // Affichage
+  const close = () => closeProductPrintChooser();
+  chooser.root.querySelectorAll('[data-print-chooser-close]').forEach(el => el.onclick = close);
   chooser.root.classList.remove('hidden');
   chooser.backdrop.classList.remove('hidden');
   chooser.dialog.classList.remove('hidden');
   chooser.dialog.setAttribute('aria-hidden', 'false');
   lockBodyScroll();
 
-  // Logique "Tout sélectionner"
   const allToggle = chooser.root.querySelector('#print-all-sections');
   const sectionChecks = [...chooser.root.querySelectorAll('input[name="sections"]')];
   const syncToggle = () => {
     const checked = sectionChecks.filter(el => el.checked).length;
     allToggle.checked = checked === sectionChecks.length;
-    allToggle.indeterminate = checked > 0 && checked < sectionChecks.length;
+    allToggle.indeterminate = checked > 0 && checked < sectionChecks.length
   };
   allToggle.onchange = () => {
-    sectionChecks.forEach(el => { el.checked = allToggle.checked; });
+    sectionChecks.forEach(el => el.checked = allToggle.checked);
     allToggle.indeterminate = false;
   };
-  sectionChecks.forEach(el => { el.onchange = syncToggle; });
+  sectionChecks.forEach(el => el.onchange = syncToggle);
   syncToggle();
 
-  // Fermeture
-  const doClose = () => closeProductPrintChooser();
-  chooser.root.querySelector('#print-chooser-close-btn').onclick = doClose;
-  chooser.root.querySelector('#print-chooser-cancel-btn').onclick = doClose;
-  chooser.backdrop.onclick = doClose;
-
-  // Impression — type="button" pour éviter tout submit parasite
-  chooser.root.querySelector('#print-chooser-confirm-btn').onclick = () => {
+  chooser.root.querySelector('#product-print-options-form').onsubmit = (event) => {
+    event.preventDefault();
     const selectedSections = sectionChecks.filter(el => el.checked).map(el => el.value);
     if (!selectedSections.length) {
       alert('Sélectionne au moins une section à imprimer.');
@@ -491,9 +483,11 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
 }
 
 function closeProductPrintChooser(){
-  const root = document.getElementById('product-print-chooser');
-  if (!root) return;
-  root.classList.add('hidden');
+  const chooser = getOrCreateProductPrintChooser();
+  chooser.root.classList.add('hidden');
+  chooser.backdrop.classList.add('hidden');
+  chooser.dialog.classList.add('hidden');
+  chooser.dialog.setAttribute('aria-hidden', 'true');
   unlockBodyScroll();
 }
 
@@ -638,19 +632,8 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs, options={})
 }
 
 function printProductSheet(ingredient, category, fournisseurs, options={}){
-  const root = getOrCreatePrintRoot();
-  root.innerHTML = buildProductPrintMarkup(ingredient, category, fournisseurs, options);
-  root.classList.remove('hidden');
-  // Forcer la libération du scroll lock (bottom-sheet encore ouvert)
-  document.body.classList.remove('sheet-open');
-  document.documentElement.classList.remove('sheet-open');
-  document.body.classList.add('printing-product');
-  // Laisser le navigateur rendre le DOM avant d'ouvrir la boîte d'impression
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      window.print();
-    });
-  });
+  const markup = buildProductPrintMarkup(ingredient, category, fournisseurs, options);
+  openPrintWindow('Fiche produit', markup);
 }
 
 window.addEventListener('keydown', (event) => {
@@ -669,11 +652,6 @@ window.addEventListener('afterprint', () => {
   if (mercurialeRoot) mercurialeRoot.classList.add('hidden');
   const chooser = document.getElementById('product-print-chooser');
   if (chooser) chooser.classList.add('hidden');
-  // Restaurer le scroll lock si un bottom-sheet est encore ouvert
-  if (scrollLockCount > 0){
-    document.body.classList.add('sheet-open');
-    document.documentElement.classList.add('sheet-open');
-  }
 });
 
 
@@ -759,14 +737,8 @@ function printMercuriale(ingredients, categories, fournisseurs){
   const root = getOrCreateMercurialePrintRoot();
   root.innerHTML = buildMercurialePrintMarkup(ingredients, categories, fournisseurs);
   root.classList.remove('hidden');
-  document.body.classList.remove('sheet-open');
-  document.documentElement.classList.remove('sheet-open');
   document.body.classList.add('printing-mercuriale');
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      window.print();
-    });
-  });
+  setTimeout(() => window.print(), 50);
 }
 
 function ingredientCloneForDuplicate(ingredient){
@@ -1794,69 +1766,3 @@ function initShell(){
 }
 
 document.addEventListener('DOMContentLoaded', initShell);
-/* Patch v2.3.2 — impression Mercuriale : code-barres par source, sans EAN texte */
-function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
-  let lastCategoryKey = null;
-  const sortedIngredients = [...ingredients].sort((a, b) => {
-    const catA = getCategoryById(categories, a.categorieId)?.nom || 'Sans catégorie';
-    const catB = getCategoryById(categories, b.categorieId)?.nom || 'Sans catégorie';
-    const byCategory = catA.localeCompare(catB, 'fr', { sensitivity: 'base' });
-    if (byCategory !== 0) return byCategory;
-    return (a.nom || '').localeCompare(b.nom || '', 'fr', { sensitivity: 'base' });
-  });
-
-  const rows = sortedIngredients.map(ingredient => {
-    const category = getCategoryById(categories, ingredient.categorieId);
-    const categoryName = category?.nom || 'Sans catégorie';
-    const categoryColor = category?.couleur || '#d9d2c3';
-    const categoryKey = `${categoryName}__${categoryColor}`;
-    const offres = (ingredient.offres || []).length ? (ingredient.offres || []) : [null];
-
-    let block = '';
-    if (categoryKey !== lastCategoryKey) {
-      block += `<tr class="print-category-row"><td colspan="7"><div class="print-category-band" style="--cat-color:${esc(categoryColor)}"><span class="print-category-band__dot"></span><span class="print-category-band__label">${esc(categoryName)}</span></div></td></tr>`;
-      lastCategoryKey = categoryKey;
-    }
-
-    block += offres.map((offre, idx) => {
-      const supplier = offre ? fournisseurs.find(f => f.id === offre.fournisseurId) : null;
-      const sourceEan = normalizeEan13(offre?.ean || '') || normalizeEan13(getIngredientPrimaryEan(ingredient) || '');
-      const eanMarkup = sourceEan
-        ? `<div class="print-ean-block print-ean-block--compact">${ean13Svg(sourceEan)}</div>`
-        : `<div class="muted">-</div>`;
-
-      return `<tr class="${idx === 0 ? 'product-first-row' : 'product-sub-row'}">
-        <td>${idx === 0 ? esc(ingredient.nom || '-') : ''}</td>
-        <td>${eanMarkup}</td>
-        <td>${esc(supplier?.nom || '-')}</td>
-        <td>${esc(offre?.marque || '-')}</td>
-        <td>${esc(offre?.reference || '-')}</td>
-        <td>${offre?.prixHTUnite ? euro(offre.prixHTUnite) : '-'}</td>
-        <td>${offre?.prixHTColis ? euro(offre.prixHTColis) : '-'}</td>
-      </tr>`;
-    }).join('');
-
-    return block;
-  }).join('');
-
-  return `
-    <div class="print-page mercuriale-print-page">
-      <header class="print-header">
-        <div>
-          <div class="print-app-name">Copilot boulangerie</div>
-          <h1>Mercuriale</h1>
-          <div class="print-subtitle">Édition du ${new Date().toLocaleDateString('fr-FR')}</div>
-        </div>
-      </header>
-      <section class="print-card">
-        <table class="print-table mercuriale-print-table">
-          <thead>
-            <tr>
-              <th>Produit</th><th>Code-barres</th><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>HT unité</th><th>HT colis</th>
-            </tr>
-          </thead>
-          <tbody>${rows || '<tr><td colspan="7">Aucun produit enregistré.</td></tr>'}</tbody>
-        </table>
-      </section>
-    </div>`;
-}
