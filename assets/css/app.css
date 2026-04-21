@@ -1033,54 +1033,46 @@ body.modal-open {
   }
 }
 
-/* === Patch nutrition compacte v2.3.14b === */
-/* === Impression produit : nutrition compacte === */
-/* Régénéré pour v2.3.14b */
-
-@media print {
-  .print-nutrition-row,
-  .print-nutrition-grid,
-  .print-nutrition-values {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)) !important;
-    gap: 6px 12px !important;
-    align-items: start !important;
+/* === v2.3.14d : nutrition impression compacte sans pastilles === */
+@media print{
+  .print-card.print-card--soft.print-card--compact{
+    padding-top: 3.5mm !important;
+    padding-bottom: 3.5mm !important;
   }
 
-  .print-nutrition-item,
-  .print-nutrition-chip,
-  .print-nutrition-box,
-  .print-nutrition-card {
-    background: transparent !important;
-    border: 0 !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    min-height: 0 !important;
+  .print-nutrition-row{
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    gap:1mm 3mm !important;
+    align-items:start !important;
   }
 
-  .print-nutrition-item .print-label,
-  .print-nutrition-chip .print-label,
-  .print-nutrition-box .print-label,
-  .print-nutrition-card .print-label {
-    margin-bottom: 2px !important;
-    font-size: 11px !important;
-    line-height: 1.1 !important;
+  .print-nutrition-pill{
+    border:0 !important;
+    background:transparent !important;
+    box-shadow:none !important;
+    border-radius:0 !important;
+    padding:0 !important;
+    min-height:0 !important;
+    display:flex !important;
+    flex-direction:column !important;
+    gap:.2mm !important;
+    break-inside:avoid !important;
   }
 
-  .print-nutrition-item .print-value,
-  .print-nutrition-chip .print-value,
-  .print-nutrition-box .print-value,
-  .print-nutrition-card .print-value {
-    font-size: 13px !important;
-    line-height: 1.15 !important;
-    font-weight: 600 !important;
+  .print-nutrition-pill span{
+    font-size:7.2pt !important;
+    line-height:1 !important;
+    color:#6f675d !important;
+    margin:0 !important;
+    padding:0 !important;
   }
 
-  .print-card.print-nutrition-section,
-  .print-section-nutrition,
-  .print-nutrition-section {
-    padding-top: 10px !important;
-    padding-bottom: 10px !important;
+  .print-nutrition-pill strong{
+    font-size:8.8pt !important;
+    line-height:1.05 !important;
+    font-weight:700 !important;
+    margin:0 !important;
+    padding:0 !important;
   }
 }
