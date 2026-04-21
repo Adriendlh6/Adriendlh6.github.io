@@ -1213,3 +1213,42 @@ body.modal-open {
     overflow: hidden !important;
   }
 }
+
+/* === v2.3.14h : impression produit - colonne TVA réduite, EAN élargie === */
+@media print {
+  .print-table th:nth-child(5),
+  .print-table td:nth-child(5) {
+    width: 7.5% !important;
+    min-width: 7.5% !important;
+    max-width: 7.5% !important;
+  }
+
+  .print-table th:nth-child(3),
+  .print-table td:nth-child(3) {
+    width: 18% !important;
+    min-width: 18% !important;
+  }
+
+  .print-table td .print-ean-block--compact .ean-svg,
+  .print-table td .print-ean-block .ean-svg {
+    width: 32mm !important;
+    max-width: 100% !important;
+    max-height: 12mm !important;
+  }
+}
+
+@media print {
+  .print-table th:nth-child(6),
+  .print-table td:nth-child(6) {
+    width: 6.5% !important;
+    min-width: 6.5% !important;
+    max-width: 6.5% !important;
+  }
+
+  .print-table th:nth-child(3),
+  .print-table td:nth-child(3) {
+    width: 19.5% !important;
+    min-width: 19.5% !important;
+    max-width: 19.5% !important;
+  }
+}
