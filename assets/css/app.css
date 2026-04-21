@@ -700,3 +700,172 @@ body.modal-open {
   .print-chooser-actions{margin:0 -12px -10px;padding:10px 12px 0}
   .print-chooser-btn{min-width:110px;min-height:46px}
 }
+.print-chooser-dialog,
+.print-options-form,
+.print-options-grid,
+.print-options-card,
+.print-options-checks,
+.print-check-row,
+.print-inline-check,
+.print-chooser-actions {
+  box-sizing: border-box;
+}
+
+.print-chooser-dialog {
+  border-radius: 22px;
+  padding: 14px 14px 12px;
+}
+
+.print-chooser-head {
+  margin-bottom: 10px;
+}
+
+.print-chooser-head h3 {
+  line-height: 1.15;
+}
+
+.print-options-grid {
+  gap: 10px;
+}
+
+.print-options-card {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #f8f5ef;
+  border: 1px solid #e4d8c8;
+  box-shadow: none;
+}
+
+.print-options-card h4,
+.print-options-card__head h4 {
+  margin: 0 0 8px;
+  font-size: 0.98rem;
+}
+
+.print-options-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.print-options-checks {
+  display: grid;
+  gap: 6px;
+}
+
+/* enlève la “bulle beige” autour directe des textes */
+.print-check-row,
+.print-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 36px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* sous-options resserrées et hiérarchisées */
+.print-options-checks .print-check-row {
+  min-height: 34px;
+  padding-left: 4px;
+}
+
+.print-check-row span,
+.print-inline-check span,
+.print-options-card label span {
+  display: inline;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+/* neutralise les styles globaux éventuels sur checkbox/radio */
+.print-check-row input[type="checkbox"],
+.print-check-row input[type="radio"],
+.print-inline-check input[type="checkbox"],
+.print-inline-check input[type="radio"] {
+  flex: 0 0 auto;
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  max-height: 18px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 4px;
+  accent-color: #a66f35;
+}
+
+.print-options-card .field-label {
+  margin-bottom: 6px;
+}
+
+.print-options-card .input,
+.print-options-card select {
+  margin-top: 0;
+  border-radius: 12px;
+}
+
+.print-options-card .muted.small {
+  display: block;
+  margin-top: 8px;
+  line-height: 1.28;
+}
+
+.print-chooser-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 2px;
+}
+
+.print-chooser-actions .btn,
+.print-chooser-actions .btn.secondary {
+  min-width: 122px;
+  border-radius: 14px;
+}
+
+/* meilleure hiérarchie visuelle entre blocs principaux et sous-options */
+.print-options-card > .print-check-row:first-child,
+.print-options-card > .print-inline-check:first-child {
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .print-chooser-dialog {
+    width: calc(100vw - 20px);
+    max-width: none;
+    padding: 12px 12px 10px;
+    border-radius: 20px;
+  }
+
+  .print-options-card {
+    padding: 9px 10px;
+    border-radius: 14px;
+  }
+
+  .print-check-row,
+  .print-inline-check {
+    min-height: 32px;
+  }
+
+  .print-options-checks .print-check-row {
+    min-height: 30px;
+    gap: 8px;
+  }
+
+  .print-chooser-actions .btn,
+  .print-chooser-actions .btn.secondary {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+}
