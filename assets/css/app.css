@@ -1412,3 +1412,99 @@ body.modal-open {
     line-height: 1.05 !important;
   }
 }
+
+
+
+/* === v2.3.16 : historique écran compact avec aperçu + expand === */
+.history-screen-list{
+  display:grid;
+  gap:14px;
+}
+.history-screen-group{
+  border:1px solid #e4d8c8;
+  border-radius:22px;
+  background:#f8f3e8;
+  overflow:hidden;
+}
+.history-screen-group-head{
+  padding:16px 18px 10px;
+}
+.history-screen-group-title-wrap{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+}
+.history-screen-group-title{
+  font-weight:800;
+  font-size:1rem;
+  line-height:1.2;
+}
+.history-screen-group-sub{
+  color:#6f675d;
+  margin-top:2px;
+}
+.history-screen-table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+  background:transparent;
+}
+.history-screen-table th,
+.history-screen-table td{
+  padding:12px 18px;
+  text-align:left;
+  border-top:1px solid #e4d8c8;
+}
+.history-screen-table th{
+  font-size:0.95rem;
+  font-weight:800;
+}
+.history-screen-table td{
+  font-size:0.95rem;
+}
+.history-screen-more{
+  border-top:1px solid #e4d8c8;
+  background:#f5eee1;
+}
+.history-screen-more summary{
+  list-style:none;
+  cursor:pointer;
+  padding:12px 18px;
+  font-weight:700;
+  color:#9b6b34;
+}
+.history-screen-more summary::-webkit-details-marker{
+  display:none;
+}
+.history-screen-more summary::after{
+  content:'▾';
+  float:right;
+}
+.history-screen-more[open] summary::after{
+  content:'▴';
+}
+.history-screen-table--more th,
+.history-screen-table--more td{
+  background:transparent;
+}
+.history-screen-actions{
+  display:flex;
+  justify-content:center;
+}
+.history-screen-actions .btn{
+  min-width:140px;
+}
+
+@media (max-width: 720px){
+  .history-screen-group-head{
+    padding:14px 14px 8px;
+  }
+  .history-screen-table th,
+  .history-screen-table td{
+    padding:10px 12px;
+    font-size:0.9rem;
+  }
+  .history-screen-group{
+    border-radius:18px;
+  }
+}
