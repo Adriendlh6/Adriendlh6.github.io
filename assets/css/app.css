@@ -556,3 +556,19 @@ body.modal-open {
   .print-options-card{padding:12px}
   .print-options-subcard{padding:9px 10px}
 }
+
+
+/* v2.3.12 popup impression compact */
+.print-chooser-dialog{padding:14px 14px 12px}
+.print-options-grid{gap:10px}
+.print-options-card{padding:11px 12px;gap:8px}
+.print-options-card__head{gap:10px}
+.print-category-panel{gap:7px;padding-top:0}
+.print-category-panel.is-collapsed{margin-top:-6px}
+.print-inline-check{font-size:.98rem}
+.print-options-subgrid--compact{gap:6px}
+.print-check-row--compact{min-height:34px;padding:5px 9px;border-radius:10px}
+.print-options-subgrid--two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.print-options-card .field-label{margin-bottom:4px}
+.print-options-card .muted.small{font-size:.8rem;line-height:1.25}
+@media (max-width:640px){.print-options-card{padding:10px 11px}.print-check-row--compact{min-height:32px;padding:4px 8px}.print-options-subgrid--two{grid-template-columns:1fr}}

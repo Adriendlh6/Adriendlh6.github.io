@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.3.11';
+const APP_VERSION = 'v2.3.12';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -454,25 +454,27 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
           </div>
         </section>
 
-        <section class="print-options-card print-category-card" data-print-category="historique">
+        <section class="print-options-card print-category-card" data-print-category="historique-prix">
           <div class="print-options-card__head">
-            ${printCheckbox('categories', 'historique', 'Historique', true, 'print-inline-check')}
+            ${printCheckbox('categories', 'historique-prix', 'Historique des prix', true, 'print-inline-check')}
           </div>
-          <div class="print-category-panel" data-category-panel="historique">
-            <section class="print-options-subcard">
-              <div class="print-options-subtitle">Historique des prix</div>
-              <div class="print-options-subgrid print-options-subgrid--compact">
-                ${printCheckbox('historyParts', 'prix-graph', 'Graphique', true, 'print-check-row--compact')}
-                ${printCheckbox('historyParts', 'prix-list', 'Texte', true, 'print-check-row--compact')}
-              </div>
-            </section>
-            <section class="print-options-subcard">
-              <div class="print-options-subtitle">Historique des achats</div>
-              <div class="print-options-subgrid print-options-subgrid--compact">
-                ${printCheckbox('historyParts', 'achats-graph', 'Graphique', false, 'print-check-row--compact')}
-                ${printCheckbox('historyParts', 'achats-list', 'Texte', false, 'print-check-row--compact')}
-              </div>
-            </section>
+          <div class="print-category-panel" data-category-panel="historique-prix">
+            <div class="print-options-subgrid print-options-subgrid--compact print-options-subgrid--two">
+              ${printCheckbox('historyPriceParts', 'prix-graph', 'Graphique', true, 'print-check-row--compact')}
+              ${printCheckbox('historyPriceParts', 'prix-list', 'Texte', true, 'print-check-row--compact')}
+            </div>
+          </div>
+        </section>
+
+        <section class="print-options-card print-category-card" data-print-category="historique-achats">
+          <div class="print-options-card__head">
+            ${printCheckbox('categories', 'historique-achats', 'Historique des achats', false, 'print-inline-check')}
+          </div>
+          <div class="print-category-panel" data-category-panel="historique-achats">
+            <div class="print-options-subgrid print-options-subgrid--compact print-options-subgrid--two">
+              ${printCheckbox('historyPurchaseParts', 'achats-graph', 'Graphique', false, 'print-check-row--compact')}
+              ${printCheckbox('historyPurchaseParts', 'achats-list', 'Texte', false, 'print-check-row--compact')}
+            </div>
           </div>
         </section>
 
@@ -538,12 +540,14 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
       return;
     }
     const selectedInfosParts = [...chooser.root.querySelectorAll('input[name="infosParts"]:checked')].map(el => el.value);
-    const selectedHistoryParts = [...chooser.root.querySelectorAll('input[name="historyParts"]:checked')].map(el => el.value);
+    const selectedHistoryPriceParts = [...chooser.root.querySelectorAll('input[name="historyPriceParts"]:checked')].map(el => el.value);
+    const selectedHistoryPurchaseParts = [...chooser.root.querySelectorAll('input[name="historyPurchaseParts"]:checked')].map(el => el.value);
     const supplierFilter = chooser.root.querySelector('#print-supplier-filter')?.value || 'all';
     const printed = printProductSheet(ingredient, category, fournisseurs, {
       categories: selectedCategories,
       infosParts: selectedInfosParts,
-      historyParts: selectedHistoryParts,
+      historyPriceParts: selectedHistoryPriceParts,
+      historyPurchaseParts: selectedHistoryPurchaseParts,
       supplierFilter
     });
     if (printed !== false) closeProductPrintChooser();
@@ -575,7 +579,8 @@ function getOrCreatePrintRoot(){
 function buildProductPrintMarkup(ingredient, category, fournisseurs, options={}){
   const categories = Array.isArray(options.categories) && options.categories.length ? options.categories : ['infos'];
   const infosParts = Array.isArray(options.infosParts) ? options.infosParts : ['allergenes', 'nutrition'];
-  const historyParts = Array.isArray(options.historyParts) ? options.historyParts : ['prix-graph', 'prix-list'];
+  const historyPriceParts = Array.isArray(options.historyPriceParts) ? options.historyPriceParts : ['prix-graph', 'prix-list'];
+  const historyPurchaseParts = Array.isArray(options.historyPurchaseParts) ? options.historyPurchaseParts : [];
   const supplierFilter = options.supplierFilter || 'all';
   const nutrition = ingredient.nutrition || {};
   const allergenes = (ingredient.allergenes || []).map(humanizeSlug);
@@ -637,24 +642,32 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs, options={})
     sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Infos</div>${infoCards.join('')}</section>`);
   }
 
-  if (categories.includes('historique')) {
-    const historyBlocks = [];
-    if (historyParts.includes('prix-graph')) {
-      historyBlocks.push(`<section class="print-card"><h2>Historique des prix — graphique</h2>${buildPriceHistoryChart(filteredHistory, fournisseurs)}</section>`);
+  if (categories.includes('historique-prix')) {
+    const historyPriceBlocks = [];
+    if (historyPriceParts.includes('prix-graph')) {
+      historyPriceBlocks.push(`<section class="print-card"><h2>Historique des prix — graphique</h2>${buildPriceHistoryChart(filteredHistory, fournisseurs)}</section>`);
     }
-    if (historyParts.includes('prix-list')) {
-      historyBlocks.push(`<section class="print-card"><h2>Historique des prix — texte</h2>${buildPriceHistoryList(filteredHistory, fournisseurs)}</section>`);
+    if (historyPriceParts.includes('prix-list')) {
+      historyPriceBlocks.push(`<section class="print-card"><h2>Historique des prix — texte</h2>${buildPriceHistoryList(filteredHistory, fournisseurs)}</section>`);
     }
-    if (historyParts.includes('achats-graph')) {
-      historyBlocks.push(`<section class="print-card"><h2>Historique des achats — graphique</h2><div class="print-placeholder">En cours de développement.</div></section>`);
+    if (!historyPriceBlocks.length) {
+      historyPriceBlocks.push(`<section class="print-card"><div class="muted">Aucune vue de prix sélectionnée.</div></section>`);
     }
-    if (historyParts.includes('achats-list')) {
-      historyBlocks.push(`<section class="print-card"><h2>Historique des achats — texte</h2><div class="print-placeholder">En cours de développement.</div></section>`);
+    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Historique des prix</div>${historyPriceBlocks.join('')}</section>`);
+  }
+
+  if (categories.includes('historique-achats')) {
+    const historyPurchaseBlocks = [];
+    if (historyPurchaseParts.includes('achats-graph')) {
+      historyPurchaseBlocks.push(`<section class="print-card"><h2>Historique des achats — graphique</h2><div class="print-placeholder">En cours de développement.</div></section>`);
     }
-    if (!historyBlocks.length) {
-      historyBlocks.push(`<section class="print-card"><div class="muted">Aucune vue historique sélectionnée.</div></section>`);
+    if (historyPurchaseParts.includes('achats-list')) {
+      historyPurchaseBlocks.push(`<section class="print-card"><h2>Historique des achats — texte</h2><div class="print-placeholder">En cours de développement.</div></section>`);
     }
-    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Historique</div>${historyBlocks.join('')}</section>`);
+    if (!historyPurchaseBlocks.length) {
+      historyPurchaseBlocks.push(`<section class="print-card"><div class="muted">Aucune vue d’achat sélectionnée.</div></section>`);
+    }
+    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Historique des achats</div>${historyPurchaseBlocks.join('')}</section>`);
   }
 
   if (categories.includes('utilisation')) {
