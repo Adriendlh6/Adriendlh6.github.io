@@ -1314,3 +1314,22 @@ body.modal-open {
     page-break-after: always !important;
   }
 }
+
+
+/* === v2.3.14m : saut de page propre avant historique === */
+@media print {
+  .print-history-section {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .print-history-section .print-section-title {
+    break-after: avoid-page !important;
+    page-break-after: avoid !important;
+  }
+
+  .print-history-section > .print-card:first-of-type {
+    break-before: avoid-page !important;
+    page-break-before: avoid !important;
+  }
+}
