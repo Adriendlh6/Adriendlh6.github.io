@@ -371,6 +371,7 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 .print-chooser-kicker{font-size:.82rem;color:var(--muted);margin-bottom:4px}
 .print-chooser-head h3{margin:0}
 .print-options-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.print-options-grid--single{grid-template-columns:1fr}
 .print-options-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--bg);display:grid;gap:12px}
 .print-options-card__head{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .print-inline-check,.print-check-row{display:flex;align-items:center;gap:10px;line-height:1.25}
@@ -501,4 +502,40 @@ body.modal-open {
   .mercuriale-print-table .print-ean-block .ean-svg,
   .mercuriale-print-table .print-ean-block--compact .ean-svg{max-width:22mm !important}
   .mercuriale-print-table td:nth-child(2){width:26mm !important}
+}
+
+
+/* v2.3.10 print popup + print layout refinements */
+.print-chooser-dialog{width:min(94vw,760px);padding:16px 16px 14px}
+.print-options-card{gap:10px}
+.print-options-card__head{align-items:center}
+.print-inline-check,.print-check-row{display:flex;align-items:center;gap:10px;line-height:1.3;width:auto}
+.print-inline-check input[type="checkbox"],
+.print-check-row input[type="checkbox"],
+.print-check-row input[type="radio"],
+.print-inline-check input[type="radio"]{width:18px !important;min-width:18px;max-width:18px;height:18px;min-height:18px;max-height:18px;padding:0 !important;margin:0 !important;flex:0 0 18px;border-radius:4px}
+.print-options-card input,
+.print-options-card select{font-size:.95rem}
+.print-options-card .print-select{min-height:42px}
+.print-options-subsections{display:grid;gap:10px}
+.print-options-subtitle{font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.print-options-subgrid{display:grid;gap:8px}
+.print-options-subgrid--two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.print-check-row{padding:9px 11px}
+.print-check-row span,.print-inline-check span{display:block;min-width:0}
+@media (max-width:640px){.print-options-subgrid--two{grid-template-columns:1fr}}
+
+@media print{
+  @page{size:auto;margin:8mm}
+  body{padding:0 !important}
+  body.printing-product .product-print-root,
+  body.printing-mercuriale .mercuriale-print-root{position:absolute;inset:0;padding:0;margin:0}
+  .print-page{padding:0 !important}
+  .print-header{margin-bottom:4mm}
+  .print-card{padding:3.2mm !important;margin-bottom:3mm !important}
+  .print-table th,.print-table td{padding:1.8mm 2mm !important}
+  .print-section-block{gap:3mm !important;margin-top:3mm !important}
+  .print-barcode-wrap{padding:1mm 0 !important}
+  .print-ean-block--compact .ean-svg{width:22mm;max-width:22mm;height:auto}
+  .print-table td .print-ean-block{justify-content:center}
 }

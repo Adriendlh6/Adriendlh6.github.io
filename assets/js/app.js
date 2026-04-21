@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.3.7';
+const APP_VERSION = 'v2.3.10';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -177,6 +177,10 @@ function formatPriceHistoryDate(value){
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }).format(d);
+}
+
+function printCheckbox(name, value, label, checked=false, extra=''){
+  return `<label class="print-check-row${extra ? ' ' + extra : ''}"><input type="checkbox" name="${name}" value="${value}" ${checked ? 'checked' : ''}><span>${label}</span></label>`;
 }
 
 
@@ -425,6 +429,7 @@ function getOrCreateProductPrintChooser(){
   };
 }
 
+
 function openProductPrintChooser(ingredient, category, fournisseurs){
   const chooser = getOrCreateProductPrintChooser();
   const offers = ingredient.offres || [];
@@ -436,27 +441,55 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
   }).join('');
   chooser.body.innerHTML = `
     <form id="product-print-options-form" class="print-options-form">
-      <div class="print-options-grid">
-        <section class="print-options-card">
+      <div class="print-options-grid print-options-grid--single">
+        <section class="print-options-card print-category-card" data-print-category="infos">
           <div class="print-options-card__head">
-            <h4>Sections</h4>
-            <label class="print-inline-check"><input type="checkbox" id="print-all-sections" checked><span>Tout sélectionner</span></label>
+            ${printCheckbox('categories', 'infos', 'Infos', true, 'print-inline-check')}
           </div>
-          <div class="print-options-checks">
-            <label class="print-check-row"><input type="checkbox" name="sections" value="infos" checked><span>Infos</span></label>
-            <label class="print-check-row"><input type="checkbox" name="sections" value="historique" checked><span>Historique</span></label>
-            <label class="print-check-row"><input type="checkbox" name="sections" value="utilisation"><span>Utilisation</span></label>
-            <label class="print-check-row"><input type="checkbox" name="sections" value="tracabilites"><span>Traçabilités</span></label>
+          <div class="print-options-subgrid">
+            ${printCheckbox('infosParts', 'allergenes', 'Allergènes', true)}
+            ${printCheckbox('infosParts', 'nutrition', 'Nutrition', true)}
           </div>
         </section>
+
+        <section class="print-options-card print-category-card" data-print-category="historique">
+          <div class="print-options-card__head">
+            ${printCheckbox('categories', 'historique', 'Historique', true, 'print-inline-check')}
+          </div>
+          <div class="print-options-subsections">
+            <div class="print-options-subtitle">Historique des prix</div>
+            <div class="print-options-subgrid print-options-subgrid--two">
+              ${printCheckbox('historyParts', 'prix-graph', 'Graphique', true)}
+              ${printCheckbox('historyParts', 'prix-list', 'Texte', true)}
+            </div>
+            <div class="print-options-subtitle">Historique des achats</div>
+            <div class="print-options-subgrid print-options-subgrid--two">
+              ${printCheckbox('historyParts', 'achats-graph', 'Graphique', false)}
+              ${printCheckbox('historyParts', 'achats-list', 'Texte', false)}
+            </div>
+          </div>
+        </section>
+
+        <section class="print-options-card print-category-card" data-print-category="utilisation">
+          <div class="print-options-card__head">
+            ${printCheckbox('categories', 'utilisation', 'Utilisation', false, 'print-inline-check')}
+          </div>
+        </section>
+
+        <section class="print-options-card print-category-card" data-print-category="tracabilites">
+          <div class="print-options-card__head">
+            ${printCheckbox('categories', 'tracabilites', 'Traçabilités', false, 'print-inline-check')}
+          </div>
+        </section>
+
         <section class="print-options-card">
           <h4>Fournisseurs</h4>
           <label class="field-label" for="print-supplier-filter">Choix à imprimer</label>
-          <select id="print-supplier-filter" name="supplierFilter" class="input">
+          <select id="print-supplier-filter" name="supplierFilter" class="input print-select">
             <option value="all">Tous les fournisseurs</option>
             ${supplierChoices}
           </select>
-          <p class="muted small">Le filtre fournisseur s'applique aux offres affichées et à l'historique des prix.</p>
+          <p class="muted small">Le filtre fournisseur s'applique aux offres et aux historiques imprimés.</p>
         </section>
       </div>
       <div class="print-chooser-actions">
@@ -473,30 +506,40 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
   chooser.dialog.setAttribute('aria-hidden', 'false');
   lockBodyScroll();
 
-  const allToggle = chooser.root.querySelector('#print-all-sections');
-  const sectionChecks = [...chooser.root.querySelectorAll('input[name="sections"]')];
-  const syncToggle = () => {
-    const checked = sectionChecks.filter(el => el.checked).length;
-    allToggle.checked = checked === sectionChecks.length;
-    allToggle.indeterminate = checked > 0 && checked < sectionChecks.length
+  const form = chooser.root.querySelector('#product-print-options-form');
+  const categoryChecks = [...chooser.root.querySelectorAll('input[name="categories"]')];
+  const syncCategoryState = () => {
+    categoryChecks.forEach(categoryCheck => {
+      const card = categoryCheck.closest('.print-category-card');
+      const nested = [...card.querySelectorAll('.print-options-subgrid input[type="checkbox"]')];
+      if (!nested.length) return;
+      if (!categoryCheck.checked) {
+        nested.forEach(input => input.disabled = true);
+      } else {
+        nested.forEach(input => input.disabled = false);
+      }
+    });
   };
-  allToggle.onchange = () => {
-    sectionChecks.forEach(el => el.checked = allToggle.checked);
-    allToggle.indeterminate = false;
-  };
-  sectionChecks.forEach(el => el.onchange = syncToggle);
-  syncToggle();
+  categoryChecks.forEach(check => check.onchange = syncCategoryState);
+  syncCategoryState();
 
-  chooser.root.querySelector('#product-print-options-form').onsubmit = (event) => {
+  form.onsubmit = (event) => {
     event.preventDefault();
-    const selectedSections = sectionChecks.filter(el => el.checked).map(el => el.value);
-    if (!selectedSections.length) {
-      alert('Sélectionne au moins une section à imprimer.');
+    const selectedCategories = categoryChecks.filter(el => el.checked).map(el => el.value);
+    if (!selectedCategories.length) {
+      alert('Sélectionne au moins une catégorie à imprimer.');
       return;
     }
+    const selectedInfosParts = [...chooser.root.querySelectorAll('input[name="infosParts"]:checked')].map(el => el.value);
+    const selectedHistoryParts = [...chooser.root.querySelectorAll('input[name="historyParts"]:checked')].map(el => el.value);
     const supplierFilter = chooser.root.querySelector('#print-supplier-filter')?.value || 'all';
-    closeProductPrintChooser();
-    printProductSheet(ingredient, category, fournisseurs, { sections: selectedSections, supplierFilter });
+    const printed = printProductSheet(ingredient, category, fournisseurs, {
+      categories: selectedCategories,
+      infosParts: selectedInfosParts,
+      historyParts: selectedHistoryParts,
+      supplierFilter
+    });
+    if (printed !== false) closeProductPrintChooser();
   };
 }
 
@@ -520,18 +563,25 @@ function getOrCreatePrintRoot(){
   return root;
 }
 
+
 function buildProductPrintMarkup(ingredient, category, fournisseurs, options={}){
-  const sections = Array.isArray(options.sections) && options.sections.length ? options.sections : ['infos'];
+  const categories = Array.isArray(options.categories) && options.categories.length ? options.categories : ['infos'];
+  const infosParts = Array.isArray(options.infosParts) ? options.infosParts : ['allergenes', 'nutrition'];
+  const historyParts = Array.isArray(options.historyParts) ? options.historyParts : ['prix-graph', 'prix-list'];
   const supplierFilter = options.supplierFilter || 'all';
   const nutrition = ingredient.nutrition || {};
   const allergenes = (ingredient.allergenes || []).map(humanizeSlug);
   const filteredOffers = (ingredient.offres || []).filter(offre => supplierFilter === 'all' || String(offre.fournisseurId || '') === String(supplierFilter));
   const filteredHistory = (ingredient.priceHistory || []).filter(entry => supplierFilter === 'all' || String(entry.fournisseurId || '') === String(supplierFilter));
-  const offers = filteredOffers.map(offre => {
+
+  const offerRows = filteredOffers.map(offre => {
     const supplier = fournisseurs.find(f => f.id === offre.fournisseurId);
+    const offerEan = getOfferDisplayEan(offre);
+    const barcodeMarkup = offerEan ? `<div class="print-ean-block print-ean-block--compact">${ean13Svg(offerEan)}</div>` : '<div class="muted">-</div>';
     return `<tr>
       <td>${esc(supplier?.nom || 'Sans fournisseur')}</td>
       <td>${esc(offre.marque || '-')}</td>
+      <td>${barcodeMarkup}</td>
       <td>${esc(offre.reference || '-')}</td>
       <td>${esc(offre.quantiteColis || '-')} ${esc(offre.uniteColis || ingredient.uniteBase || 'u')}</td>
       <td>${String(offre.tva ?? 0).replace('.', ',')}%</td>
@@ -539,91 +589,6 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs, options={})
       <td>${offre.prixHTColis ? euro(offre.prixHTColis) : '-'}</td>
     </tr>`;
   }).join('');
-  const historyRows = filteredHistory.slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(entry => {
-    const supplier = fournisseurs.find(f => f.id === entry.fournisseurId);
-    return `<tr>
-      <td>${formatPriceHistoryDate(entry.timestamp)}</td>
-      <td>${esc(supplier?.nom || 'Sans fournisseur')}</td>
-      <td>${esc(entry.marque || '-')}</td>
-      <td>${entry.prixHTUnite ? euro(entry.prixHTUnite) : '-'}</td>
-      <td>${entry.prixHTColis ? euro(entry.prixHTColis) : '-'}</td>
-    </tr>`;
-  }).join('');
-  const sectionMarkup = [];
-
-  if (sections.includes('infos')) {
-    sectionMarkup.push(`
-      <section class="print-section-block">
-        <div class="print-section-title">Infos</div>
-        <section class="print-grid">
-          <article class="print-card">
-            <div class="detail-label">Nom du produit</div>
-            <div class="detail-value detail-title-value">${esc(ingredient.nom || '-')}</div>
-            <div class="detail-label">Catégorie</div>
-            <div class="print-category-wrap">${categoryChip(category)}</div>
-          </article>
-          <article class="print-card">
-            <div class="detail-label">EAN</div>
-            <div class="print-barcode-wrap">${ean13Svg(getIngredientPrimaryEan(ingredient))}</div>
-            <div class="print-ean-text monospace">${esc(getIngredientPrimaryEan(ingredient) || '-')}</div>
-          </article>
-        </section>
-        <section class="print-card">
-          <h2>Fournisseurs</h2>
-          ${offers ? `<table class="print-table"><thead><tr><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>Colis</th><th>TVA</th><th>HT unité</th><th>HT colis</th></tr></thead><tbody>${offers}</tbody></table>` : '<div class="muted">Aucune offre enregistrée pour ce filtre.</div>'}
-        </section>
-        <section class="print-two-col">
-          <article class="print-card">
-            <h2>Allergènes</h2>
-            <div class="toolbar chip-row">${allergenes.length ? allergenes.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div>
-          </article>
-          <article class="print-card">
-            <h2>Nutrition pour 100 g</h2>
-            <div class="print-nutrition-grid">
-              <div><strong>Énergie</strong><span>${esc(formatNutritionValue('energie', nutrition.energie))}</span></div>
-              <div><strong>Matières grasses</strong><span>${esc(formatNutritionValue('matieresGrasses', nutrition.matieresGrasses))}</span></div>
-              <div><strong>Acides gras saturés</strong><span>${esc(formatNutritionValue('acidesGrasSatures', nutrition.acidesGrasSatures))}</span></div>
-              <div><strong>Glucides</strong><span>${esc(formatNutritionValue('glucides', nutrition.glucides))}</span></div>
-              <div><strong>Sucres</strong><span>${esc(formatNutritionValue('sucres', nutrition.sucres))}</span></div>
-              <div><strong>Protéines</strong><span>${esc(formatNutritionValue('proteines', nutrition.proteines))}</span></div>
-              <div><strong>Sel</strong><span>${esc(formatNutritionValue('sel', nutrition.sel))}</span></div>
-            </div>
-          </article>
-        </section>
-        ${ingredient.note ? `<section class="print-card"><h2>Note</h2><div>${esc(ingredient.note)}</div></section>` : ''}
-      </section>`);
-  }
-
-  if (sections.includes('historique')) {
-    sectionMarkup.push(`
-      <section class="print-section-block">
-        <div class="print-section-title">Historique</div>
-        <section class="print-card">
-          <h2>Historique des prix</h2>
-          ${historyRows ? `<table class="print-table"><thead><tr><th>Date</th><th>Fournisseur</th><th>Marque</th><th>HT unité</th><th>HT colis</th></tr></thead><tbody>${historyRows}</tbody></table>` : '<div class="muted">Aucun historique de prix pour ce filtre.</div>'}
-        </section>
-        <section class="print-card">
-          <h2>Historique des achats</h2>
-          <div class="muted">En cours de développement.</div>
-        </section>
-      </section>`);
-  }
-
-  if (sections.includes('utilisation')) {
-    sectionMarkup.push(`
-      <section class="print-section-block">
-        <div class="print-section-title">Utilisation</div>
-        <section class="print-card"><div class="muted">En cours de développement.</div></section>
-      </section>`);
-  }
-
-  if (sections.includes('tracabilites')) {
-    sectionMarkup.push(`
-      <section class="print-section-block">
-        <div class="print-section-title">Traçabilités</div>
-        <section class="print-card"><div class="muted">En cours de développement.</div></section>
-      </section>`);
-  }
 
   const supplierLabel = supplierFilter === 'all'
     ? 'Tous les fournisseurs'
@@ -631,6 +596,65 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs, options={})
         const supplier = fournisseurs.find(f => String(f.id) === String(supplierFilter));
         return supplier?.nom || 'Fournisseur sélectionné';
       })();
+
+  const sectionMarkup = [];
+
+  if (categories.includes('infos')) {
+    const infoCards = [];
+    infoCards.push(`
+      <section class="print-grid print-grid--2">
+        <article class="print-card">
+          <div class="print-label">Nom du produit</div>
+          <div class="print-value">${esc(ingredient.nom || '-')}</div>
+          <div class="print-label" style="margin-top:12px">Catégorie</div>
+          <div class="print-category-wrap">${categoryChip(category)}</div>
+        </article>
+        ${ingredient.note ? `<article class="print-card"><div class="print-label">Note</div><div class="print-note">${esc(ingredient.note)}</div></article>` : ''}
+      </section>
+    `);
+    infoCards.push(`
+      <section class="print-card">
+        <h2>Fournisseurs</h2>
+        ${offerRows ? `<table class="print-table"><thead><tr><th>Fournisseur</th><th>Marque</th><th>EAN</th><th>Référence</th><th>Colis</th><th>TVA</th><th>HT unité</th><th>HT colis</th></tr></thead><tbody>${offerRows}</tbody></table>` : '<div class="muted">Aucune offre enregistrée pour ce filtre.</div>'}
+      </section>
+    `);
+    const secondaryCards = [];
+    if (infosParts.includes('allergenes')) {
+      secondaryCards.push(`<article class="print-card"><h2>Allergènes</h2><div class="toolbar chip-row">${allergenes.length ? allergenes.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div></article>`);
+    }
+    if (infosParts.includes('nutrition')) {
+      secondaryCards.push(`<article class="print-card"><h2>Nutrition pour 100 g</h2><div class="print-nutrition-grid"><div><strong>Énergie</strong><span>${esc(formatNutritionValue('energie', nutrition.energie))}</span></div><div><strong>Matières grasses</strong><span>${esc(formatNutritionValue('matieresGrasses', nutrition.matieresGrasses))}</span></div><div><strong>Acides gras saturés</strong><span>${esc(formatNutritionValue('acidesGrasSatures', nutrition.acidesGrasSatures))}</span></div><div><strong>Glucides</strong><span>${esc(formatNutritionValue('glucides', nutrition.glucides))}</span></div><div><strong>Sucres</strong><span>${esc(formatNutritionValue('sucres', nutrition.sucres))}</span></div><div><strong>Protéines</strong><span>${esc(formatNutritionValue('proteines', nutrition.proteines))}</span></div><div><strong>Sel</strong><span>${esc(formatNutritionValue('sel', nutrition.sel))}</span></div></div></article>`);
+    }
+    if (secondaryCards.length) infoCards.push(`<section class="print-grid print-grid--2">${secondaryCards.join('')}</section>`);
+    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Infos</div>${infoCards.join('')}</section>`);
+  }
+
+  if (categories.includes('historique')) {
+    const historyBlocks = [];
+    if (historyParts.includes('prix-graph')) {
+      historyBlocks.push(`<section class="print-card"><h2>Historique des prix — graphique</h2>${buildPriceHistoryChart(filteredHistory, fournisseurs)}</section>`);
+    }
+    if (historyParts.includes('prix-list')) {
+      historyBlocks.push(`<section class="print-card"><h2>Historique des prix — texte</h2>${buildPriceHistoryList(filteredHistory, fournisseurs)}</section>`);
+    }
+    if (historyParts.includes('achats-graph')) {
+      historyBlocks.push(`<section class="print-card"><h2>Historique des achats — graphique</h2><div class="print-placeholder">En cours de développement.</div></section>`);
+    }
+    if (historyParts.includes('achats-list')) {
+      historyBlocks.push(`<section class="print-card"><h2>Historique des achats — texte</h2><div class="print-placeholder">En cours de développement.</div></section>`);
+    }
+    if (!historyBlocks.length) {
+      historyBlocks.push(`<section class="print-card"><div class="muted">Aucune vue historique sélectionnée.</div></section>`);
+    }
+    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Historique</div>${historyBlocks.join('')}</section>`);
+  }
+
+  if (categories.includes('utilisation')) {
+    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Utilisation</div><section class="print-card"><div class="print-placeholder">En cours de développement.</div></section></section>`);
+  }
+  if (categories.includes('tracabilites')) {
+    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Traçabilités</div><section class="print-card"><div class="print-placeholder">En cours de développement.</div></section></section>`);
+  }
 
   return `
     <div class="print-page">
@@ -658,12 +682,14 @@ function printProductSheet(ingredient, category, fournisseurs, options={}){
   return true;
 }
 
+
 window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     const chooser = document.getElementById('product-print-chooser');
     if (chooser && !chooser.classList.contains('hidden')) closeProductPrintChooser();
   }
 });
+
 
 window.addEventListener('afterprint', () => {
   document.body.classList.remove('printing-product');
@@ -672,9 +698,8 @@ window.addEventListener('afterprint', () => {
   if (root) root.classList.add('hidden');
   const mercurialeRoot = document.getElementById('mercuriale-print-root');
   if (mercurialeRoot) mercurialeRoot.classList.add('hidden');
-  const chooser = document.getElementById('product-print-chooser');
-  if (chooser) chooser.classList.add('hidden');
 });
+
 
 
 
