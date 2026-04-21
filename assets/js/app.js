@@ -636,11 +636,34 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs, options={})
 }
 
 function printProductSheet(ingredient, category, fournisseurs, options={}){
-  const root = getOrCreatePrintRoot();
-  root.innerHTML = buildProductPrintMarkup(ingredient, category, fournisseurs, options);
-  root.classList.remove('hidden');
-  document.body.classList.add('printing-product');
-  setTimeout(() => window.print(), 50);
+  const markup = buildProductPrintMarkup(ingredient, category, fournisseurs, options);
+  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1024,height=768');
+  if (!printWindow) return false;
+  const cssHref = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}assets/css/app.css`;
+  printWindow.document.open();
+  printWindow.document.write(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Impression produit</title>
+  <link rel="stylesheet" href="${cssHref}">
+</head>
+<body class="printing-product printing-product-window">
+  <section id="product-print-root" class="product-print-root">${markup}</section>
+</body>
+</html>`);
+  printWindow.document.close();
+  const triggerPrint = () => {
+    try { printWindow.focus(); } catch (e) {}
+    try { printWindow.print(); } catch (e) {}
+  };
+  if (printWindow.document.readyState === 'complete') {
+    setTimeout(triggerPrint, 150);
+  } else {
+    printWindow.onload = () => setTimeout(triggerPrint, 150);
+  }
+  return true;
 }
 
 window.addEventListener('keydown', (event) => {
