@@ -494,3 +494,41 @@ body.modal-open {
   .mercuriale-print-table .print-ean-block--compact .ean-svg{max-width:22mm !important}
   .mercuriale-print-table td:nth-child(2){width:26mm !important}
 }
+
+
+/* v2.3.3 — fix pop-up impression fiche détail */
+#print-product-modal .modal-panel,
+#print-product-modal .popup-panel,
+.print-product-modal__panel {
+  display: grid;
+  gap: 14px;
+}
+
+#print-product-modal fieldset {
+  display: grid;
+  gap: 10px;
+}
+
+#print-product-modal legend,
+.print-product-modal__legend {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+#print-product-modal .checkbox-row,
+#print-product-modal .print-option-row,
+#print-product-modal label:has(input[type="checkbox"]),
+#print-product-modal label:has(input[type="radio"]),
+.print-product-option {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  align-items: start;
+  column-gap: 10px;
+  row-gap: 0;
+}
+
+#print-product-modal label span,
+#print-product-modal .checkbox-row span,
+#print-product-modal .print-option-row span {
+  line-height: 1.35;
+}
