@@ -539,3 +539,20 @@ body.modal-open {
   .print-ean-block--compact .ean-svg{width:22mm;max-width:22mm;height:auto}
   .print-table td .print-ean-block{justify-content:center}
 }
+
+
+/* v2.3.11 popup impression */
+.print-category-panel{display:grid;gap:10px;overflow:hidden;transition:max-height .2s ease,opacity .18s ease,margin-top .18s ease;padding-top:2px}
+.print-category-panel.is-collapsed{max-height:0;opacity:0;margin-top:-4px;pointer-events:none}
+.print-options-subgrid--compact{gap:8px}
+.print-check-row--compact{min-height:38px;padding:7px 10px}
+.print-options-subcard{display:grid;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.55)}
+.print-options-subcard .print-options-subtitle{margin:0}
+.print-inline-check{font-weight:700}
+.print-inline-check input[type="checkbox"],
+.print-check-row input[type="checkbox"],
+.print-check-row input[type="radio"]{width:18px !important;height:18px !important;min-height:0 !important;padding:0 !important;flex:0 0 18px !important}
+@media (max-width:640px){
+  .print-options-card{padding:12px}
+  .print-options-subcard{padding:9px 10px}
+}

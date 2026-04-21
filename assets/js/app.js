@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.3.10';
+const APP_VERSION = 'v2.3.11';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -446,9 +446,11 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
           <div class="print-options-card__head">
             ${printCheckbox('categories', 'infos', 'Infos', true, 'print-inline-check')}
           </div>
-          <div class="print-options-subgrid">
-            ${printCheckbox('infosParts', 'allergenes', 'Allergènes', true)}
-            ${printCheckbox('infosParts', 'nutrition', 'Nutrition', true)}
+          <div class="print-category-panel" data-category-panel="infos">
+            <div class="print-options-subgrid print-options-subgrid--compact">
+              ${printCheckbox('infosParts', 'allergenes', 'Allergènes', true, 'print-check-row--compact')}
+              ${printCheckbox('infosParts', 'nutrition', 'Nutrition', true, 'print-check-row--compact')}
+            </div>
           </div>
         </section>
 
@@ -456,17 +458,21 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
           <div class="print-options-card__head">
             ${printCheckbox('categories', 'historique', 'Historique', true, 'print-inline-check')}
           </div>
-          <div class="print-options-subsections">
-            <div class="print-options-subtitle">Historique des prix</div>
-            <div class="print-options-subgrid print-options-subgrid--two">
-              ${printCheckbox('historyParts', 'prix-graph', 'Graphique', true)}
-              ${printCheckbox('historyParts', 'prix-list', 'Texte', true)}
-            </div>
-            <div class="print-options-subtitle">Historique des achats</div>
-            <div class="print-options-subgrid print-options-subgrid--two">
-              ${printCheckbox('historyParts', 'achats-graph', 'Graphique', false)}
-              ${printCheckbox('historyParts', 'achats-list', 'Texte', false)}
-            </div>
+          <div class="print-category-panel" data-category-panel="historique">
+            <section class="print-options-subcard">
+              <div class="print-options-subtitle">Historique des prix</div>
+              <div class="print-options-subgrid print-options-subgrid--compact">
+                ${printCheckbox('historyParts', 'prix-graph', 'Graphique', true, 'print-check-row--compact')}
+                ${printCheckbox('historyParts', 'prix-list', 'Texte', true, 'print-check-row--compact')}
+              </div>
+            </section>
+            <section class="print-options-subcard">
+              <div class="print-options-subtitle">Historique des achats</div>
+              <div class="print-options-subgrid print-options-subgrid--compact">
+                ${printCheckbox('historyParts', 'achats-graph', 'Graphique', false, 'print-check-row--compact')}
+                ${printCheckbox('historyParts', 'achats-list', 'Texte', false, 'print-check-row--compact')}
+              </div>
+            </section>
           </div>
         </section>
 
@@ -511,13 +517,14 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
   const syncCategoryState = () => {
     categoryChecks.forEach(categoryCheck => {
       const card = categoryCheck.closest('.print-category-card');
-      const nested = [...card.querySelectorAll('.print-options-subgrid input[type="checkbox"]')];
-      if (!nested.length) return;
-      if (!categoryCheck.checked) {
-        nested.forEach(input => input.disabled = true);
-      } else {
-        nested.forEach(input => input.disabled = false);
+      const panel = card.querySelector('[data-category-panel]');
+      const nested = [...card.querySelectorAll('.print-category-panel input[type="checkbox"]')];
+      if (panel) {
+        panel.classList.toggle('is-collapsed', !categoryCheck.checked);
       }
+      nested.forEach(input => {
+        input.disabled = !categoryCheck.checked;
+      });
     });
   };
   categoryChecks.forEach(check => check.onchange = syncCategoryState);
@@ -542,6 +549,7 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
     if (printed !== false) closeProductPrintChooser();
   };
 }
+
 
 function closeProductPrintChooser(){
   const chooser = getOrCreateProductPrintChooser();
