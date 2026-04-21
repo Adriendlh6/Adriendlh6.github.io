@@ -483,14 +483,6 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
     printProductSheet(ingredient, category, fournisseurs, { sections: selectedSections, supplierFilter });
     return false;
   };
-
-  const submitBtn = form.querySelector('button[type="submit"]');
-  if (submitBtn) {
-    submitBtn.onclick = (event) => {
-      event.preventDefault();
-      form.requestSubmit ? form.requestSubmit() : form.onsubmit(event);
-    };
-  }
 }
 
 function closeProductPrintChooser(){
