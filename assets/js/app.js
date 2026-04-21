@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.3.12';
+const APP_VERSION = 'v2.3.13';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -576,6 +576,7 @@ function getOrCreatePrintRoot(){
 }
 
 
+
 function buildProductPrintMarkup(ingredient, category, fournisseurs, options={}){
   const categories = Array.isArray(options.categories) && options.categories.length ? options.categories : ['infos'];
   const infosParts = Array.isArray(options.infosParts) ? options.infosParts : ['allergenes', 'nutrition'];
@@ -613,33 +614,58 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs, options={})
   const sectionMarkup = [];
 
   if (categories.includes('infos')) {
-    const infoCards = [];
-    infoCards.push(`
-      <section class="print-grid print-grid--2">
-        <article class="print-card">
+    const nutritionItems = [
+      ['Énergie', formatNutritionValue('energie', nutrition.energie)],
+      ['Matières grasses', formatNutritionValue('matieresGrasses', nutrition.matieresGrasses)],
+      ['Acides gras saturés', formatNutritionValue('acidesGrasSatures', nutrition.acidesGrasSatures)],
+      ['Glucides', formatNutritionValue('glucides', nutrition.glucides)],
+      ['Sucres', formatNutritionValue('sucres', nutrition.sucres)],
+      ['Protéines', formatNutritionValue('proteines', nutrition.proteines)],
+      ['Sel', formatNutritionValue('sel', nutrition.sel)],
+    ];
+
+    const infosBlock = [];
+    infosBlock.push(`
+      <section class="print-grid print-grid--2 print-top-grid">
+        <article class="print-card print-card--soft">
           <div class="print-label">Nom du produit</div>
-          <div class="print-value">${esc(ingredient.nom || '-')}</div>
-          <div class="print-label" style="margin-top:12px">Catégorie</div>
+          <div class="print-value print-value--xl">${esc(ingredient.nom || '-')}</div>
+          <div class="print-label" style="margin-top:10px">Catégorie</div>
           <div class="print-category-wrap">${categoryChip(category)}</div>
+          ${ingredient.note ? `<div class="print-note-inline">${esc(ingredient.note)}</div>` : ''}
         </article>
-        ${ingredient.note ? `<article class="print-card"><div class="print-label">Note</div><div class="print-note">${esc(ingredient.note)}</div></article>` : ''}
+        <article class="print-card print-card--soft">
+          <h2 class="print-card-title">Allergènes</h2>
+          <div class="toolbar chip-row">${allergenes.length ? allergenes.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div>
+        </article>
       </section>
     `);
-    infoCards.push(`
+
+    if (infosParts.includes('nutrition')) {
+      infosBlock.push(`
+        <section class="print-card print-card--soft print-card--compact">
+          <div class="print-row-head">
+            <h2 class="print-card-title">Valeurs nutritionnelles</h2>
+            <span class="print-card-subtitle">pour 100 g</span>
+          </div>
+          <div class="print-nutrition-row">
+            ${nutritionItems.map(([label, value]) => `<div class="print-nutrition-pill"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('')}
+          </div>
+        </section>
+      `);
+    }
+
+    infosBlock.push(`
       <section class="print-card">
-        <h2>Fournisseurs</h2>
+        <div class="print-row-head">
+          <h2 class="print-card-title">Fournisseurs</h2>
+          <span class="print-card-subtitle">${esc(supplierLabel)}</span>
+        </div>
         ${offerRows ? `<table class="print-table"><thead><tr><th>Fournisseur</th><th>Marque</th><th>EAN</th><th>Référence</th><th>Colis</th><th>TVA</th><th>HT unité</th><th>HT colis</th></tr></thead><tbody>${offerRows}</tbody></table>` : '<div class="muted">Aucune offre enregistrée pour ce filtre.</div>'}
       </section>
     `);
-    const secondaryCards = [];
-    if (infosParts.includes('allergenes')) {
-      secondaryCards.push(`<article class="print-card"><h2>Allergènes</h2><div class="toolbar chip-row">${allergenes.length ? allergenes.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '<span class="muted">Aucun allergène renseigné.</span>'}</div></article>`);
-    }
-    if (infosParts.includes('nutrition')) {
-      secondaryCards.push(`<article class="print-card"><h2>Nutrition pour 100 g</h2><div class="print-nutrition-grid"><div><strong>Énergie</strong><span>${esc(formatNutritionValue('energie', nutrition.energie))}</span></div><div><strong>Matières grasses</strong><span>${esc(formatNutritionValue('matieresGrasses', nutrition.matieresGrasses))}</span></div><div><strong>Acides gras saturés</strong><span>${esc(formatNutritionValue('acidesGrasSatures', nutrition.acidesGrasSatures))}</span></div><div><strong>Glucides</strong><span>${esc(formatNutritionValue('glucides', nutrition.glucides))}</span></div><div><strong>Sucres</strong><span>${esc(formatNutritionValue('sucres', nutrition.sucres))}</span></div><div><strong>Protéines</strong><span>${esc(formatNutritionValue('proteines', nutrition.proteines))}</span></div><div><strong>Sel</strong><span>${esc(formatNutritionValue('sel', nutrition.sel))}</span></div></div></article>`);
-    }
-    if (secondaryCards.length) infoCards.push(`<section class="print-grid print-grid--2">${secondaryCards.join('')}</section>`);
-    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Infos</div>${infoCards.join('')}</section>`);
+
+    sectionMarkup.push(`<section class="print-section-block"><div class="print-section-title">Infos</div>${infosBlock.join('')}</section>`);
   }
 
   if (categories.includes('historique-prix')) {
@@ -679,20 +705,23 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs, options={})
 
   return `
     <div class="print-page">
-      <header class="print-header">
-        <div>
-          <div class="print-app-name">Copilot boulangerie</div>
-          <h1>Fiche produit</h1>
-          <div class="print-subtitle">Édition du ${new Date().toLocaleDateString('fr-FR')}</div>
+      <header class="print-header print-header--product">
+        <div class="print-header-brand">
+          <img src="assets/img/print-logo.png" alt="Copilot boulangerie" class="print-logo">
+          <div>
+            <div class="print-app-name">Copilot boulangerie</div>
+            <h1>Fiche produit</h1>
+            <div class="print-subtitle">Édition du ${new Date().toLocaleDateString('fr-FR')}</div>
+          </div>
         </div>
         <div class="print-print-meta">
-          <div class="print-category-wrap">${categoryChip(category)}</div>
           <div class="print-filter-badge">${esc(supplierLabel)}</div>
         </div>
       </header>
       ${sectionMarkup.join('')}
     </div>`;
 }
+
 
 function printProductSheet(ingredient, category, fournisseurs, options={}){
   const root = getOrCreatePrintRoot();
