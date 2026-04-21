@@ -1254,11 +1254,16 @@ body.modal-open {
 }
 
 
-/* === v2.3.14j : impression produit - masquer blocs vides résiduels === */
+/* === v2.3.14k : forcer page 2 après le tableau fournisseurs === */
 @media print {
-  .print-card:empty,
-  .print-section-block:empty,
-  .print-placeholder:empty {
-    display:none !important;
+  .print-suppliers-section {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+
+  .print-suppliers-section + .print-section-block,
+  .print-suppliers-section + .print-card {
+    break-before: page !important;
+    page-break-before: always !important;
   }
 }
