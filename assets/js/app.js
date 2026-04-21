@@ -1769,3 +1769,184 @@ function initShell(){
 }
 
 document.addEventListener('DOMContentLoaded', initShell);
+/* PATCH v2.3.1 — Pop-up impression produit
+   À ajouter à la fin de assets/js/app.js
+*/
+
+(function () {
+  function getEl(id) {
+    return document.getElementById(id);
+  }
+
+  function closePrintProductModal() {
+    const modal = getEl('print-product-modal');
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+  }
+
+  function openPrintProductModal() {
+    const modal = getEl('print-product-modal');
+    if (!modal) return;
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+  }
+
+  window.openPrintProductModal = openPrintProductModal;
+  window.closePrintProductModal = closePrintProductModal;
+
+  function collectPrintProductOptions() {
+    const ids = [
+      'print-section-infos',
+      'print-section-historique',
+      'print-section-utilisation',
+      'print-section-tracabilites'
+    ];
+
+    const sections = ids.map((id) => {
+      const el = getEl(id);
+      return el && el.checked ? el.value : null;
+    }).filter(Boolean);
+
+    const supplierMode = document.querySelector('input[name="print-supplier-mode"]:checked')?.value || 'all';
+    const supplierSelect = getEl('print-supplier-select');
+
+    return {
+      sections,
+      supplierMode,
+      supplierValue: supplierSelect ? supplierSelect.value : 'all'
+    };
+  }
+
+  function runSelectedProductPrint() {
+    const opts = collectPrintProductOptions();
+
+    if (typeof window.printSelectedProduct === 'function') {
+      window.printSelectedProduct(opts);
+      return true;
+    }
+    if (typeof window.printProductWithOptions === 'function') {
+      window.printProductWithOptions(opts);
+      return true;
+    }
+    if (typeof window.printProduct === 'function') {
+      window.printProduct(opts);
+      return true;
+    }
+    return false;
+  }
+
+  document.addEventListener('click', function (event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    if (target.closest('#detail-print-btn, [data-action="print-product"], .js-print-product')) {
+      event.preventDefault();
+      openPrintProductModal();
+      return;
+    }
+
+    if (target.closest('#print-product-cancel, #print-product-close, .js-close-print-product-modal')) {
+      event.preventDefault();
+      closePrintProductModal();
+      return;
+    }
+
+    const modal = target.closest('#print-product-modal');
+    if (modal && target.matches('#print-product-modal')) {
+      event.preventDefault();
+      closePrintProductModal();
+      return;
+    }
+
+    if (target.closest('#print-product-confirm, .js-confirm-print-product')) {
+      event.preventDefault();
+      const launched = runSelectedProductPrint();
+      if (launched) {
+        closePrintProductModal();
+      } else {
+        console.warn("Aucune fonction d'impression produit n'a été trouvée.");
+      }
+    }
+  });
+
+  document.addEventListener('change', function (event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    if (target.matches('input[name="print-supplier-mode"]')) {
+      const supplierSelect = getEl('print-supplier-select');
+      if (!supplierSelect) return;
+      const checked = document.querySelector('input[name="print-supplier-mode"]:checked')?.value || 'all';
+      supplierSelect.disabled = checked !== 'one';
+    }
+  });
+})();
+/* Patch v2.3.2 — impression Mercuriale : code-barres par source, sans EAN texte */
+function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
+  let lastCategoryKey = null;
+  const sortedIngredients = [...ingredients].sort((a, b) => {
+    const catA = getCategoryById(categories, a.categorieId)?.nom || 'Sans catégorie';
+    const catB = getCategoryById(categories, b.categorieId)?.nom || 'Sans catégorie';
+    const byCategory = catA.localeCompare(catB, 'fr', { sensitivity: 'base' });
+    if (byCategory !== 0) return byCategory;
+    return (a.nom || '').localeCompare(b.nom || '', 'fr', { sensitivity: 'base' });
+  });
+
+  const rows = sortedIngredients.map(ingredient => {
+    const category = getCategoryById(categories, ingredient.categorieId);
+    const categoryName = category?.nom || 'Sans catégorie';
+    const categoryColor = category?.couleur || '#d9d2c3';
+    const categoryKey = `${categoryName}__${categoryColor}`;
+    const offres = (ingredient.offres || []).length ? (ingredient.offres || []) : [null];
+
+    let block = '';
+    if (categoryKey !== lastCategoryKey) {
+      block += `<tr class="print-category-row"><td colspan="7"><div class="print-category-band" style="--cat-color:${esc(categoryColor)}"><span class="print-category-band__dot"></span><span class="print-category-band__label">${esc(categoryName)}</span></div></td></tr>`;
+      lastCategoryKey = categoryKey;
+    }
+
+    block += offres.map((offre, idx) => {
+      const supplier = offre ? fournisseurs.find(f => f.id === offre.fournisseurId) : null;
+      const sourceEan = normalizeEan13(offre?.ean || '') || normalizeEan13(getIngredientPrimaryEan(ingredient) || '');
+      const eanMarkup = sourceEan
+        ? `<div class="print-ean-block print-ean-block--compact">${ean13Svg(sourceEan)}</div>`
+        : `<div class="muted">-</div>`;
+
+      return `<tr class="${idx === 0 ? 'product-first-row' : 'product-sub-row'}">
+        <td>${idx === 0 ? esc(ingredient.nom || '-') : ''}</td>
+        <td>${eanMarkup}</td>
+        <td>${esc(supplier?.nom || '-')}</td>
+        <td>${esc(offre?.marque || '-')}</td>
+        <td>${esc(offre?.reference || '-')}</td>
+        <td>${offre?.prixHTUnite ? euro(offre.prixHTUnite) : '-'}</td>
+        <td>${offre?.prixHTColis ? euro(offre.prixHTColis) : '-'}</td>
+      </tr>`;
+    }).join('');
+
+    return block;
+  }).join('');
+
+  return `
+    <div class="print-page mercuriale-print-page">
+      <header class="print-header">
+        <div>
+          <div class="print-app-name">Copilot boulangerie</div>
+          <h1>Mercuriale</h1>
+          <div class="print-subtitle">Édition du ${new Date().toLocaleDateString('fr-FR')}</div>
+        </div>
+      </header>
+      <section class="print-card">
+        <table class="print-table mercuriale-print-table">
+          <thead>
+            <tr>
+              <th>Produit</th><th>Code-barres</th><th>Fournisseur</th><th>Marque</th><th>Référence</th><th>HT unité</th><th>HT colis</th>
+            </tr>
+          </thead>
+          <tbody>${rows || '<tr><td colspan="7">Aucun produit enregistré.</td></tr>'}</tbody>
+        </table>
+      </section>
+    </div>`;
+}
