@@ -179,6 +179,24 @@ function formatPriceHistoryDate(value){
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'short' }).format(d);
 }
 
+
+function formatNutritionValue(key, value){
+  if (value === undefined || value === null || value === '') return '-';
+  const normalized = String(value).trim();
+  const unitMap = {
+    energie: 'kcal',
+    matieresGrasses: 'g',
+    acidesGrasSatures: 'g',
+    glucides: 'g',
+    sucres: 'g',
+    proteines: 'g',
+    sel: 'g',
+  };
+  const unit = unitMap[key] || '';
+  if (!unit) return normalized;
+  return /(kcal|g|kg|l)$/i.test(normalized) ? normalized : `${normalized} ${unit}`;
+}
+
 function localDayStamp(date = new Date()){
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -476,11 +494,17 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
       alert('Sélectionne au moins une section à imprimer.');
       return;
     }
+    const popup = window.open('', '_blank', 'noopener,noreferrer,width=1024,height=768');
+    if (!popup) {
+      alert("La fenêtre d'impression a été bloquée par le navigateur.");
+      return;
+    }
     const supplierFilter = chooser.root.querySelector('#print-supplier-filter')?.value || 'all';
-    const printed = printProductSheet(ingredient, category, fournisseurs, { sections: selectedSections, supplierFilter });
+    const printed = printProductSheet(ingredient, category, fournisseurs, { sections: selectedSections, supplierFilter }, popup);
     if (printed !== false) {
       closeProductPrintChooser();
     } else {
+      try { popup.close(); } catch (e) {}
       alert("La fenêtre d'impression a été bloquée par le navigateur.");
     }
   };
@@ -635,9 +659,9 @@ function buildProductPrintMarkup(ingredient, category, fournisseurs, options={})
     </div>`;
 }
 
-function printProductSheet(ingredient, category, fournisseurs, options={}){
+function printProductSheet(ingredient, category, fournisseurs, options={}, existingWindow=null){
   const markup = buildProductPrintMarkup(ingredient, category, fournisseurs, options);
-  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1024,height=768');
+  const printWindow = existingWindow || window.open('', '_blank', 'noopener,noreferrer,width=1024,height=768');
   if (!printWindow) return false;
   const cssHref = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}assets/css/app.css`;
   printWindow.document.open();
