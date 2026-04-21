@@ -1335,67 +1335,15 @@ body.modal-open {
 }
 
 
-/* === v2.3.14o : historique impression compact + limites === */
-@media print {
-  .history-list-group--table {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
+/* === v2.3.15 : comparaison de 2 sources dans la pop-up impression === */
+.print-compare-wrap.hidden {
+  display: none !important;
+}
 
-  .history-list-group-head--compact {
-    margin-bottom: 4px !important;
-    padding-bottom: 0 !important;
-  }
+.print-compare-wrap {
+  margin-top: 8px;
+}
 
-  .history-list-group--table .history-list-group-count {
-    font-size: 10px !important;
-    color: #7a7066 !important;
-  }
-
-  .history-list-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    font-size: 11px;
-  }
-
-  .history-list-table th,
-  .history-list-table td {
-    border: 1px solid #e3d6c6;
-    padding: 4px 6px;
-    text-align: left;
-    line-height: 1.15;
-    word-break: break-word;
-  }
-
-  .history-list-table thead th {
-    background: #faf6ef;
-    font-size: 10px;
-    color: #6f675d;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-  }
-
-  .price-history-legend--compact {
-    gap: 4px !important;
-    margin-top: 6px !important;
-  }
-
-  .price-history-legend--compact .price-history-legend-item {
-    gap: 5px !important;
-    padding: 0 !important;
-  }
-
-  .price-history-legend--compact .price-history-legend-chip {
-    width: 8px !important;
-    height: 8px !important;
-    min-width: 8px !important;
-  }
-
-  .price-history-legend--compact .price-history-legend-name,
-  .price-history-legend--compact .price-history-legend-meta,
-  .price-history-legend--compact .price-history-legend-text {
-    font-size: 10px !important;
-    line-height: 1.05 !important;
-  }
+.print-compare-wrap .field-label {
+  margin-top: 0;
 }
