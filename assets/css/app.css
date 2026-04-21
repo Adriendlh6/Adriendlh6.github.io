@@ -1088,3 +1088,78 @@ body.modal-open {
     padding-bottom: 3mm !important;
   }
 }
+
+/* === v2.3.14f : impression produit - espacement et marge droite === */
+@media print {
+  body {
+    padding-right: 0 !important;
+  }
+
+  .print-page {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 3mm !important;
+  }
+
+  .print-header {
+    margin-bottom: 10px !important;
+  }
+
+  .print-card,
+  .print-section-block,
+  .print-offer-card,
+  .print-history-item,
+  .print-placeholder {
+    margin-bottom: 8px !important;
+  }
+
+  .print-grid,
+  .print-grid--2,
+  .print-grid--3 {
+    gap: 8px !important;
+  }
+
+  .print-card {
+    padding: 12px 14px !important;
+  }
+
+  .print-card:last-child,
+  .print-section-block:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  .print-table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .print-table th,
+  .print-table td {
+    padding: 8px 8px !important;
+    word-break: break-word !important;
+  }
+
+  .print-table th:last-child,
+  .print-table td:last-child {
+    padding-right: 10px !important;
+  }
+
+  .print-offer-card,
+  .print-history-item,
+  .print-placeholder {
+    width: 100% !important;
+  }
+
+  .print-section-title {
+    margin-bottom: 8px !important;
+  }
+
+  .print-history-list {
+    gap: 8px !important;
+  }
+
+  .print-history-head {
+    margin-bottom: 6px !important;
+  }
+}
