@@ -1033,46 +1033,58 @@ body.modal-open {
   }
 }
 
-/* === v2.3.14d : nutrition impression compacte sans pastilles === */
-@media print{
-  .print-card.print-card--soft.print-card--compact{
-    padding-top: 3.5mm !important;
-    padding-bottom: 3.5mm !important;
-  }
-
+/* === v2.3.14e : nutrition impression compacte (ciblage réel) === */
+@media print {
   .print-nutrition-row{
     display:grid !important;
-    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
-    gap:1mm 3mm !important;
+    grid-template-columns: repeat(4, minmax(0,1fr)) !important;
+    gap: 1mm 3mm !important;
     align-items:start !important;
+    margin-top: 0 !important;
   }
 
   .print-nutrition-pill{
-    border:0 !important;
-    background:transparent !important;
-    box-shadow:none !important;
-    border-radius:0 !important;
-    padding:0 !important;
-    min-height:0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    box-shadow: none !important;
     display:flex !important;
-    flex-direction:column !important;
-    gap:.2mm !important;
-    break-inside:avoid !important;
+    flex-direction:row !important;
+    align-items:baseline !important;
+    justify-content:flex-start !important;
+    gap: 1.2mm !important;
+    break-inside: avoid !important;
   }
 
   .print-nutrition-pill span{
-    font-size:7.2pt !important;
-    line-height:1 !important;
+    font-size: 7.4pt !important;
+    line-height: 1.05 !important;
     color:#6f675d !important;
-    margin:0 !important;
-    padding:0 !important;
+    white-space:nowrap !important;
   }
 
   .print-nutrition-pill strong{
-    font-size:8.8pt !important;
-    line-height:1.05 !important;
-    font-weight:700 !important;
-    margin:0 !important;
-    padding:0 !important;
+    font-size: 8.7pt !important;
+    line-height: 1.05 !important;
+    font-weight: 700 !important;
+    white-space:nowrap !important;
+  }
+
+  .print-section-block .print-nutrition-row + *{
+    margin-top: 0 !important;
+  }
+
+  .print-section-block:has(.print-nutrition-row){
+    padding-top: 2.5mm !important;
+    padding-bottom: 2.5mm !important;
+  }
+}
+
+@media print {
+  .print-card:has(.print-nutrition-row){
+    padding-top: 3mm !important;
+    padding-bottom: 3mm !important;
   }
 }
