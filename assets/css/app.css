@@ -496,39 +496,9 @@ body.modal-open {
 }
 
 
-/* v2.3.3 — fix pop-up impression fiche détail */
-#print-product-modal .modal-panel,
-#print-product-modal .popup-panel,
-.print-product-modal__panel {
-  display: grid;
-  gap: 14px;
-}
-
-#print-product-modal fieldset {
-  display: grid;
-  gap: 10px;
-}
-
-#print-product-modal legend,
-.print-product-modal__legend {
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-#print-product-modal .checkbox-row,
-#print-product-modal .print-option-row,
-#print-product-modal label:has(input[type="checkbox"]),
-#print-product-modal label:has(input[type="radio"]),
-.print-product-option {
-  display: grid;
-  grid-template-columns: 18px 1fr;
-  align-items: start;
-  column-gap: 10px;
-  row-gap: 0;
-}
-
-#print-product-modal label span,
-#print-product-modal .checkbox-row span,
-#print-product-modal .print-option-row span {
-  line-height: 1.35;
-}
+/* v2.3.4 — alignement pop-up impression fiche détail */
+.print-options-card h4{margin:0;line-height:1.2}
+.print-inline-check,.print-check-row{display:flex;align-items:center;gap:10px;line-height:1.25}
+.print-inline-check input,.print-check-row input{margin:0;flex:0 0 auto}
+.print-check-row span,.print-inline-check span{display:inline-flex;align-items:center}
+.print-options-card .field-label{margin-bottom:4px;display:block}
