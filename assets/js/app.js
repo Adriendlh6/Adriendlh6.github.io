@@ -1,4 +1,4 @@
-const APP_VERSION = 'v2.3.4';
+const APP_VERSION = 'v2.3.0';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -469,19 +469,16 @@ function openProductPrintChooser(ingredient, category, fournisseurs){
   sectionChecks.forEach(el => el.onchange = syncToggle);
   syncToggle();
 
-  const form = chooser.root.querySelector('#product-print-options-form');
-  form.onsubmit = (event) => {
+  chooser.root.querySelector('#product-print-options-form').onsubmit = (event) => {
     event.preventDefault();
-    event.stopPropagation();
     const selectedSections = sectionChecks.filter(el => el.checked).map(el => el.value);
     if (!selectedSections.length) {
       alert('Sélectionne au moins une section à imprimer.');
-      return false;
+      return;
     }
     const supplierFilter = chooser.root.querySelector('#print-supplier-filter')?.value || 'all';
     closeProductPrintChooser();
     printProductSheet(ingredient, category, fournisseurs, { sections: selectedSections, supplierFilter });
-    return false;
   };
 }
 
@@ -1772,6 +1769,121 @@ function initShell(){
 }
 
 document.addEventListener('DOMContentLoaded', initShell);
+/* PATCH v2.3.1 — Pop-up impression produit
+   À ajouter à la fin de assets/js/app.js
+*/
+
+(function () {
+  function getEl(id) {
+    return document.getElementById(id);
+  }
+
+  function closePrintProductModal() {
+    const modal = getEl('print-product-modal');
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+  }
+
+  function openPrintProductModal() {
+    const modal = getEl('print-product-modal');
+    if (!modal) return;
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+  }
+
+  window.openPrintProductModal = openPrintProductModal;
+  window.closePrintProductModal = closePrintProductModal;
+
+  function collectPrintProductOptions() {
+    const ids = [
+      'print-section-infos',
+      'print-section-historique',
+      'print-section-utilisation',
+      'print-section-tracabilites'
+    ];
+
+    const sections = ids.map((id) => {
+      const el = getEl(id);
+      return el && el.checked ? el.value : null;
+    }).filter(Boolean);
+
+    const supplierMode = document.querySelector('input[name="print-supplier-mode"]:checked')?.value || 'all';
+    const supplierSelect = getEl('print-supplier-select');
+
+    return {
+      sections,
+      supplierMode,
+      supplierValue: supplierSelect ? supplierSelect.value : 'all'
+    };
+  }
+
+  function runSelectedProductPrint() {
+    const opts = collectPrintProductOptions();
+
+    if (typeof window.printSelectedProduct === 'function') {
+      window.printSelectedProduct(opts);
+      return true;
+    }
+    if (typeof window.printProductWithOptions === 'function') {
+      window.printProductWithOptions(opts);
+      return true;
+    }
+    if (typeof window.printProduct === 'function') {
+      window.printProduct(opts);
+      return true;
+    }
+    return false;
+  }
+
+  document.addEventListener('click', function (event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    if (target.closest('#detail-print-btn, [data-action="print-product"], .js-print-product')) {
+      event.preventDefault();
+      openPrintProductModal();
+      return;
+    }
+
+    if (target.closest('#print-product-cancel, #print-product-close, .js-close-print-product-modal')) {
+      event.preventDefault();
+      closePrintProductModal();
+      return;
+    }
+
+    const modal = target.closest('#print-product-modal');
+    if (modal && target.matches('#print-product-modal')) {
+      event.preventDefault();
+      closePrintProductModal();
+      return;
+    }
+
+    if (target.closest('#print-product-confirm, .js-confirm-print-product')) {
+      event.preventDefault();
+      const launched = runSelectedProductPrint();
+      if (launched) {
+        closePrintProductModal();
+      } else {
+        console.warn("Aucune fonction d'impression produit n'a été trouvée.");
+      }
+    }
+  });
+
+  document.addEventListener('change', function (event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    if (target.matches('input[name="print-supplier-mode"]')) {
+      const supplierSelect = getEl('print-supplier-select');
+      if (!supplierSelect) return;
+      const checked = document.querySelector('input[name="print-supplier-mode"]:checked')?.value || 'all';
+      supplierSelect.disabled = checked !== 'one';
+    }
+  });
+})();
 /* Patch v2.3.2 — impression Mercuriale : code-barres par source, sans EAN texte */
 function buildMercurialePrintMarkup(ingredients, categories, fournisseurs){
   let lastCategoryKey = null;
