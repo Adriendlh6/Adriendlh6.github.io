@@ -1,4 +1,4 @@
-  const APP_VERSION = 'v2.3.4';
+const APP_VERSION = 'v2.3.4';
 const ROUTES = {
   dashboard: { title: 'Dashboard', file: 'pages/dashboard.html' },
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
@@ -641,8 +641,16 @@ function printProductSheet(ingredient, category, fournisseurs, options={}){
   const root = getOrCreatePrintRoot();
   root.innerHTML = buildProductPrintMarkup(ingredient, category, fournisseurs, options);
   root.classList.remove('hidden');
+  // Forcer la libération du scroll lock (bottom-sheet encore ouvert)
+  document.body.classList.remove('sheet-open');
+  document.documentElement.classList.remove('sheet-open');
   document.body.classList.add('printing-product');
-  setTimeout(() => window.print(), 50);
+  // Laisser le navigateur rendre le DOM avant d'ouvrir la boîte d'impression
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  });
 }
 
 window.addEventListener('keydown', (event) => {
@@ -661,6 +669,11 @@ window.addEventListener('afterprint', () => {
   if (mercurialeRoot) mercurialeRoot.classList.add('hidden');
   const chooser = document.getElementById('product-print-chooser');
   if (chooser) chooser.classList.add('hidden');
+  // Restaurer le scroll lock si un bottom-sheet est encore ouvert
+  if (scrollLockCount > 0){
+    document.body.classList.add('sheet-open');
+    document.documentElement.classList.add('sheet-open');
+  }
 });
 
 
@@ -746,8 +759,14 @@ function printMercuriale(ingredients, categories, fournisseurs){
   const root = getOrCreateMercurialePrintRoot();
   root.innerHTML = buildMercurialePrintMarkup(ingredients, categories, fournisseurs);
   root.classList.remove('hidden');
+  document.body.classList.remove('sheet-open');
+  document.documentElement.classList.remove('sheet-open');
   document.body.classList.add('printing-mercuriale');
-  setTimeout(() => window.print(), 50);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.print();
+    });
+  });
 }
 
 function ingredientCloneForDuplicate(ingredient){
