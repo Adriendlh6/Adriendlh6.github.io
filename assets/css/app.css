@@ -700,6 +700,11 @@ body.modal-open {
   .print-chooser-actions{margin:0 -12px -10px;padding:10px 12px 0}
   .print-chooser-btn{min-width:110px;min-height:46px}
 }
+
+
+/* === POPUP IMPRESSION : finition visuelle finale === */
+/* À ajouter en fin de app.css */
+
 .print-chooser-dialog,
 .print-options-form,
 .print-options-grid,
@@ -867,5 +872,131 @@ body.modal-open {
   .print-chooser-actions .btn.secondary {
     min-width: 0;
     flex: 1 1 0;
+  }
+}
+
+
+
+/* === Impression fiche produit : nouvelle mise en page === */
+@media print{
+  .print-page{padding:10mm 9mm 11mm !important;}
+  .print-header--product{
+    margin-bottom:4.5mm !important;
+    gap:8mm !important;
+    align-items:center !important;
+  }
+  .print-header-brand{
+    display:flex;
+    align-items:center;
+    gap:4.5mm;
+  }
+  .print-logo{
+    width:22mm;
+    height:22mm;
+    object-fit:contain;
+    flex:0 0 auto;
+  }
+  .print-header-brand h1{
+    margin:0 0 1mm !important;
+    font-size:18pt !important;
+  }
+  .print-app-name{font-size:10pt !important;}
+  .print-subtitle{font-size:9pt !important;}
+  .print-print-meta{margin-left:auto;}
+  .print-grid.print-top-grid{
+    grid-template-columns:1.2fr .8fr !important;
+    gap:4mm !important;
+    margin-bottom:4mm !important;
+  }
+  .print-card{
+    padding:3.2mm !important;
+    border-radius:3mm !important;
+    margin-bottom:3mm !important;
+  }
+  .print-card--soft{
+    background:#fbf8f2;
+    border-color:#d9cfbf;
+  }
+  .print-card--compact{
+    padding-top:2.6mm !important;
+    padding-bottom:2.6mm !important;
+  }
+  .print-card-title{
+    margin:0;
+    font-size:11pt;
+  }
+  .print-card-subtitle{
+    font-size:8.5pt;
+    color:#6f675d;
+  }
+  .print-row-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:4mm;
+    margin-bottom:2.2mm;
+  }
+  .print-value--xl{
+    font-size:17pt;
+    line-height:1.12;
+  }
+  .print-note-inline{
+    margin-top:2.5mm;
+    font-size:9pt;
+    color:#4b433a;
+    white-space:pre-wrap;
+  }
+  .print-section-block > .print-section-title{
+    margin-bottom:2.2mm !important;
+  }
+  .print-nutrition-row{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:1.8mm;
+  }
+  .print-nutrition-pill{
+    border:1px solid #d6ccbe;
+    border-radius:2.6mm;
+    background:#fff;
+    padding:1.8mm 2mm;
+    display:flex;
+    flex-direction:column;
+    gap:.8mm;
+    min-height:14mm;
+    break-inside:avoid;
+  }
+  .print-nutrition-pill span{
+    font-size:7.7pt;
+    color:#6f675d;
+    line-height:1.1;
+  }
+  .print-nutrition-pill strong{
+    font-size:9.4pt;
+    line-height:1.15;
+  }
+  .print-card .chip-row{
+    gap:1.8mm;
+  }
+  .print-card .tag{
+    padding:1.3mm 2mm;
+    font-size:8.4pt;
+    border-radius:999px;
+  }
+  .print-table{
+    font-size:9.2pt !important;
+  }
+  .print-table th,.print-table td{
+    padding:1.8mm 2mm !important;
+  }
+  .print-table thead th{
+    background:#f4efe6 !important;
+  }
+  .print-ean-block--compact{
+    min-width:22mm !important;
+    gap:0 !important;
+  }
+  .print-ean-block--compact .ean-svg{
+    max-width:20mm !important;
+    width:20mm !important;
   }
 }
