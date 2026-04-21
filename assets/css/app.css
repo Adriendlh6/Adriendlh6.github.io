@@ -1254,43 +1254,11 @@ body.modal-open {
 }
 
 
-/* === v2.3.14i : impression produit - pagination complète === */
-@media print{
-  body.printing-product .product-print-root{
-    position: static !important;
-    inset: auto !important;
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  body.printing-product,
-  body.printing-product html{
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .product-print-root,
-  .product-print-root *{
-    overflow: visible !important;
-  }
-
-  .print-page{
-    page-break-after: auto !important;
-    break-after: auto !important;
-  }
-
-  .print-section-block,
-  .print-card{
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  .print-history-chart-wrap,
-  .price-history-chart-wrap,
-  .print-history-list,
-  .history-list-groups{
-    overflow: visible !important;
+/* === v2.3.14j : impression produit - masquer blocs vides résiduels === */
+@media print {
+  .print-card:empty,
+  .print-section-block:empty,
+  .print-placeholder:empty {
+    display:none !important;
   }
 }
