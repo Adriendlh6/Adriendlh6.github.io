@@ -572,3 +572,131 @@ body.modal-open {
 .print-options-card .field-label{margin-bottom:4px}
 .print-options-card .muted.small{font-size:.8rem;line-height:1.25}
 @media (max-width:640px){.print-options-card{padding:10px 11px}.print-check-row--compact{min-height:32px;padding:4px 8px}.print-options-subgrid--two{grid-template-columns:1fr}}
+
+
+/* v2.3.12b popup impression visual polish */
+.print-chooser-backdrop{backdrop-filter:blur(2px);background:rgba(24,18,12,.34)}
+.print-chooser-dialog{
+  width:min(94vw,680px);
+  border-radius:24px;
+  padding:16px 16px 14px;
+  background:linear-gradient(180deg,#fff 0%,#fffdf9 100%);
+  border:1px solid rgba(191,168,145,.55);
+  box-shadow:0 18px 44px rgba(29,20,10,.18);
+  gap:14px;
+}
+.print-chooser-head{align-items:center;padding-bottom:4px;border-bottom:1px solid rgba(216,199,180,.55)}
+.print-chooser-kicker{font-size:.78rem;letter-spacing:.02em;color:#8a7c6f;margin-bottom:2px}
+.print-chooser-head h3{font-size:1.55rem;line-height:1.08;letter-spacing:-.02em}
+.print-chooser-body{display:grid;gap:10px}
+.print-options-grid,
+.print-options-grid--single{gap:10px}
+.print-options-card{
+  padding:12px 13px;
+  gap:8px;
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(250,247,241,.96) 0%,rgba(244,239,232,.92) 100%);
+  border:1px solid rgba(214,200,183,.9);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+}
+.print-options-card__head{align-items:center;min-height:36px}
+.print-inline-check{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-height:34px;
+  padding:7px 12px;
+  border-radius:999px;
+  background:#fff;
+  border:1px solid rgba(214,200,183,.95);
+  box-shadow:0 1px 2px rgba(34,24,14,.04);
+  font-size:1rem;
+  font-weight:700;
+}
+.print-inline-check input[type="checkbox"],
+.print-inline-check input[type="radio"],
+.print-check-row input[type="checkbox"],
+.print-check-row input[type="radio"]{
+  appearance:none;
+  -webkit-appearance:none;
+  width:18px !important;height:18px !important;min-width:18px;flex:0 0 18px !important;
+  border:2px solid #bfb1a2 !important;
+  border-radius:6px;
+  background:#fff !important;
+  box-shadow:none !important;
+  position:relative;
+}
+.print-inline-check input[type="radio"],
+.print-check-row input[type="radio"]{border-radius:999px}
+.print-inline-check input:checked,
+.print-check-row input:checked{background:var(--brand,#a06d34) !important;border-color:var(--brand,#a06d34) !important}
+.print-inline-check input:checked::after,
+.print-check-row input:checked::after{
+  content:'';
+  position:absolute;
+  inset:3px;
+  background:#fff;
+  clip-path:polygon(14% 52%, 0 66%, 38% 100%, 100% 18%, 86% 4%, 36% 68%);
+}
+.print-inline-check input[type="radio"]:checked::after,
+.print-check-row input[type="radio"]:checked::after{clip-path:none;inset:4px;border-radius:999px}
+.print-category-panel{
+  gap:5px;
+  margin-left:6px;
+  padding-left:8px;
+  border-left:2px solid rgba(184,116,42,.14);
+}
+.print-category-panel.is-collapsed{margin-left:0;padding-left:0;border-left:none}
+.print-options-subtitle{
+  font-size:.72rem;
+  letter-spacing:.08em;
+  color:#8f816f;
+  margin:2px 0 0;
+}
+.print-options-subcard{
+  gap:6px;
+  padding:8px 9px;
+  border-radius:14px;
+  background:rgba(255,255,255,.6);
+  border:1px solid rgba(219,205,191,.9);
+}
+.print-options-subgrid,
+.print-options-subgrid--compact{gap:5px}
+.print-check-row,
+.print-check-row--compact{
+  min-height:34px;
+  padding:6px 10px;
+  border-radius:12px;
+  background:#fff;
+  border:1px solid rgba(220,208,196,.95);
+  box-shadow:0 1px 1px rgba(34,24,14,.03);
+}
+.print-check-row span,.print-inline-check span{font-size:.95rem;color:#2c2218}
+.print-options-card h4{font-size:1rem;line-height:1.1}
+.print-options-card .field-label{font-size:.82rem;color:#8c7b6c;margin-bottom:4px}
+#print-supplier-filter{
+  border-radius:13px;
+  border:1px solid rgba(212,196,179,.95);
+  background:#fff;
+  min-height:42px;
+  padding:0 14px;
+}
+.print-options-card .muted.small{font-size:.77rem;color:#8d8072;line-height:1.25}
+.print-chooser-actions{
+  position:sticky;
+  bottom:-14px;
+  margin:0 -16px -14px;
+  padding:12px 16px 0;
+  background:linear-gradient(180deg,rgba(255,253,249,0) 0%,rgba(255,253,249,.88) 22%,#fffdf9 100%);
+}
+.print-chooser-btn{min-width:124px;border-radius:16px;min-height:48px}
+@media (max-width:640px){
+  .print-chooser-dialog{width:min(96vw,560px);padding:14px 12px 10px;border-radius:22px}
+  .print-chooser-head h3{font-size:1.32rem}
+  .print-options-card{padding:10px 11px;border-radius:16px}
+  .print-inline-check{min-height:32px;padding:6px 10px;font-size:.95rem}
+  .print-check-row,.print-check-row--compact{min-height:32px;padding:5px 9px}
+  .print-check-row span,.print-inline-check span{font-size:.92rem}
+  .print-chooser-actions{margin:0 -12px -10px;padding:10px 12px 0}
+  .print-chooser-btn{min-width:110px;min-height:46px}
+}
