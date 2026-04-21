@@ -1254,16 +1254,63 @@ body.modal-open {
 }
 
 
-/* === v2.3.14k : forcer page 2 après le tableau fournisseurs === */
+/* === v2.3.14l : pagination globale impression produit === */
 @media print {
-  .print-suppliers-section {
-    break-after: page !important;
-    page-break-after: always !important;
+  html,
+  body,
+  body.printing-product {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
-  .print-suppliers-section + .print-section-block,
-  .print-suppliers-section + .print-card {
-    break-before: page !important;
-    page-break-before: always !important;
+  body.printing-product {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-product > *:not(#product-print-root) {
+    display: none !important;
+  }
+
+  body.printing-product #product-print-root {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    transform: none !important;
+    contain: none !important;
+  }
+
+  body.printing-product #product-print-root .print-page {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+
+  body.printing-product #product-print-root .print-card,
+  body.printing-product #product-print-root .print-section-block,
+  body.printing-product #product-print-root .print-history-item,
+  body.printing-product #product-print-root .print-offer-card,
+  body.printing-product #product-print-root .print-placeholder {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  body.printing-product #product-print-root .print-suppliers-section {
+    break-after: page !important;
+    page-break-after: always !important;
   }
 }
