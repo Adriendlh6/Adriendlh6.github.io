@@ -136,21 +136,61 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
 .ean-visual-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px;overflow:auto}
 .ean-svg{display:block;width:100%;height:auto;min-width:280px;max-width:420px;margin:0 auto}
 
-.product-print-root{display:none}
+/* Racines d'impression — cachées à l'écran, visibles uniquement en impression */
+.product-print-root,
+.mercuriale-print-root{display:none}
+
 @media print{
-  body.printing-product .app-shell,
-  body.printing-product .sheet-backdrop,
-  body.printing-product .bottom-sheet,
-  body.printing-product .topbar,
-  body.printing-product .footer,
-  body.printing-product .sidebar{display:none !important}
-  body.printing-product{background:#fff}
-  body.printing-product .product-print-root{display:block !important}
-  body.printing-product *{visibility:hidden}
-  body.printing-product .product-print-root,
-  body.printing-product .product-print-root *{visibility:visible}
-  body.printing-product .product-print-root{position:absolute;inset:0;padding:0;margin:0}
-  .print-page{padding:18mm 14mm;color:#111;background:#fff;font-size:12pt}
+  /* ── Remise à zéro : tout le body est masqué ── */
+  html, body{
+    overflow:visible !important;
+    height:auto !important;
+    background:#fff !important;
+  }
+
+  /* Masquer toute l'interface (sidebar, sheets, topbar…) */
+  .app-shell,
+  .sheet-backdrop,
+  .bottom-sheet,
+  .topbar,
+  .footer,
+  .sidebar,
+  .overlay,
+  #product-print-chooser,
+  .mercuriale-selection-bar{
+    display:none !important;
+  }
+
+  /* ── Fiche produit ── */
+  body.printing-product .product-print-root{
+    display:block !important;
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:auto;
+    overflow:visible;
+    background:#fff;
+    padding:0;
+    margin:0;
+    z-index:9999;
+  }
+
+  /* ── Mercuriale ── */
+  body.printing-mercuriale .mercuriale-print-root{
+    display:block !important;
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:auto;
+    overflow:visible;
+    background:#fff;
+    padding:0;
+    margin:0;
+    z-index:9999;
+  }
+
+  /* ── Styles communs aux pages imprimées ── */
+  .print-page{padding:14mm 12mm;color:#111;background:#fff;font-size:12pt}
   .print-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;margin-bottom:8mm}
   .print-header h1{margin:0 0 2mm;font-size:20pt}
   .print-app-name{font-weight:700;font-size:11pt}
@@ -165,23 +205,8 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .print-table thead th{background:#f0f0f0}
   .print-nutrition-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm 6mm}
   .print-nutrition-grid div{display:flex;justify-content:space-between;gap:4mm;border-bottom:1px dotted #ccc;padding-bottom:1.2mm}
-}
 
-
-.mercuriale-print-root{display:none}
-@media print{
-  body.printing-mercuriale .app-shell,
-  body.printing-mercuriale .sheet-backdrop,
-  body.printing-mercuriale .bottom-sheet,
-  body.printing-mercuriale .topbar,
-  body.printing-mercuriale .footer,
-  body.printing-mercuriale .sidebar{display:none !important}
-  body.printing-mercuriale{background:#fff}
-  body.printing-mercuriale .mercuriale-print-root{display:block !important}
-  body.printing-mercuriale *{visibility:hidden}
-  body.printing-mercuriale .mercuriale-print-root,
-  body.printing-mercuriale .mercuriale-print-root *{visibility:visible}
-  body.printing-mercuriale .mercuriale-print-root{position:absolute;inset:0;padding:0;margin:0}
+  /* ── Styles spécifiques mercuriale ── */
   .mercuriale-print-page .print-card{overflow:visible}
   .mercuriale-print-table{font-size:9.2pt}
   .mercuriale-print-table th,.mercuriale-print-table td{padding:2mm}
@@ -448,3 +473,5 @@ th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-
   .mercuriale-print-table .print-ean-block--compact .ean-svg{max-width:22mm !important}
   .mercuriale-print-table td:nth-child(2){width:26mm !important}
 }
+
+
