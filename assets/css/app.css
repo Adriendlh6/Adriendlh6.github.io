@@ -1163,3 +1163,53 @@ body.modal-open {
     margin-bottom: 6px !important;
   }
 }
+
+/* === v2.3.14g : impression produit - hauteurs alignées + code-barres contenu === */
+@media print {
+  /* mêmes hauteurs pour les deux cartes d'info en haut */
+  .print-grid--2 {
+    align-items: stretch !important;
+  }
+
+  .print-grid--2 > .print-card,
+  .print-grid--2 > .print-section-block,
+  .print-grid--2 > .print-offer-card {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* empêche le code-barres de déborder de sa cellule */
+  .print-table td .ean-svg,
+  .print-table td svg.ean-svg,
+  .print-table .ean-svg,
+  .print-table svg {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: 15mm !important;
+    overflow: hidden !important;
+  }
+
+  .print-table td .print-ean-block,
+  .print-table td .print-ean-block--compact {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  .print-table td .print-ean-block--compact .ean-svg,
+  .print-table td .print-ean-block .ean-svg {
+    width: 28mm !important;
+    max-width: 100% !important;
+    max-height: 12mm !important;
+  }
+
+  .print-table td {
+    overflow: hidden !important;
+  }
+}
