@@ -87,24 +87,28 @@
     const host = qs('#app-content');
     host.innerHTML = `
       <section id="${PAGE_ID}" class="suppliers-page">
-        <div class="suppliers-header-card">
-          <div class="suppliers-header">
+        <div class="merc-header-wrap">
+          <div class="mercuriale-header">
             <div>
               <h2 class="suppliers-title">Fournisseurs</h2>
               <p class="suppliers-subtitle">Gestion centralisée des partenaires et contacts.</p>
             </div>
-            <div class="suppliers-actions">
+            <div class="mercuriale-actions">
               <button type="button" class="btn secondary" id="suppliers-print-btn">Imprimer</button>
               <button type="button" class="btn" id="suppliers-add-btn">Ajouter</button>
             </div>
           </div>
-          <div class="suppliers-toolbar">
-            <div class="suppliers-search-row">
+        </div>
+
+        <section class="item mercuriale-toolbar-card suppliers-toolbar-card">
+          <div class="mercuriale-toolbar-topline">
+            <div class="suppliers-search-row mercuriale-search-field">
               <input id="suppliers-search-input" class="input" type="search" placeholder="Rechercher un fournisseur, un commercial ou un téléphone">
             </div>
-            <button type="button" class="btn secondary suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false">Voir les archivés</button>
+            <button type="button" class="icon-square-btn suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false" title="Voir les archivés">🗂️</button>
           </div>
-        </div>
+        </section>
+
         <div id="suppliers-list" class="suppliers-list"></div>
       </section>
 
@@ -118,14 +122,16 @@
     const commercial = [contact.prenom, contact.nom].filter(Boolean).join(' ').trim() || item.commercial || '—';
     const phone = item.entrepriseTelephone || contact.telephone || '—';
     return `
-      <button type="button" class="supplier-row ${item.archived ? 'is-archived' : ''}" data-supplier-open="${item.id}">
-        <div class="supplier-row__main">
-          <strong>${esc(item.entrepriseNom || item.nom || 'Sans nom')}</strong>
-          <div class="supplier-row__meta">${esc(commercial)}</div>
-          <div class="supplier-row__meta">${esc(phone)}</div>
+      <article class="item product-card supplier-card-lite ${item.archived ? 'is-archived' : ''}" data-supplier-open="${item.id}" tabindex="0">
+        <div class="item-top">
+          <div>
+            <strong>${esc(item.entrepriseNom || item.nom || 'Sans nom')}</strong>
+            <div class="muted">${esc(commercial)}</div>
+            <div class="muted">${esc(phone)}</div>
+          </div>
+          ${item.archived ? '<span class="supplier-row__badge">Archivé</span>' : ''}
         </div>
-        ${item.archived ? '<span class="supplier-row__badge">Archivé</span>' : ''}
-      </button>
+      </article>
     `;
   }
 
@@ -374,16 +380,25 @@
         : `<div class="notice">${showArchived ? 'Aucun fournisseur archivé.' : 'Aucun fournisseur trouvé.'}</div>`;
 
       qsa('[data-supplier-open]', target).forEach(btn => {
-        btn.onclick = () => {
+        const open = () => {
           const item = list.find(entry => entry.id === btn.dataset.supplierOpen);
           if (item) renderReadSheet(item);
+        };
+        btn.onclick = open;
+        btn.onkeydown = (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            open();
+          }
         };
       });
 
       if (archivedToggle) {
-        archivedToggle.textContent = showArchived ? 'Voir les actifs' : 'Voir les archivés';
+        archivedToggle.textContent = showArchived ? '📂' : '🗂️';
+        archivedToggle.setAttribute('title', showArchived ? 'Voir les actifs' : 'Voir les archivés');
+        archivedToggle.setAttribute('aria-label', showArchived ? 'Voir les actifs' : 'Voir les archivés');
         archivedToggle.setAttribute('aria-pressed', String(showArchived));
-        archivedToggle.classList.toggle('is-active', showArchived);
+        archivedToggle.classList.toggle('active', showArchived);
       }
     };
 
