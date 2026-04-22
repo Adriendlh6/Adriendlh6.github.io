@@ -1,4 +1,4 @@
-/* Mercuriale isolated module - phase 2 */
+/* Mercuriale module - isolation complète */
 (function(){
 function ensureJSZipLoaded(){
   if (typeof JSZip !== 'undefined') return Promise.resolve(JSZip);
@@ -323,10 +323,10 @@ function closeSheet(sheet, backdrop){
   unlockBodyScroll();
 }
 
-
 function unloadRouteAssets(){
   qsa('[data-route-asset]').forEach(node => node.remove());
   delete window.MercurialePage;
+  delete window.MercurialePageFns;
 }
 
 function loadScriptAsset(src){
@@ -365,7 +365,7 @@ async function loadRoute(route){
   qs('#pageTitle').textContent = cfg.title;
   qsa('.nav-link').forEach(btn => btn.classList.toggle('active', btn.dataset.route === state.route));
   await ensureRouteAssets(state.route);
-  initCurrentPage();
+  await initCurrentPage();
   closeSidebar();
   history.replaceState({}, '', '#' + state.route);
 }
@@ -1280,8 +1280,6 @@ if (clearSelectionBtn) clearSelectionBtn.onclick = () => clearSelection();
   renderIngredients();
 }
 
-async
-
   const api = {
     ensureJSZipLoaded,
     exportMercurialeXls,
@@ -1309,7 +1307,6 @@ async
     computeOffreFromField,
     getIngredientDraft,
     renderMercuriale,
-    renderAllergenes,
     updateSelectionBar,
     clearSelection,
     toggleIngredientSelection,
@@ -1317,25 +1314,12 @@ async
     cancelLongPress,
     renderIngredients,
     renderCategorySelect,
-    renderMercurialeFilterControls,
-    updateFiltersToggleState,
-    ingredientUnitSortPrice,
-    getVisibleIngredients,
     renderOffers,
-    resetIngredientForm,
-    populateIngredientForm,
-    openIngredientSheetWithData,
-    formatNutritionValue,
-    showIngredientDetail,
-    renderCategoriesManager,
-    resetCategorieForm,
-    appendOfferDraft,
+    showIngredientDetail
   };
 
   window.MercurialePageFns = api;
   window.MercurialePage = {
-    render: (...args) => renderMercuriale(...args),
-    getMercurialeCategories: (...args) => getMercurialeCategories(...args),
-    exportMercurialeXls: (...args) => exportMercurialeXls(...args)
+    render: (...args) => renderMercuriale(...args)
   };
 })();
