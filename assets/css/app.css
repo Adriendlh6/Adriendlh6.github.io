@@ -1636,3 +1636,69 @@ body.modal-open {
     color: transparent !important;
   }
 }
+
+
+/* === v2.3.20b : impression Mercuriale - logo, marges réduites, code-barres centré === */
+@media print {
+  @page {
+    margin: 7mm 5mm 8mm 5mm;
+  }
+
+  .mercuriale-print-page {
+    padding: 6mm 4mm 8mm !important;
+  }
+
+  .mercuriale-print-header {
+    margin-bottom: 3.5mm !important;
+  }
+
+  .mercuriale-print-header .print-header-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5mm !important;
+  }
+
+  .mercuriale-print-header .print-logo {
+    display: block !important;
+    width: 22mm !important;
+    height: 22mm !important;
+    object-fit: contain !important;
+    flex: 0 0 22mm !important;
+  }
+
+  .mercuriale-print-card {
+    padding: 2.5mm !important;
+  }
+
+  .mercuriale-print-table td:nth-child(4),
+  .mercuriale-print-table th:nth-child(4) {
+    text-align: center !important;
+  }
+
+  .mercuriale-print-table .print-ean-block,
+  .mercuriale-print-table .print-ean-block--compact {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    margin: 0 auto !important;
+  }
+
+  .mercuriale-print-table .print-ean-block .ean-svg,
+  .mercuriale-print-table .print-ean-block--compact .ean-svg {
+    display: block !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 36mm !important;
+    max-height: 10mm !important;
+    height: auto !important;
+  }
+
+  .mercuriale-print-table .print-ean-number {
+    width: 100% !important;
+    text-align: center !important;
+    margin: 0 auto !important;
+  }
+}
