@@ -98,8 +98,11 @@
               <button type="button" class="btn" id="suppliers-add-btn">Ajouter</button>
             </div>
           </div>
-          <div class="suppliers-search-row">
-            <input id="suppliers-search-input" class="input" type="search" placeholder="Rechercher un fournisseur, un commercial ou un téléphone">
+          <div class="suppliers-toolbar">
+            <div class="suppliers-search-row">
+              <input id="suppliers-search-input" class="input" type="search" placeholder="Rechercher un fournisseur, un commercial ou un téléphone">
+            </div>
+            <button type="button" class="btn secondary suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false">Voir les archivés</button>
           </div>
         </div>
         <div id="suppliers-list" class="suppliers-list"></div>
@@ -344,12 +347,14 @@
     const searchInput = qs('#suppliers-search-input');
     const printBtn = qs('#suppliers-print-btn');
     const addBtn = qs('#suppliers-add-btn');
+    const archivedToggle = qs('#suppliers-archived-toggle');
     const target = qs('#suppliers-list');
+    let showArchived = false;
 
     const drawList = () => {
       const term = String(searchInput?.value || '').toLowerCase().trim();
       const filtered = list
-        .filter(item => !item.archived)
+        .filter(item => showArchived ? item.archived : !item.archived)
         .filter(item => {
           if (!term) return true;
           const c1 = item.contacts?.[0] || {};
@@ -366,7 +371,7 @@
 
       target.innerHTML = filtered.length
         ? filtered.map(supplierRowMarkup).join('')
-        : '<div class="notice">Aucun fournisseur trouvé.</div>';
+        : `<div class="notice">${showArchived ? 'Aucun fournisseur archivé.' : 'Aucun fournisseur trouvé.'}</div>`;
 
       qsa('[data-supplier-open]', target).forEach(btn => {
         btn.onclick = () => {
@@ -374,11 +379,21 @@
           if (item) renderReadSheet(item);
         };
       });
+
+      if (archivedToggle) {
+        archivedToggle.textContent = showArchived ? 'Voir les actifs' : 'Voir les archivés';
+        archivedToggle.setAttribute('aria-pressed', String(showArchived));
+        archivedToggle.classList.toggle('is-active', showArchived);
+      }
     };
 
     searchInput?.addEventListener('input', drawList);
     addBtn?.addEventListener('click', () => renderEditSheet());
     printBtn?.addEventListener('click', () => alert("Impression fournisseurs à venir."));
+    archivedToggle?.addEventListener('click', () => {
+      showArchived = !showArchived;
+      drawList();
+    });
     drawList();
   }
 
