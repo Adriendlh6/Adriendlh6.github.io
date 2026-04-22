@@ -1525,3 +1525,114 @@ body.modal-open {
   padding-top: 8px;
   padding-bottom: 6px;
 }
+
+
+/* === v2.3.20 : impression Mercuriale - en-tête harmonisé + tableau affiné === */
+@media print {
+  .mercuriale-print-page {
+    padding: 10mm 9mm 11mm !important;
+  }
+
+  .mercuriale-print-header {
+    margin-bottom: 4.5mm !important;
+    gap: 8mm !important;
+    align-items: center !important;
+  }
+
+  .mercuriale-print-card {
+    padding: 3.2mm !important;
+    border-radius: 3mm !important;
+    margin-bottom: 0 !important;
+    overflow: visible !important;
+  }
+
+  .mercuriale-print-table {
+    font-size: 9pt !important;
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  .mercuriale-print-table th,
+  .mercuriale-print-table td {
+    padding: 2.1mm 1.8mm !important;
+    vertical-align: middle !important;
+    line-height: 1.15 !important;
+    word-break: break-word !important;
+  }
+
+  .mercuriale-print-table thead th {
+    font-size: 8.2pt !important;
+    letter-spacing: 0.01em !important;
+    background: #f7f2ea !important;
+    color: #4d3a28 !important;
+  }
+
+  .mercuriale-print-table th:nth-child(1),
+  .mercuriale-print-table td:nth-child(1) {
+    width: 18% !important;
+  }
+
+  .mercuriale-print-table th:nth-child(2),
+  .mercuriale-print-table td:nth-child(2) {
+    width: 18% !important;
+  }
+
+  .mercuriale-print-table th:nth-child(3),
+  .mercuriale-print-table td:nth-child(3) {
+    width: 16% !important;
+  }
+
+  .mercuriale-print-table th:nth-child(4),
+  .mercuriale-print-table td:nth-child(4) {
+    width: 13% !important;
+  }
+
+  .mercuriale-print-table th:nth-child(5),
+  .mercuriale-print-table td:nth-child(5) {
+    width: 13% !important;
+  }
+
+  .mercuriale-print-table th:nth-child(6),
+  .mercuriale-print-table td:nth-child(6),
+  .mercuriale-print-table th:nth-child(7),
+  .mercuriale-print-table td:nth-child(7) {
+    width: 11% !important;
+    text-align: right !important;
+  }
+
+  .mercuriale-print-table .print-category-row td {
+    padding: 1mm 0 1.4mm !important;
+  }
+
+  .mercuriale-print-table .print-category-band {
+    padding: 1.4mm 2.2mm !important;
+    border-radius: 2.4mm !important;
+  }
+
+  .mercuriale-print-table .print-ean-block {
+    align-items: center !important;
+    gap: 1mm !important;
+  }
+
+  .mercuriale-print-table .print-ean-block .ean-svg {
+    width: 100% !important;
+    max-width: 34mm !important;
+    height: auto !important;
+    max-height: 10mm !important;
+  }
+
+  .mercuriale-print-table .print-ean-number {
+    font-size: 7.2pt !important;
+    line-height: 1 !important;
+    text-align: center !important;
+  }
+
+  .mercuriale-print-table .product-first-row td {
+    border-top: 1.4px solid #9f8a73 !important;
+  }
+
+  .mercuriale-print-table .product-sub-row td:first-child,
+  .mercuriale-print-table .product-sub-row td:nth-child(2) {
+    color: transparent !important;
+  }
+}
