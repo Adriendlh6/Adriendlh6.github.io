@@ -1,0 +1,10 @@
+/* Mercuriale page stylesheet - phase 1 isolation */
+/* Le socle global reste dans app.css pour éviter les régressions.
+   Les prochains ajustements Mercuriale seront ajoutés ici. */
+
+.mercuriale-page,
+.mercuriale-print-page,
+.mercuriale-header,
+.mercuriale-selection-bar {
+  /* point d’ancrage pour la suite */
+}
