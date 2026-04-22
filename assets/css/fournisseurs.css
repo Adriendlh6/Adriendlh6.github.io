@@ -1,22 +1,60 @@
-/* Fournisseurs page - alignée sur la Mercuriale */
+/* Fournisseurs page - copie visuelle Mercuriale adaptée */
 .suppliers-page{display:grid;gap:14px}
-.merc-header-wrap{margin:0 0 2px}
-.suppliers-title{margin:0;font-size:1.55rem;line-height:1.1}
-.suppliers-subtitle{margin:6px 0 0;color:var(--muted)}
-
-.suppliers-toolbar-card{margin:0 0 14px}
-.suppliers-search-row{min-width:0}
-.suppliers-archive-toggle{white-space:nowrap}
-.suppliers-archive-toggle.active{
-  background:var(--surface-2);
-  border-color:var(--brand);
-  color:var(--brand);
+.suppliers-shell-card{display:grid;gap:14px}
+.suppliers-shell-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:16px;
+  align-items:start;
 }
-
+.suppliers-shell-copy{max-width:460px}
+.suppliers-title{
+  margin:0;
+  font-size:clamp(1.9rem,3.1vw,2.55rem);
+  line-height:1.05;
+}
+.suppliers-subtitle{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:clamp(1rem,1.5vw,1.08rem);
+  line-height:1.28;
+}
+.suppliers-shell-actions{
+  align-items:center;
+  flex-wrap:nowrap;
+}
+.suppliers-search-card{
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:var(--surface);
+}
+.suppliers-search-card summary{
+  font-size:1.05rem;
+  font-weight:700;
+  padding:14px 16px 0;
+}
+.suppliers-search-card > div,
+.suppliers-search-row{
+  padding:0 16px 16px;
+}
+.suppliers-search-row .input{
+  min-height:54px;
+  border-radius:16px;
+}
 .suppliers-list{display:grid;gap:12px}
-.supplier-card-lite{cursor:pointer}
-.supplier-card-lite .item-top{align-items:flex-start}
-.supplier-card-lite strong{font-size:1.02rem;line-height:1.2}
+.supplier-card-lite{
+  cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.supplier-card-lite:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+.supplier-card-lite strong{
+  font-size:1.02rem;
+  line-height:1.2;
+}
+.supplier-card-lite .muted{
+  font-size:.98rem;
+  line-height:1.22;
+}
 .supplier-card-lite.is-archived{opacity:.78}
 .supplier-row__badge{
   padding:6px 10px;
@@ -27,6 +65,13 @@
   flex:0 0 auto;
 }
 
+.suppliers-archive-toggle.active{
+  background:var(--surface-2);
+  border-color:var(--brand);
+  color:var(--brand);
+}
+
+/* Bottom sheet kept as-is for now */
 .supplier-sheet{
   padding:18px 16px 24px;
   max-height:88vh;
@@ -103,9 +148,10 @@
 .field--full{grid-column:1/-1}
 
 @media (max-width: 920px){
+  .suppliers-shell-head{grid-template-columns:1fr}
+  .suppliers-shell-actions{justify-content:flex-start}
   .supplier-info-line{grid-template-columns:1fr}
 }
-
 @media (max-width: 640px){
-  .supplier-card-lite{padding:14px}
+  .suppliers-shell-actions{gap:8px}
 }

@@ -87,29 +87,28 @@
     const host = qs('#app-content');
     host.innerHTML = `
       <section id="${PAGE_ID}" class="suppliers-page">
-        <div class="merc-header-wrap">
-          <div class="mercuriale-header">
-            <div>
-              <h2 class="suppliers-title">Fournisseurs</h2>
-              <p class="suppliers-subtitle">Gestion centralisée des partenaires et contacts.</p>
+        <section class="item suppliers-shell-card">
+          <div class="suppliers-shell-head">
+            <div class="suppliers-shell-copy">
+              <h2 class="suppliers-title">Gestion des fournisseurs</h2>
+              <p class="suppliers-subtitle">Référentiel fournisseurs, contacts et informations de gestion.</p>
             </div>
-            <div class="mercuriale-actions">
-              <button type="button" class="btn secondary" id="suppliers-print-btn">Imprimer</button>
-              <button type="button" class="btn" id="suppliers-add-btn">Ajouter</button>
+            <div class="mercuriale-actions suppliers-shell-actions">
+              <button type="button" class="icon-square-btn" id="suppliers-print-btn" title="Imprimer">🖨️</button>
+              <button type="button" class="icon-square-btn suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false" title="Voir les archivés">🗂️</button>
+              <button type="button" class="icon-square-btn primary" id="suppliers-add-btn" title="Ajouter">＋</button>
             </div>
           </div>
-        </div>
 
-        <section class="item mercuriale-toolbar-card suppliers-toolbar-card">
-          <div class="mercuriale-toolbar-topline">
-            <div class="suppliers-search-row mercuriale-search-field">
-              <input id="suppliers-search-input" class="input" type="search" placeholder="Rechercher un fournisseur, un commercial ou un téléphone">
+          <section class="details suppliers-search-card" open>
+            <summary>Recherche</summary>
+            <div class="suppliers-search-row">
+              <input id="suppliers-search-input" class="input" type="search" placeholder="Nom, commercial ou téléphone">
             </div>
-            <button type="button" class="icon-square-btn suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false" title="Voir les archivés">🗂️</button>
-          </div>
+          </section>
+
+          <div id="suppliers-list" class="suppliers-list"></div>
         </section>
-
-        <div id="suppliers-list" class="suppliers-list"></div>
       </section>
 
       <div id="supplier-sheet-backdrop" class="sheet-backdrop hidden"></div>
