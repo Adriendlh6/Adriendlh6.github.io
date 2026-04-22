@@ -1514,3 +1514,14 @@ body.modal-open {
 #mercuriale-print-chooser .print-options-grid--single {
   grid-template-columns: 1fr;
 }
+
+
+/* === v2.3.18b : pop-up impression Mercuriale === */
+.print-chooser-body {
+  padding-bottom: 8px;
+}
+
+.print-chooser-actions {
+  padding-top: 8px;
+  padding-bottom: 6px;
+}
