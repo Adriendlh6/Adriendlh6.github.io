@@ -1508,3 +1508,18 @@ body.modal-open {
     border-radius:18px;
   }
 }
+
+
+/* === v2.3.17c : formulaires figés === */
+.offers-editor input[data-offre-field="prixHTUnite"],
+.offers-editor input[data-offre-field="prixTTCUnite"],
+.offers-editor input[data-offre-field="prixHTColis"],
+.offers-editor input[data-offre-field="prixTTCColis"],
+.offers-editor input[data-offre-field="quantiteColis"] {
+  text-align: left;
+}
+
+.offers-editor select[data-offre-field="tva"] {
+  appearance: auto;
+  -webkit-appearance: menulist;
+}
