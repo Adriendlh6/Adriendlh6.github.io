@@ -177,10 +177,6 @@
   content:' *';
   color:var(--danger);
 }
-@media (max-width: 640px){
-  .supplier-form-footer{grid-template-columns:1fr}
-}
-
 
 /* Ajustement du formulaire fournisseur sur le modèle Mercuriale */
 .supplier-card--edit{background:var(--surface)}

@@ -25,7 +25,7 @@
         ? row.contacts.map(contact => ({ ...emptyContact(), ...contact, id: contact.id || uid('contact') }))
         : (row.contact || row.telephone || row.mail
           ? [{ ...emptyContact(), nom: row.contact || '', qualite: 'Commercial', mail: row.mail || '', telephone: row.telephone || '' }]
-          : [emptyContact(), emptyContact()]),
+          : []),
       joursCommande: row.joursCommande || '',
       joursLivraison: row.joursLivraison || '',
       noteInterne: row.noteInterne || row.notes || '',
