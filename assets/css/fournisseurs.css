@@ -149,6 +149,21 @@
 .text-btn.danger{color:#9d2f2f}
 .field--full{grid-column:1/-1}
 
+
+
+/* Détail fournisseur : mêmes onglets que la mercuriale */
+.detail-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.detail-tab{
+  border:1px solid var(--line);
+  background:var(--surface-2);
+  padding:12px 10px;
+  border-radius:12px;
+  font-weight:600;
+  color:var(--text);
+}
+.detail-tab.active{background:var(--brand);border-color:var(--brand);color:#fff}
+.detail-tab-panel{display:none;gap:14px}
+.detail-tab-panel.active{display:grid}
 @media (max-width: 920px){
   .suppliers-shell-head{grid-template-columns:1fr}
   .suppliers-shell-actions{justify-content:flex-start}
@@ -157,6 +172,7 @@
 @media (max-width: 640px){
   .suppliers-shell-actions{gap:8px}
   .suppliers-search-row{grid-template-columns:1fr}
+  .detail-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 
