@@ -10,6 +10,54 @@
     return { id: uid('contact'), nom: '', prenom: '', qualite: '', mail: '', telephone: '' };
   }
 
+  const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  const DELIVERY_RECURRENCES = [
+    { value: 'all', label: 'Toutes les semaines' },
+    { value: 'odd', label: 'Semaines impaires' },
+    { value: 'even', label: 'Semaines paires' },
+  ];
+
+  function emptyDeliveryRule(){
+    return { id: uid('delivery'), jourCommande: '', jourLivraison: '', heureLimite: '', recurrence: 'all' };
+  }
+
+  function normalizeWeekdays(value){
+    const list = Array.isArray(value) ? value : String(value || '').split(',');
+    return list.map(v => String(v || '').trim()).filter(Boolean).filter(v => WEEKDAYS.includes(v));
+  }
+
+  function normalizeDeliveryRules(row){
+    if (Array.isArray(row?.livraisons) && row.livraisons.length) {
+      return row.livraisons.map(rule => ({ ...emptyDeliveryRule(), ...rule, id: rule.id || uid('delivery'), heureLimite: rule.heureLimite || rule.heureLimiteCommande || '' }));
+    }
+    if (row?.joursCommande || row?.joursLivraison) {
+      return [{ ...emptyDeliveryRule(), jourCommande: row.joursCommande || '', jourLivraison: row.joursLivraison || '', heureLimite: row.heureLimite || row.heureLimiteCommande || '', recurrence: row.recurrence || 'all' }];
+    }
+    return [];
+  }
+
+  function summarizeWeekdays(days){
+    const list = normalizeWeekdays(days);
+    return list.length ? list.join(', ') : '';
+  }
+
+  function recurrenceLabel(value){
+    return DELIVERY_RECURRENCES.find(item => item.value === value)?.label || 'Toutes les semaines';
+  }
+
+  function summarizeDeliveryRules(rules){
+    if (!Array.isArray(rules) || !rules.length) return '';
+    return rules.map(rule => {
+      const parts = [];
+      if (rule.jourCommande) parts.push(`Commande ${rule.jourCommande}`);
+      if (rule.heureLimite) parts.push(`avant ${rule.heureLimite}`);
+      if (rule.jourLivraison) parts.push(`→ Livraison ${rule.jourLivraison}`);
+      if (rule.recurrence && rule.recurrence !== 'all') parts.push(`(${recurrenceLabel(rule.recurrence)})`);
+      return parts.join(' ');
+    }).join(' · ');
+  }
+
+
   function normalizeSupplier(row){
     if (!row) return null;
     return {
@@ -187,9 +235,9 @@
 
         <section class="supplier-card">
           <h4>Organisation</h4>
-          ${infoLine('Jours de commande', item.joursCommande)}
-          ${infoLine('Jours de livraison', item.joursLivraison)}
-          ${infoLine('Note interne', item.noteInterne)}
+          ${infoLine('Magasin physique', summarizeWeekdays(item.magasinPhysiqueJours))}
+          ${infoLine('Livraisons', summarizeDeliveryRules(item.livraisons))}
+          ${infoLine('Note', item.noteInterne)}
         </section>
       </div>
 
@@ -247,11 +295,81 @@
     `;
   }
 
+  function weekdaySelectOptions(selectedValue){
+    return ['<option value="">Choisir</option>'].concat(WEEKDAYS.map(day => `<option value="${day}" ${selectedValue === day ? 'selected' : ''}>${day}</option>`)).join('');
+  }
+
+  function recurrenceSelectOptions(selectedValue){
+    return DELIVERY_RECURRENCES.map(item => `<option value="${item.value}" ${selectedValue === item.value ? 'selected' : ''}>${item.label}</option>`).join('');
+  }
+
+  function multiDayDropdownMarkup(selectedDays){
+    const selected = normalizeWeekdays(selectedDays);
+    const label = selected.length ? selected.join(', ') : 'Choisir les jours';
+    return `
+      <details class="multi-select" data-multi-select>
+        <summary class="input multi-select__summary">${esc(label)}</summary>
+        <div class="multi-select__menu">
+          ${WEEKDAYS.map(day => `
+            <label class="multi-select__option">
+              <input type="checkbox" name="magasinPhysiqueJours" value="${day}" ${selected.includes(day) ? 'checked' : ''}>
+              <span>${day}</span>
+            </label>
+          `).join('')}
+        </div>
+      </details>
+    `;
+  }
+
+  function deliveryRuleFields(rule, idx){
+    return `
+      <section class="supplier-card supplier-card--edit supplier-card--delivery">
+        <div class="supplier-card__head">
+          <h4>Livraison ${idx + 1}</h4>
+          <button type="button" class="text-btn danger" data-delivery-remove="${idx}">Supprimer</button>
+        </div>
+        <div class="form-grid supplier-organization-grid">
+          <div class="field">
+            <label>Jour de commande</label>
+            <select class="input" name="livraison_commande_${idx}">${weekdaySelectOptions(rule.jourCommande)}</select>
+          </div>
+          <div class="field">
+            <label>Jour de livraison</label>
+            <select class="input" name="livraison_livraison_${idx}">${weekdaySelectOptions(rule.jourLivraison)}</select>
+          </div>
+          <div class="field">
+            <label>Heure limite de commande</label>
+            <input class="input" type="time" name="livraison_heure_${idx}" value="${esc(rule.heureLimite || '')}">
+          </div>
+          <div class="field">
+            <label>Récurrence</label>
+            <select class="input" name="livraison_recurrence_${idx}">${recurrenceSelectOptions(rule.recurrence)}</select>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function bindMultiSelectSummary(sheet){
+    qsa('[data-multi-select]', sheet).forEach(block => {
+      const summary = qs('.multi-select__summary', block);
+      const updateLabel = () => {
+        const selected = qsa('input[type="checkbox"]:checked', block).map(input => input.value);
+        summary.textContent = selected.length ? selected.join(', ') : 'Choisir les jours';
+      };
+      qsa('input[type="checkbox"]', block).forEach(input => input.addEventListener('change', updateLabel));
+      updateLabel();
+    });
+  }
+
   function renderEditSheet(item = null){
     const sheet = qs('#supplier-sheet');
     const backdrop = qs('#supplier-sheet-backdrop');
     const draft = structuredClone(item || normalizeSupplier({ id: uid('supplier') }));
     draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [];
+    draft.magasinPhysiqueJours = normalizeWeekdays(draft.magasinPhysiqueJours);
+    draft.livraisons = Array.isArray(draft.livraisons) && draft.livraisons.length ? draft.livraisons : [];
+    const uiState = { contactsOpen: false, organisationOpen: false };
 
     function syncDraftFromForm(){
       const form = qs('#supplier-edit-form', sheet);
@@ -263,8 +381,16 @@
       draft.telephone = draft.entrepriseTelephone;
       draft.entrepriseMail = String(fd.get('entrepriseMail') || '').trim();
       draft.entrepriseAdresse = String(fd.get('entrepriseAdresse') || '').trim();
-      draft.joursCommande = String(fd.get('joursCommande') || '').trim();
-      draft.joursLivraison = String(fd.get('joursLivraison') || '').trim();
+      draft.magasinPhysiqueJours = normalizeWeekdays(fd.getAll('magasinPhysiqueJours'));
+      draft.livraisons = draft.livraisons.map((rule, idx) => ({
+        ...rule,
+        jourCommande: String(fd.get(`livraison_commande_${idx}`) || '').trim(),
+        jourLivraison: String(fd.get(`livraison_livraison_${idx}`) || '').trim(),
+        heureLimite: String(fd.get(`livraison_heure_${idx}`) || '').trim(),
+        recurrence: String(fd.get(`livraison_recurrence_${idx}`) || 'all').trim() || 'all'
+      }));
+      draft.joursCommande = summarizeDeliveryRules(draft.livraisons);
+      draft.joursLivraison = summarizeWeekdays(draft.magasinPhysiqueJours);
       draft.noteInterne = String(fd.get('noteInterne') || '').trim();
       draft.contacts = draft.contacts.map((contact, idx) => ({
         ...contact,
@@ -294,7 +420,7 @@
             <div class="field field--full"><label>Adresse</label><textarea class="input" name="entrepriseAdresse" rows="3" required>${esc(draft.entrepriseAdresse)}</textarea></div>
           </div>
 
-          <details class="details" open>
+          <details class="details" ${uiState.contactsOpen ? 'open' : ''} data-details-section="contacts">
             <summary>Contacts</summary>
             <div class="details-content grid">
               <div class="supplier-inline-head supplier-inline-head--contacts">
@@ -307,12 +433,28 @@
             </div>
           </details>
 
-          <details class="details">
+          <details class="details" ${uiState.organisationOpen ? 'open' : ''} data-details-section="organisation">
             <summary>Organisation</summary>
-            <div class="details-content form-grid">
-              <div class="field"><label>Jours de commande</label><input class="input" type="text" name="joursCommande" value="${esc(draft.joursCommande)}"></div>
-              <div class="field"><label>Jours de livraison</label><input class="input" type="text" name="joursLivraison" value="${esc(draft.joursLivraison)}"></div>
-              <div class="field field--full"><label>Note interne</label><textarea class="input" name="noteInterne" rows="4">${esc(draft.noteInterne)}</textarea></div>
+            <div class="details-content grid">
+              <section class="supplier-card supplier-card--edit">
+                <div class="supplier-dot-title"><span class="supplier-dot"></span><h4>Magasin physique</h4></div>
+                <div class="field field--full">
+                  <label>Jours d'ouverture / réception</label>
+                  ${multiDayDropdownMarkup(draft.magasinPhysiqueJours)}
+                </div>
+              </section>
+
+              <section class="supplier-card supplier-card--edit">
+                <div class="supplier-inline-head supplier-inline-head--contacts">
+                  <div class="supplier-dot-title"><span class="supplier-dot"></span><h4>Livraison</h4></div>
+                  <button type="button" class="icon-square-btn primary" data-delivery-add title="Ajouter un paramètre de livraison" aria-label="Ajouter un paramètre de livraison">＋</button>
+                </div>
+                <div id="supplier-delivery-wrap" class="list">
+                  ${draft.livraisons.length ? draft.livraisons.map((rule, idx) => deliveryRuleFields(rule, idx)).join('') : '<p class="muted">Aucun paramètre de livraison ajouté.</p>'}
+                </div>
+              </section>
+
+              <div class="field field--full supplier-note-field"><label>Note interne</label><textarea class="input" name="noteInterne" rows="4">${esc(draft.noteInterne)}</textarea></div>
             </div>
           </details>
 
@@ -322,16 +464,37 @@
           </div>
         </form>
       `;
+      bindMultiSelectSummary(sheet);
       qsa('[data-supplier-close], [data-supplier-cancel]', sheet).forEach(btn => btn.onclick = () => item ? renderReadSheet(item) : closeSheet(sheet, backdrop));
       qsa('[data-contact-remove]', sheet).forEach(btn => btn.onclick = () => {
         syncDraftFromForm();
         draft.contacts.splice(Number(btn.dataset.contactRemove), 1);
+        uiState.contactsOpen = true;
         draw();
       });
       qs('[data-contact-add]', sheet)?.addEventListener('click', () => {
         syncDraftFromForm();
         draft.contacts.push(emptyContact());
+        uiState.contactsOpen = true;
         draw();
+      });
+      qsa('[data-delivery-remove]', sheet).forEach(btn => btn.onclick = () => {
+        syncDraftFromForm();
+        draft.livraisons.splice(Number(btn.dataset.deliveryRemove), 1);
+        uiState.organisationOpen = true;
+        draw();
+      });
+      qs('[data-delivery-add]', sheet)?.addEventListener('click', () => {
+        syncDraftFromForm();
+        draft.livraisons.push(emptyDeliveryRule());
+        uiState.organisationOpen = true;
+        draw();
+      });
+      qsa('[data-details-section]', sheet).forEach(details => {
+        details.addEventListener('toggle', () => {
+          if (details.dataset.detailsSection === 'contacts') uiState.contactsOpen = details.open;
+          if (details.dataset.detailsSection === 'organisation') uiState.organisationOpen = details.open;
+        });
       });
 
       qs('#supplier-edit-form').onsubmit = async (e) => {
