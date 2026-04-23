@@ -253,6 +253,29 @@
     const draft = structuredClone(item || normalizeSupplier({ id: uid('supplier') }));
     draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [];
 
+    function syncDraftFromForm(){
+      const form = qs('#supplier-edit-form', sheet);
+      if (!form) return;
+      const fd = new FormData(form);
+      draft.entrepriseNom = String(fd.get('entrepriseNom') || '').trim();
+      draft.nom = draft.entrepriseNom;
+      draft.entrepriseTelephone = String(fd.get('entrepriseTelephone') || '').trim();
+      draft.telephone = draft.entrepriseTelephone;
+      draft.entrepriseMail = String(fd.get('entrepriseMail') || '').trim();
+      draft.entrepriseAdresse = String(fd.get('entrepriseAdresse') || '').trim();
+      draft.joursCommande = String(fd.get('joursCommande') || '').trim();
+      draft.joursLivraison = String(fd.get('joursLivraison') || '').trim();
+      draft.noteInterne = String(fd.get('noteInterne') || '').trim();
+      draft.contacts = draft.contacts.map((contact, idx) => ({
+        ...contact,
+        nom: String(fd.get(`contact_nom_${idx}`) || '').trim(),
+        prenom: String(fd.get(`contact_prenom_${idx}`) || '').trim(),
+        qualite: String(fd.get(`contact_qualite_${idx}`) || '').trim(),
+        mail: String(fd.get(`contact_mail_${idx}`) || '').trim(),
+        telephone: String(fd.get(`contact_telephone_${idx}`) || '').trim()
+      }));
+    }
+
     const draw = () => {
       sheet.innerHTML = `
         <form id="supplier-edit-form" class="grid sheet-form" novalidate>
@@ -301,10 +324,12 @@
       `;
       qsa('[data-supplier-close], [data-supplier-cancel]', sheet).forEach(btn => btn.onclick = () => item ? renderReadSheet(item) : closeSheet(sheet, backdrop));
       qsa('[data-contact-remove]', sheet).forEach(btn => btn.onclick = () => {
+        syncDraftFromForm();
         draft.contacts.splice(Number(btn.dataset.contactRemove), 1);
         draw();
       });
       qs('[data-contact-add]', sheet)?.addEventListener('click', () => {
+        syncDraftFromForm();
         draft.contacts.push(emptyContact());
         draw();
       });
@@ -314,24 +339,8 @@
         const form = e.target;
         if (!form.reportValidity()) return;
 
-        const fd = new FormData(form);
-        draft.entrepriseNom = String(fd.get('entrepriseNom') || '').trim();
-        draft.nom = draft.entrepriseNom;
-        draft.entrepriseTelephone = String(fd.get('entrepriseTelephone') || '').trim();
-        draft.telephone = draft.entrepriseTelephone;
-        draft.entrepriseMail = String(fd.get('entrepriseMail') || '').trim();
-        draft.entrepriseAdresse = String(fd.get('entrepriseAdresse') || '').trim();
-        draft.joursCommande = String(fd.get('joursCommande') || '').trim();
-        draft.joursLivraison = String(fd.get('joursLivraison') || '').trim();
-        draft.noteInterne = String(fd.get('noteInterne') || '').trim();
-        draft.contacts = draft.contacts.map((contact, idx) => ({
-          ...contact,
-          nom: String(fd.get(`contact_nom_${idx}`) || '').trim(),
-          prenom: String(fd.get(`contact_prenom_${idx}`) || '').trim(),
-          qualite: String(fd.get(`contact_qualite_${idx}`) || '').trim(),
-          mail: String(fd.get(`contact_mail_${idx}`) || '').trim(),
-          telephone: String(fd.get(`contact_telephone_${idx}`) || '').trim()
-        })).filter(contact => [contact.nom, contact.prenom, contact.qualite, contact.mail, contact.telephone].some(Boolean));
+        syncDraftFromForm();
+        draft.contacts = draft.contacts.filter(contact => [contact.nom, contact.prenom, contact.qualite, contact.mail, contact.telephone].some(Boolean));
 
         const primaryContact = draft.contacts?.[0] || null;
         draft.commercial = primaryContact
