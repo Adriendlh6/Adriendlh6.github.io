@@ -1,6 +1,12 @@
 /* Fournisseurs page module */
 (function(){
   const PAGE_ID = 'fournisseurs-module-root';
+  const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  const DELIVERY_RECURRENCES = [
+    { value: 'all', label: 'Toutes les semaines' },
+    { value: 'even', label: 'Semaines paires' },
+    { value: 'odd', label: 'Semaines impaires' }
+  ];
 
   function uid(prefix='id'){
     return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
@@ -8,6 +14,39 @@
 
   function emptyContact(){
     return { id: uid('contact'), nom: '', prenom: '', qualite: '', mail: '', telephone: '' };
+  }
+
+  function emptyDeliveryRule(){
+    return { id: uid('delivery'), jourCommande: '', jourLivraison: '', recurrence: 'all' };
+  }
+
+  function normalizeWeekdays(values){
+    const list = Array.isArray(values) ? values : (typeof values === 'string' ? values.split(',') : []);
+    return WEEKDAYS.filter(day => list.map(v => String(v).trim()).includes(day));
+  }
+
+  function normalizeDeliveryRules(row){
+    if (Array.isArray(row?.livraisons) && row.livraisons.length) {
+      return row.livraisons.map(rule => ({ ...emptyDeliveryRule(), ...rule, id: rule.id || uid('delivery') }));
+    }
+    if (row?.joursCommande || row?.joursLivraison) {
+      return [{ ...emptyDeliveryRule(), jourCommande: row.joursCommande || '', jourLivraison: row.joursLivraison || '', recurrence: row.recurrence || 'all' }];
+    }
+    return [];
+  }
+
+  function summarizeDeliveryRules(rules){
+    if (!Array.isArray(rules) || !rules.length) return '';
+    return rules
+      .map(rule => {
+        const recurrence = DELIVERY_RECURRENCES.find(item => item.value === rule.recurrence)?.label || 'Toutes les semaines';
+        return [rule.jourCommande, '→', rule.jourLivraison, `(${recurrence})`].filter(Boolean).join(' ');
+      })
+      .join(' • ');
+  }
+
+  function summarizeWeekdays(days){
+    return Array.isArray(days) && days.length ? days.join(', ') : '';
   }
 
   function normalizeSupplier(row){
@@ -26,6 +65,8 @@
         : (row.contact || row.telephone || row.mail
           ? [{ ...emptyContact(), nom: row.contact || '', qualite: 'Commercial', mail: row.mail || '', telephone: row.telephone || '' }]
           : []),
+      magasinPhysiqueJours: normalizeWeekdays(row.magasinPhysiqueJours || row.joursMagasinPhysique),
+      livraisons: normalizeDeliveryRules(row),
       joursCommande: row.joursCommande || '',
       joursLivraison: row.joursLivraison || '',
       noteInterne: row.noteInterne || row.notes || '',
@@ -56,6 +97,8 @@
       telephone: draft.entrepriseTelephone || contact1.telephone || '',
       mail: draft.entrepriseMail || contact1.mail || '',
       adresse: draft.entrepriseAdresse || '',
+      joursCommande: summarizeDeliveryRules(draft.livraisons),
+      joursLivraison: summarizeWeekdays(draft.magasinPhysiqueJours),
       updatedAt: now,
       historique: [
         { id: uid('hist'), date: now, action, label: action === 'created' ? 'Création du fournisseur' : 'Modification de la fiche' },
@@ -187,8 +230,8 @@
 
         <section class="supplier-card">
           <h4>Organisation</h4>
-          ${infoLine('Jours de commande', item.joursCommande)}
-          ${infoLine('Jours de livraison', item.joursLivraison)}
+          ${infoLine('Magasin physique', summarizeWeekdays(item.magasinPhysiqueJours))}
+          ${infoLine('Livraisons', summarizeDeliveryRules(item.livraisons))}
           ${infoLine('Note interne', item.noteInterne)}
         </section>
       </div>
@@ -247,11 +290,76 @@
     `;
   }
 
+  function weekdaySelectOptions(selectedValue){
+    return ['<option value="">Choisir</option>'].concat(WEEKDAYS.map(day => `<option value="${day}" ${selectedValue === day ? 'selected' : ''}>${day}</option>`)).join('');
+  }
+
+  function recurrenceSelectOptions(selectedValue){
+    return DELIVERY_RECURRENCES.map(item => `<option value="${item.value}" ${selectedValue === item.value ? 'selected' : ''}>${item.label}</option>`).join('');
+  }
+
+  function multiDayDropdownMarkup(selectedDays){
+    const selected = normalizeWeekdays(selectedDays);
+    const label = selected.length ? selected.join(', ') : 'Choisir les jours';
+    return `
+      <details class="multi-select" data-multi-select>
+        <summary class="input multi-select__summary">${esc(label)}</summary>
+        <div class="multi-select__menu">
+          ${WEEKDAYS.map(day => `
+            <label class="multi-select__option">
+              <input type="checkbox" name="magasinPhysiqueJours" value="${day}" ${selected.includes(day) ? 'checked' : ''}>
+              <span>${day}</span>
+            </label>
+          `).join('')}
+        </div>
+      </details>
+    `;
+  }
+
+  function deliveryRuleFields(rule, idx){
+    return `
+      <section class="supplier-card supplier-card--edit supplier-card--delivery">
+        <div class="supplier-card__head">
+          <h4>Livraison ${idx + 1}</h4>
+          <button type="button" class="text-btn danger" data-delivery-remove="${idx}">Supprimer</button>
+        </div>
+        <div class="form-grid supplier-organization-grid">
+          <div class="field">
+            <label>Jour de commande</label>
+            <select class="input" name="livraison_commande_${idx}">${weekdaySelectOptions(rule.jourCommande)}</select>
+          </div>
+          <div class="field">
+            <label>Jour de livraison</label>
+            <select class="input" name="livraison_livraison_${idx}">${weekdaySelectOptions(rule.jourLivraison)}</select>
+          </div>
+          <div class="field">
+            <label>Récurrence</label>
+            <select class="input" name="livraison_recurrence_${idx}">${recurrenceSelectOptions(rule.recurrence)}</select>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function bindMultiSelectSummary(sheet){
+    qsa('[data-multi-select]', sheet).forEach(block => {
+      const summary = qs('.multi-select__summary', block);
+      const updateLabel = () => {
+        const selected = qsa('input[type="checkbox"]:checked', block).map(input => input.value);
+        summary.textContent = selected.length ? selected.join(', ') : 'Choisir les jours';
+      };
+      qsa('input[type="checkbox"]', block).forEach(input => input.addEventListener('change', updateLabel));
+      updateLabel();
+    });
+  }
+
   function renderEditSheet(item = null){
     const sheet = qs('#supplier-sheet');
     const backdrop = qs('#supplier-sheet-backdrop');
     const draft = structuredClone(item || normalizeSupplier({ id: uid('supplier') }));
     draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [];
+    draft.magasinPhysiqueJours = normalizeWeekdays(draft.magasinPhysiqueJours);
+    draft.livraisons = Array.isArray(draft.livraisons) && draft.livraisons.length ? draft.livraisons : [];
 
     const draw = () => {
       sheet.innerHTML = `
@@ -286,9 +394,25 @@
 
           <details class="details">
             <summary>Organisation</summary>
-            <div class="details-content form-grid">
-              <div class="field"><label>Jours de commande</label><input class="input" type="text" name="joursCommande" value="${esc(draft.joursCommande)}"></div>
-              <div class="field"><label>Jours de livraison</label><input class="input" type="text" name="joursLivraison" value="${esc(draft.joursLivraison)}"></div>
+            <div class="details-content grid">
+              <section class="supplier-card supplier-card--edit">
+                <div class="supplier-dot-title"><span class="supplier-dot"></span><h4>Magasin physique</h4></div>
+                <div class="field field--full">
+                  <label>Jours d'ouverture / réception</label>
+                  ${multiDayDropdownMarkup(draft.magasinPhysiqueJours)}
+                </div>
+              </section>
+
+              <section class="supplier-card supplier-card--edit">
+                <div class="supplier-inline-head supplier-inline-head--contacts">
+                  <div class="supplier-dot-title"><span class="supplier-dot"></span><h4>Livraison</h4></div>
+                  <button type="button" class="icon-square-btn primary" data-delivery-add title="Ajouter un paramètre de livraison" aria-label="Ajouter un paramètre de livraison">＋</button>
+                </div>
+                <div id="supplier-delivery-wrap" class="list">
+                  ${draft.livraisons.length ? draft.livraisons.map((rule, idx) => deliveryRuleFields(rule, idx)).join('') : '<p class="muted">Aucun paramètre de livraison ajouté.</p>'}
+                </div>
+              </section>
+
               <div class="field field--full"><label>Note interne</label><textarea class="input" name="noteInterne" rows="4">${esc(draft.noteInterne)}</textarea></div>
             </div>
           </details>
@@ -308,6 +432,15 @@
         draft.contacts.push(emptyContact());
         draw();
       });
+      qsa('[data-delivery-remove]', sheet).forEach(btn => btn.onclick = () => {
+        draft.livraisons.splice(Number(btn.dataset.deliveryRemove), 1);
+        draw();
+      });
+      qs('[data-delivery-add]', sheet)?.addEventListener('click', () => {
+        draft.livraisons.push(emptyDeliveryRule());
+        draw();
+      });
+      bindMultiSelectSummary(sheet);
 
       qs('#supplier-edit-form').onsubmit = async (e) => {
         e.preventDefault();
@@ -318,8 +451,15 @@
         draft.telephone = draft.entrepriseTelephone;
         draft.entrepriseMail = String(fd.get('entrepriseMail') || '').trim();
         draft.entrepriseAdresse = String(fd.get('entrepriseAdresse') || '').trim();
-        draft.joursCommande = String(fd.get('joursCommande') || '').trim();
-        draft.joursLivraison = String(fd.get('joursLivraison') || '').trim();
+        draft.magasinPhysiqueJours = normalizeWeekdays(fd.getAll('magasinPhysiqueJours'));
+        draft.livraisons = draft.livraisons.map((rule, idx) => ({
+          ...rule,
+          jourCommande: String(fd.get(`livraison_commande_${idx}`) || '').trim(),
+          jourLivraison: String(fd.get(`livraison_livraison_${idx}`) || '').trim(),
+          recurrence: String(fd.get(`livraison_recurrence_${idx}`) || 'all').trim() || 'all'
+        })).filter(rule => rule.jourCommande || rule.jourLivraison);
+        draft.joursCommande = summarizeDeliveryRules(draft.livraisons);
+        draft.joursLivraison = summarizeWeekdays(draft.magasinPhysiqueJours);
         draft.noteInterne = String(fd.get('noteInterne') || '').trim();
         draft.contacts = draft.contacts.map((contact, idx) => ({
           ...contact,
