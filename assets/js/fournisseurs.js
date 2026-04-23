@@ -88,22 +88,24 @@
     host.innerHTML = `
       <section id="${PAGE_ID}" class="suppliers-page">
         <section class="item suppliers-shell-card">
-          <div class="suppliers-shell-head">
+          <div class="suppliers-shell-head mercuriale-header">
             <div class="suppliers-shell-copy">
               <h2 class="suppliers-title">Gestion des fournisseurs</h2>
               <p class="suppliers-subtitle">Référentiel fournisseurs, contacts et informations de gestion.</p>
             </div>
             <div class="mercuriale-actions suppliers-shell-actions">
               <button type="button" class="icon-square-btn" id="suppliers-print-btn" title="Imprimer">🖨️</button>
-              <button type="button" class="icon-square-btn suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false" title="Voir les archivés">🗂️</button>
               <button type="button" class="icon-square-btn primary" id="suppliers-add-btn" title="Ajouter">＋</button>
             </div>
           </div>
 
-          <section class="details suppliers-search-card" open>
-            <summary>Recherche</summary>
-            <div class="suppliers-search-row">
-              <input id="suppliers-search-input" class="input" type="search" placeholder="Nom, commercial ou téléphone">
+          <section class="card mercuriale-toolbar-card suppliers-search-card">
+            <div class="mercuriale-toolbar-topline suppliers-search-row">
+              <div class="field mercuriale-search-field suppliers-search-field">
+                <label for="suppliers-search-input">Recherche</label>
+                <input id="suppliers-search-input" class="input" type="search" placeholder="Nom, commercial ou téléphone" autocomplete="off">
+              </div>
+              <button type="button" class="icon-square-btn suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false" title="Voir les archivés" aria-label="Voir les archivés">🗂️</button>
             </div>
           </section>
 

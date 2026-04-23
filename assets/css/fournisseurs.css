@@ -155,3 +155,27 @@
 @media (max-width: 640px){
   .suppliers-shell-actions{gap:8px}
 }
+
+
+/* Alignement identique à la mercuriale */
+.suppliers-search-card{
+  padding:0;
+}
+.suppliers-search-row{
+  padding:0;
+}
+.suppliers-search-field{
+  margin:0;
+}
+.suppliers-search-field label{
+  display:block;
+}
+.suppliers-search-field .input,
+.suppliers-search-field input{
+  width:100%;
+}
+.suppliers-archive-toggle.active{
+  background:var(--surface-2);
+  border-color:var(--brand);
+  color:var(--brand);
+}
