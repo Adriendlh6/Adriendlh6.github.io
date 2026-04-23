@@ -1,6 +1,14 @@
 /* Fournisseurs page module */
 (function(){
   const PAGE_ID = 'fournisseurs-module-root';
+  const DEFAULT_LOGO_DATA_URL = `data:image/svg+xml;utf8,${encodeURIComponent(`
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'>
+      <rect width='120' height='120' rx='28' fill='#f4ede3'/>
+      <circle cx='60' cy='42' r='18' fill='#caa277' opacity='0.9'/>
+      <path d='M30 88c5-17 17-26 30-26s25 9 30 26' fill='none' stroke='#94663d' stroke-width='10' stroke-linecap='round'/>
+      <path d='M60 24v36' stroke='#94663d' stroke-width='6' stroke-linecap='round' opacity='0.6'/>
+    </svg>
+  `)}`;
 
   function uid(prefix='id'){
     return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
@@ -58,6 +66,26 @@
   }
 
 
+  function getSupplierLogoSrc(item){
+    return item?.logoDataUrl || DEFAULT_LOGO_DATA_URL;
+  }
+
+  async function fetchLogoAsDataUrl(url){
+    const cleanUrl = String(url || '').trim();
+    if (!cleanUrl) throw new Error('URL manquante');
+    const response = await fetch(cleanUrl, { mode: 'cors' });
+    if (!response.ok) throw new Error(`Impossible de récupérer le logo (${response.status})`);
+    const blob = await response.blob();
+    if (!String(blob.type || '').startsWith('image/')) throw new Error("Le fichier récupéré n'est pas une image");
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Conversion du logo impossible'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+
   function normalizeSupplier(row){
     if (!row) return null;
     return {
@@ -83,6 +111,8 @@
       historique: Array.isArray(row.historique) ? row.historique : [],
       produits: Array.isArray(row.produits) ? row.produits : [],
       factures: Array.isArray(row.factures) ? row.factures : [],
+      logoUrl: row.logoUrl || '',
+      logoDataUrl: row.logoDataUrl || '',
       createdAt: row.createdAt || new Date().toISOString(),
       updatedAt: row.updatedAt || new Date().toISOString()
     };
@@ -174,11 +204,14 @@
     const phone = item.entrepriseTelephone || contact.telephone || '—';
     return `
       <article class="item product-card supplier-card-lite ${item.archived ? 'is-archived' : ''}" data-supplier-open="${item.id}" tabindex="0">
-        <div class="item-top">
-          <div>
-            <strong>${esc(item.entrepriseNom || item.nom || 'Sans nom')}</strong>
-            <div class="muted">${esc(commercial)}</div>
-            <div class="muted">${esc(phone)}</div>
+        <div class="item-top supplier-row-main">
+          <div class="supplier-row-branding">
+            <img class="supplier-logo-thumb" src="${getSupplierLogoSrc(item)}" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_DATA_URL}'" alt="Logo ${esc(item.entrepriseNom || item.nom || 'fournisseur')}">
+            <div>
+              <strong>${esc(item.entrepriseNom || item.nom || 'Sans nom')}</strong>
+              <div class="muted">${esc(commercial)}</div>
+              <div class="muted">${esc(phone)}</div>
+            </div>
           </div>
           ${item.archived ? '<span class="supplier-row__badge">Archivé</span>' : ''}
         </div>
@@ -195,10 +228,13 @@
     const backdrop = qs('#supplier-sheet-backdrop');
     const contacts = Array.isArray(item.contacts) ? item.contacts : [];
     sheet.innerHTML = `
-      <div class="sheet-header">
-        <div>
-          <div class="sheet-kicker">Fournisseur</div>
-          <h3>${esc(item.entrepriseNom || 'Sans nom')}</h3>
+      <div class="sheet-header supplier-sheet-header">
+        <div class="supplier-sheet-identity">
+          <img class="supplier-logo-large" src="${getSupplierLogoSrc(item)}" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_DATA_URL}'" alt="Logo ${esc(item.entrepriseNom || 'fournisseur')}">
+          <div>
+            <div class="sheet-kicker">Fournisseur</div>
+            <h3>${esc(item.entrepriseNom || 'Sans nom')}</h3>
+          </div>
         </div>
         <button type="button" class="icon-btn" data-supplier-close>✕</button>
       </div>
@@ -375,7 +411,7 @@
     draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [];
     draft.magasinPhysiqueJours = normalizeWeekdays(draft.magasinPhysiqueJours);
     draft.livraisons = Array.isArray(draft.livraisons) && draft.livraisons.length ? draft.livraisons : [];
-    const uiState = { contactsOpen: false, approvisionnementOpen: false, noteOpen: false };
+    const uiState = { contactsOpen: false, approvisionnementOpen: false, noteOpen: false, logoError: '' };
 
     function syncDraftFromForm(){
       const form = qs('#supplier-edit-form', sheet);
@@ -387,6 +423,7 @@
       draft.telephone = draft.entrepriseTelephone;
       draft.entrepriseMail = String(fd.get('entrepriseMail') || '').trim();
       draft.entrepriseAdresse = String(fd.get('entrepriseAdresse') || '').trim();
+      draft.logoUrl = String(fd.get('logoUrl') || '').trim();
       draft.magasinPhysiqueJours = normalizeWeekdays(fd.getAll('magasinPhysiqueJours'));
       draft.livraisons = draft.livraisons.map((rule, idx) => ({
         ...rule,
@@ -425,6 +462,25 @@
             <div class="field"><label>Mail</label><input class="input" type="email" name="entrepriseMail" value="${esc(draft.entrepriseMail)}" required></div>
             <div class="field field--full"><label>Adresse</label><textarea class="input" name="entrepriseAdresse" rows="3" required>${esc(draft.entrepriseAdresse)}</textarea></div>
           </div>
+
+          <section class="supplier-card supplier-card--edit supplier-logo-card">
+            <div class="supplier-dot-title"><span class="supplier-dot"></span><h4>Logo</h4></div>
+            <div class="supplier-logo-editor">
+              <img class="supplier-logo-preview" src="${getSupplierLogoSrc(draft)}" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_DATA_URL}'" alt="Aperçu du logo">
+              <div class="supplier-logo-controls">
+                <div class="field field--full">
+                  <label>URL du logo</label>
+                  <input class="input" type="url" name="logoUrl" value="${esc(draft.logoUrl || '')}" placeholder="https://...">
+                </div>
+                <div class="supplier-logo-actions">
+                  <button type="button" class="btn secondary" data-logo-import>Importer le logo</button>
+                  <button type="button" class="btn secondary" data-logo-reset>Logo par défaut</button>
+                </div>
+                <p class="muted supplier-logo-help">Colle une URL d'image puis importe-la pour la sauvegarder dans l'application.</p>
+                ${uiState.logoError ? `<p class="form-error">${esc(uiState.logoError)}</p>` : ''}
+              </div>
+            </div>
+          </section>
 
           <details class="details" ${uiState.contactsOpen ? 'open' : ''} data-details-section="contacts">
             <summary>Contacts</summary>
@@ -499,6 +555,24 @@
         syncDraftFromForm();
         draft.livraisons.push(emptyDeliveryRule());
         uiState.approvisionnementOpen = true;
+        draw();
+      });
+      qs('[data-logo-import]', sheet)?.addEventListener('click', async () => {
+        syncDraftFromForm();
+        uiState.logoError = '';
+        try {
+          const imported = await fetchLogoAsDataUrl(draft.logoUrl);
+          draft.logoDataUrl = imported;
+        } catch (error) {
+          uiState.logoError = error?.message || 'Import du logo impossible';
+        }
+        draw();
+      });
+      qs('[data-logo-reset]', sheet)?.addEventListener('click', () => {
+        syncDraftFromForm();
+        draft.logoDataUrl = '';
+        draft.logoUrl = '';
+        uiState.logoError = '';
         draw();
       });
       qsa('[data-details-section]', sheet).forEach(details => {
