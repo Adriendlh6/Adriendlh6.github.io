@@ -230,6 +230,21 @@
 .print-compare-wrap .field-label{margin-top:0}
 
 
+.print-chooser.hidden,.print-chooser-dialog.hidden,.print-chooser-backdrop.hidden{display:none !important}
+.print-chooser-dialog > *{min-width:0}
+.print-chooser-head > div{min-width:0;display:grid;gap:2px}
+.print-chooser-head .icon-square-btn{flex:0 0 auto;align-self:flex-start}
+.print-chooser-body > form{display:grid;gap:14px}
+.print-options-card,.print-category-panel,.print-options-checks{min-width:0}
+.print-options-card h4,.print-options-card__head h4{text-align:left}
+.print-category-panel{display:grid;gap:8px}
+.print-inline-check,.print-check-row{justify-content:flex-start;text-align:left}
+.print-inline-check span,.print-check-row span{min-width:0;text-align:left}
+.print-check-row input{align-self:flex-start;margin-top:1px}
+.print-options-card .input,.print-options-card .print-select{width:100%;max-width:100%}
+.print-chooser-actions .btn{display:inline-flex;align-items:center;justify-content:center;text-align:center}
+.print-chooser-actions .btn span{line-height:1.1;text-align:center}
+
 /* === Restauration mise en page impression produit et mercuriale === */
 @media print{
   .print-page{padding:10mm 9mm 11mm !important;max-width:none !important;width:100% !important;margin:0 !important}
@@ -334,6 +349,13 @@
   .mercuriale-print-table .product-first-row td{border-top:1.4px solid #9f8a73 !important}
   .mercuriale-print-table .product-sub-row td:first-child,.mercuriale-print-table .product-sub-row td:nth-child(2){color:transparent !important}
 
+
+  .print-card .print-table th,.print-card .print-table td{vertical-align:middle !important}
+  .print-card .print-table th:nth-child(3),.print-card .print-table td:nth-child(3){text-align:center !important}
+  .print-card .print-table td:nth-child(3) .print-ean-block,.print-card .print-table td:nth-child(3) .print-ean-block--compact{margin:0 auto !important;display:flex !important;flex-direction:column !important;align-items:center !important;justify-content:center !important;text-align:center !important;width:100% !important}
+  .print-card .print-table td:nth-child(3) .ean-svg,.print-card .print-table td:nth-child(3) svg.ean-svg{display:block !important;margin:0 auto !important;width:32mm !important;max-width:32mm !important;height:auto !important}
+  .print-card .print-table td:nth-child(3) .print-ean-number,.print-card .print-table td:nth-child(3) .barcode-number{text-align:center !important;width:100% !important;margin:0 auto !important}
+  .mercuriale-print-table th:nth-child(2),.mercuriale-print-table td:nth-child(2){text-align:center !important}
   @page{margin:7mm 5mm 8mm 5mm}
 }
 
