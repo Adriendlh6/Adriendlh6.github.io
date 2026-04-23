@@ -311,9 +311,12 @@
             </div>
             <div class="mercuriale-actions suppliers-shell-actions">
               <button type="button" class="icon-square-btn" id="suppliers-print-btn" title="Imprimer">🖨️</button>
+              <button type="button" class="icon-square-btn suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false" title="Voir les archivés" aria-label="Voir les archivés">🗂️</button>
               <button type="button" class="icon-square-btn primary" id="suppliers-add-btn" title="Ajouter">＋</button>
             </div>
           </div>
+
+          <div id="suppliers-selection-bar" class="suppliers-selection-bar hidden"></div>
 
           <section class="card mercuriale-toolbar-card suppliers-search-card">
             <div class="mercuriale-toolbar-topline suppliers-search-row">
@@ -321,7 +324,6 @@
                 <label for="suppliers-search-input">Recherche</label>
                 <input id="suppliers-search-input" class="input" type="search" placeholder="Nom, commercial ou téléphone" autocomplete="off">
               </div>
-              <button type="button" class="icon-square-btn suppliers-archive-toggle" id="suppliers-archived-toggle" aria-pressed="false" title="Voir les archivés" aria-label="Voir les archivés">🗂️</button>
             </div>
           </section>
 
@@ -334,12 +336,13 @@
     `;
   }
 
-  function supplierRowMarkup(item){
+  function supplierRowMarkup(item, options={}){
     const contactLabel = getSupplierDisplayContact(item);
     const phone = getSupplierDisplayPhone(item);
     const callable = getCallablePhone(item);
+    const selected = Boolean(options.selected);
     return `
-      <article class="item product-card supplier-card-lite ${item.archived ? 'is-archived' : ''}" data-supplier-open="${item.id}" data-supplier-phone="${esc(callable)}" tabindex="0">
+      <article class="item product-card supplier-card-lite ${item.archived ? 'is-archived' : ''} ${selected ? 'is-selected' : ''}" data-supplier-open="${item.id}" data-supplier-phone="${esc(callable)}" tabindex="0" aria-selected="${selected ? 'true' : 'false'}">
         <div class="item-top supplier-row-main">
           <div class="supplier-row-branding">
             <img class="supplier-logo-thumb" src="${getSupplierLogoSrc(item)}" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_DATA_URL}'" alt="Logo ${esc(item.entrepriseNom || item.nom || 'fournisseur')}">
@@ -901,25 +904,94 @@
     draw();
   }
 
-  function bindLongPressToCall(node, item, open){
+
+  function removeRowActionMenu(){
+    document.querySelectorAll('.supplier-mini-modal-backdrop[data-row-menu], .supplier-mini-modal[data-row-menu]').forEach(node => node.remove());
+  }
+
+  function openRowActionMenu(item, handlers={}){
+    removeRowActionMenu();
+    const callable = getCallablePhone(item);
+    const backdrop = document.createElement('div');
+    backdrop.className = 'supplier-mini-modal-backdrop';
+    backdrop.dataset.rowMenu = 'true';
+    const modal = document.createElement('div');
+    modal.className = 'supplier-mini-modal supplier-row-menu';
+    modal.dataset.rowMenu = 'true';
+    modal.innerHTML = `
+      <div class="supplier-mini-modal__head">
+        <div>
+          <h4>Action rapide</h4>
+          <p class="muted">${esc(item.entrepriseNom || item.nom || 'Fournisseur')}</p>
+        </div>
+        <button type="button" class="icon-btn" data-row-menu-close>✕</button>
+      </div>
+      <div class="supplier-mini-modal__body supplier-row-menu__body">
+        <button type="button" class="btn secondary" data-row-select>✔️ Sélectionner</button>
+        <button type="button" class="btn secondary" data-row-call ${callable ? '' : 'disabled'}>📞 Appeler</button>
+      </div>
+    `;
+    const close = () => removeRowActionMenu();
+    backdrop.addEventListener('click', close);
+    qs('[data-row-menu-close]', modal)?.addEventListener('click', close);
+    qs('[data-row-select]', modal)?.addEventListener('click', () => {
+      close();
+      handlers.onSelect?.();
+    });
+    qs('[data-row-call]', modal)?.addEventListener('click', () => {
+      if (!callable) return;
+      close();
+      window.location.href = `tel:${callable}`;
+    });
+    document.body.append(backdrop, modal);
+  }
+
+  function printSuppliersSelection(items){
+    if (!Array.isArray(items) || !items.length) return;
+    const content = `
+      <html>
+        <head>
+          <title>Impression fournisseurs</title>
+          <style>
+            body{font-family:Arial,sans-serif;padding:24px;color:#111}
+            h1{font-size:22px;margin:0 0 18px}
+            table{width:100%;border-collapse:collapse}
+            th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:14px;vertical-align:top}
+            th{background:#f6f6f6}
+          </style>
+        </head>
+        <body>
+          <h1>Fournisseurs sélectionnés</h1>
+          <table>
+            <thead><tr><th>Entreprise</th><th>Interlocuteur</th><th>Téléphone</th></tr></thead>
+            <tbody>
+              ${items.map(item => `<tr><td>${esc(item.entrepriseNom || item.nom || 'N/C')}</td><td>${esc(getSupplierDisplayContact(item))}</td><td>${esc(getSupplierDisplayPhone(item))}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+    const win = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700');
+    if (!win) return;
+    win.document.open();
+    win.document.write(content);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 150);
+  }
+
+  function bindRowInteractions(node, item, handlers={}){
     let pressTimer = null;
     let longPressTriggered = false;
     const start = () => {
       clearTimeout(pressTimer);
       longPressTriggered = false;
       pressTimer = setTimeout(() => {
-        const phone = getCallablePhone(item);
-        if (!phone) return;
         longPressTriggered = true;
-        const label = getSupplierDisplayPhone(item);
-        if (window.confirm(`Appeler ${label} ?`)) {
-          window.location.href = `tel:${phone}`;
-        }
+        openRowActionMenu(item, { onSelect: handlers.onSelect });
       }, 550);
     };
-    const cancel = () => {
-      clearTimeout(pressTimer);
-    };
+    const cancel = () => clearTimeout(pressTimer);
     node.addEventListener('mousedown', start);
     node.addEventListener('touchstart', start, { passive: true });
     ['mouseup','mouseleave','touchend','touchcancel','touchmove'].forEach(evt => node.addEventListener(evt, cancel, { passive: true }));
@@ -930,28 +1002,83 @@
         longPressTriggered = false;
         return;
       }
-      open();
+      handlers.onClick?.();
     });
     node.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      const phone = getCallablePhone(item);
-      if (!phone) return;
-      const label = getSupplierDisplayPhone(item);
-      if (window.confirm(`Appeler ${label} ?`)) {
-        window.location.href = `tel:${phone}`;
-      }
+      openRowActionMenu(item, { onSelect: handlers.onSelect });
     });
   }
 
+
   async function render(){
     renderShell();
-    const list = await loadSuppliers();
+    let list = await loadSuppliers();
     const searchInput = qs('#suppliers-search-input');
     const printBtn = qs('#suppliers-print-btn');
     const addBtn = qs('#suppliers-add-btn');
     const archivedToggle = qs('#suppliers-archived-toggle');
     const target = qs('#suppliers-list');
+    const selectionBar = qs('#suppliers-selection-bar');
     let showArchived = false;
+    let selectionMode = false;
+    const selectedIds = new Set();
+
+    const refreshList = async () => {
+      list = await loadSuppliers();
+      drawList();
+    };
+
+    const exitSelectionMode = () => {
+      selectionMode = false;
+      selectedIds.clear();
+      drawSelectionBar();
+      drawList();
+    };
+
+    const toggleSelection = (id) => {
+      if (selectedIds.has(id)) selectedIds.delete(id);
+      else selectedIds.add(id);
+      if (!selectedIds.size) selectionMode = false;
+      drawSelectionBar();
+      drawList();
+    };
+
+    const enterSelectionMode = (id) => {
+      selectionMode = true;
+      if (id) selectedIds.add(id);
+      drawSelectionBar();
+      drawList();
+    };
+
+    const drawSelectionBar = () => {
+      if (!selectionBar) return;
+      if (!selectionMode || !selectedIds.size) {
+        selectionBar.classList.add('hidden');
+        selectionBar.innerHTML = '';
+        return;
+      }
+      selectionBar.classList.remove('hidden');
+      selectionBar.innerHTML = `
+        <div class="suppliers-selection-bar__copy">${selectedIds.size} sélectionné${selectedIds.size > 1 ? 's' : ''}</div>
+        <div class="suppliers-selection-bar__actions">
+          <button type="button" class="icon-square-btn" data-selection-print title="Imprimer la sélection">🖨️</button>
+          <button type="button" class="icon-square-btn" data-selection-archive title="Archiver la sélection">🗂️</button>
+          <button type="button" class="btn secondary" data-selection-cancel>Annuler</button>
+        </div>
+      `;
+      qs('[data-selection-cancel]', selectionBar)?.addEventListener('click', exitSelectionMode);
+      qs('[data-selection-print]', selectionBar)?.addEventListener('click', () => {
+        const items = list.filter(item => selectedIds.has(item.id));
+        printSuppliersSelection(items);
+      });
+      qs('[data-selection-archive]', selectionBar)?.addEventListener('click', async () => {
+        const items = list.filter(item => selectedIds.has(item.id));
+        for (const item of items) await archiveSupplier(item.id);
+        await refreshList();
+        exitSelectionMode();
+      });
+    };
 
     const drawList = () => {
       const term = String(searchInput?.value || '').toLowerCase().trim();
@@ -974,18 +1101,30 @@
         });
 
       target.innerHTML = filtered.length
-        ? filtered.map(supplierRowMarkup).join('')
+        ? filtered.map(item => supplierRowMarkup(item, { selected: selectedIds.has(item.id) })).join('')
         : `<div class="notice">${showArchived ? 'Aucun fournisseur archivé.' : 'Aucun fournisseur trouvé.'}</div>`;
 
       qsa('[data-supplier-open]', target).forEach(btn => {
         const item = list.find(entry => entry.id === btn.dataset.supplierOpen);
         if (!item) return;
-        const open = () => renderReadSheet(item);
-        bindLongPressToCall(btn, item, open);
+        bindRowInteractions(btn, item, {
+          onClick: () => {
+            if (selectionMode) {
+              toggleSelection(item.id);
+              return;
+            }
+            renderReadSheet(item);
+          },
+          onSelect: () => {
+            if (!selectionMode) enterSelectionMode(item.id);
+            else toggleSelection(item.id);
+          }
+        });
         btn.onkeydown = (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            open();
+            if (selectionMode) toggleSelection(item.id);
+            else renderReadSheet(item);
           }
         };
       });
@@ -1001,11 +1140,21 @@
 
     searchInput?.addEventListener('input', drawList);
     addBtn?.addEventListener('click', () => renderEditSheet());
-    printBtn?.addEventListener('click', () => alert("Impression fournisseurs à venir."));
+    printBtn?.addEventListener('click', () => {
+      if (selectionMode && selectedIds.size) {
+        const items = list.filter(item => selectedIds.has(item.id));
+        printSuppliersSelection(items);
+        return;
+      }
+      alert("Impression fournisseurs à venir.");
+    });
     archivedToggle?.addEventListener('click', () => {
       showArchived = !showArchived;
+      if (selectionMode) exitSelectionMode();
       drawList();
     });
+
+    drawSelectionBar();
     drawList();
   }
 
