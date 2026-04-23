@@ -15,7 +15,7 @@
   }
 
   function emptyContact(){
-    return { id: uid('contact'), nom: '', prenom: '', qualite: '', mail: '', telephone: '' };
+    return { id: uid('contact'), nom: '', prenom: '', qualite: '', mail: '', telephone: '', principal: false };
   }
 
   const WEEKDAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -63,6 +63,41 @@
       if (rule.recurrence && rule.recurrence !== 'all') parts.push(`(${recurrenceLabel(rule.recurrence)})`);
       return parts.join(' ');
     }).join(' · ');
+  }
+
+  function firstNonEmpty(...values){
+    for (const value of values){
+      const clean = String(value || '').trim();
+      if (clean) return clean;
+    }
+    return '';
+  }
+
+  function getPrincipalContact(item){
+    const contacts = Array.isArray(item?.contacts) ? item.contacts : [];
+    return contacts.find(contact => contact && contact.principal) || null;
+  }
+
+  function getSupplierDisplayContact(item){
+    const principal = getPrincipalContact(item);
+    if (principal){
+      const fullName = firstNonEmpty([principal.prenom, principal.nom].filter(Boolean).join(' '), principal.nom, principal.prenom, 'N/C');
+      const qualite = firstNonEmpty(principal.qualite, 'N/C');
+      return `${fullName} (${qualite})`;
+    }
+    const entreprise = firstNonEmpty(item?.entrepriseNom, item?.nom);
+    return entreprise ? `${entreprise} (Entreprise)` : 'N/C';
+  }
+
+  function getSupplierDisplayPhone(item){
+    const principal = getPrincipalContact(item);
+    return firstNonEmpty(principal?.telephone, item?.entrepriseTelephone, item?.telephone, 'N/C');
+  }
+
+  function getCallablePhone(item){
+    const value = getSupplierDisplayPhone(item);
+    if (!value || value === 'N/C') return '';
+    return String(value).replace(/[^+\d]/g, '');
   }
 
 
@@ -135,9 +170,9 @@
       entrepriseSiret: row.entrepriseSiret || row.siret || '',
       commercial: row.commercial || row.contact || '',
       contacts: Array.isArray(row.contacts) && row.contacts.length
-        ? row.contacts.map(contact => ({ ...emptyContact(), ...contact, id: contact.id || uid('contact') }))
+        ? row.contacts.map((contact, index) => ({ ...emptyContact(), ...contact, id: contact.id || uid('contact'), principal: Boolean(contact.principal) || (!row.contacts.some(entry => entry && entry.principal) && index === 0) }))
         : (row.contact || row.telephone || row.mail
-          ? [{ ...emptyContact(), nom: row.contact || '', qualite: 'Commercial', mail: row.mail || '', telephone: row.telephone || '' }]
+          ? [{ ...emptyContact(), nom: row.contact || '', qualite: 'Commercial', mail: row.mail || '', telephone: row.telephone || '', principal: true }]
           : []),
       joursCommande: row.joursCommande || '',
       joursLivraison: row.joursLivraison || '',
@@ -166,14 +201,14 @@
     const now = new Date().toISOString();
     const existing = await AppDB.get('fournisseurs', draft.id).catch(() => null);
     const previousHistory = Array.isArray(existing?.historique) ? existing.historique : [];
-    const contact1 = draft.contacts?.[0] || {};
+    const principalContact = getPrincipalContact(draft) || draft.contacts?.[0] || {};
     const record = {
       ...existing,
       ...draft,
       nom: draft.entrepriseNom,
-      contact: [contact1.prenom, contact1.nom].filter(Boolean).join(' ').trim() || draft.commercial || '',
-      telephone: draft.entrepriseTelephone || contact1.telephone || '',
-      mail: draft.entrepriseMail || contact1.mail || '',
+      contact: [principalContact.prenom, principalContact.nom].filter(Boolean).join(' ').trim() || draft.commercial || '',
+      telephone: principalContact.telephone || draft.entrepriseTelephone || '',
+      mail: principalContact.mail || draft.entrepriseMail || '',
       adresse: draft.entrepriseAdresse || '',
       siret: draft.entrepriseSiret || '',
       entrepriseSiret: draft.entrepriseSiret || '',
@@ -242,17 +277,17 @@
   }
 
   function supplierRowMarkup(item){
-    const contact = item.contacts?.[0] || {};
-    const commercial = [contact.prenom, contact.nom].filter(Boolean).join(' ').trim() || item.commercial || '—';
-    const phone = item.entrepriseTelephone || contact.telephone || '—';
+    const contactLabel = getSupplierDisplayContact(item);
+    const phone = getSupplierDisplayPhone(item);
+    const callable = getCallablePhone(item);
     return `
-      <article class="item product-card supplier-card-lite ${item.archived ? 'is-archived' : ''}" data-supplier-open="${item.id}" tabindex="0">
+      <article class="item product-card supplier-card-lite ${item.archived ? 'is-archived' : ''}" data-supplier-open="${item.id}" data-supplier-phone="${esc(callable)}" tabindex="0">
         <div class="item-top supplier-row-main">
           <div class="supplier-row-branding">
             <img class="supplier-logo-thumb" src="${getSupplierLogoSrc(item)}" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_DATA_URL}'" alt="Logo ${esc(item.entrepriseNom || item.nom || 'fournisseur')}">
             <div>
               <strong>${esc(item.entrepriseNom || item.nom || 'Sans nom')}</strong>
-              <div class="muted">${esc(commercial)}</div>
+              <div class="muted">${esc(contactLabel)}</div>
               <div class="muted">${esc(phone)}</div>
             </div>
           </div>
@@ -306,7 +341,7 @@
 
         ${contacts.map((contact, idx) => `
           <section class="supplier-card">
-            <h4>Contact ${idx + 1}</h4>
+            <h4>Contact ${idx + 1}${contact.principal ? ' · Principal' : ''}</h4>
             ${infoLine('Nom / prénom', [contact.prenom, contact.nom].filter(Boolean).join(' '))}
             ${infoLine('Qualité', contact.qualite)}
             ${infoLine('Mail', contact.mail)}
@@ -366,7 +401,7 @@
     return `
       <section class="supplier-card supplier-card--edit">
         <div class="supplier-card__head">
-          <h4>Contact ${idx + 1}</h4>
+          <h4>Contact ${idx + 1}${contact.principal ? ' · Principal' : ''}</h4>
           ${idx > 0 ? `<button type="button" class="text-btn danger" data-contact-remove="${idx}">Supprimer</button>` : ''}
         </div>
         <div class="form-grid">
@@ -375,6 +410,10 @@
           <div class="field"><label>Qualité</label><input class="input" type="text" name="contact_qualite_${idx}" value="${esc(contact.qualite)}"></div>
           <div class="field"><label>Mail</label><input class="input" type="email" name="contact_mail_${idx}" value="${esc(contact.mail)}"></div>
           <div class="field"><label>Téléphone</label><input class="input" type="tel" name="contact_telephone_${idx}" value="${esc(contact.telephone)}"></div>
+          <label class="supplier-principal-toggle field--full">
+            <input type="checkbox" name="contact_principal_${idx}" ${contact.principal ? 'checked' : ''}>
+            <span>Interlocuteur principal</span>
+          </label>
         </div>
       </section>
     `;
@@ -498,8 +537,13 @@
         prenom: String(fd.get(`contact_prenom_${idx}`) || '').trim(),
         qualite: String(fd.get(`contact_qualite_${idx}`) || '').trim(),
         mail: String(fd.get(`contact_mail_${idx}`) || '').trim(),
-        telephone: String(fd.get(`contact_telephone_${idx}`) || '').trim()
+        telephone: String(fd.get(`contact_telephone_${idx}`) || '').trim(),
+        principal: fd.get(`contact_principal_${idx}`) === 'on'
       }));
+      const firstPrincipalIndex = draft.contacts.findIndex(contact => contact.principal);
+      if (firstPrincipalIndex > -1) {
+        draft.contacts = draft.contacts.map((contact, idx) => ({ ...contact, principal: idx == firstPrincipalIndex }));
+      }
     }
 
     const draw = () => {
@@ -651,7 +695,7 @@
       });
       qs('[data-contact-add]', sheet)?.addEventListener('click', () => {
         syncDraftFromForm();
-        draft.contacts.push(emptyContact());
+        draft.contacts.push({ ...emptyContact(), principal: draft.contacts.length === 0 });
         uiState.contactsOpen = true;
         draw();
       });
@@ -753,6 +797,14 @@
           if (details.dataset.detailsSection === 'note') uiState.noteOpen = details.open;
         });
       });
+      qsa('input[name^="contact_principal_"]', sheet).forEach(input => {
+        input.addEventListener('change', () => {
+          if (!input.checked) return;
+          qsa('input[name^="contact_principal_"]', sheet).forEach(other => {
+            if (other !== input) other.checked = false;
+          });
+        });
+      });
 
       qs('#supplier-edit-form').onsubmit = async (e) => {
         e.preventDefault();
@@ -762,7 +814,7 @@
         syncDraftFromForm();
         draft.contacts = draft.contacts.filter(contact => [contact.nom, contact.prenom, contact.qualite, contact.mail, contact.telephone].some(Boolean));
 
-        const primaryContact = draft.contacts?.[0] || null;
+        const primaryContact = getPrincipalContact(draft) || draft.contacts?.[0] || null;
         draft.commercial = primaryContact
           ? [primaryContact.prenom, primaryContact.nom].filter(Boolean).join(' ').trim()
           : '';
@@ -776,6 +828,48 @@
     };
 
     draw();
+  }
+
+  function bindLongPressToCall(node, item, open){
+    let pressTimer = null;
+    let longPressTriggered = false;
+    const start = () => {
+      clearTimeout(pressTimer);
+      longPressTriggered = false;
+      pressTimer = setTimeout(() => {
+        const phone = getCallablePhone(item);
+        if (!phone) return;
+        longPressTriggered = true;
+        const label = getSupplierDisplayPhone(item);
+        if (window.confirm(`Appeler ${label} ?`)) {
+          window.location.href = `tel:${phone}`;
+        }
+      }, 550);
+    };
+    const cancel = () => {
+      clearTimeout(pressTimer);
+    };
+    node.addEventListener('mousedown', start);
+    node.addEventListener('touchstart', start, { passive: true });
+    ['mouseup','mouseleave','touchend','touchcancel','touchmove'].forEach(evt => node.addEventListener(evt, cancel, { passive: true }));
+    node.addEventListener('click', (e) => {
+      if (longPressTriggered) {
+        e.preventDefault();
+        e.stopPropagation();
+        longPressTriggered = false;
+        return;
+      }
+      open();
+    });
+    node.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const phone = getCallablePhone(item);
+      if (!phone) return;
+      const label = getSupplierDisplayPhone(item);
+      if (window.confirm(`Appeler ${label} ?`)) {
+        window.location.href = `tel:${phone}`;
+      }
+    });
   }
 
   async function render(){
@@ -811,11 +905,10 @@
         : `<div class="notice">${showArchived ? 'Aucun fournisseur archivé.' : 'Aucun fournisseur trouvé.'}</div>`;
 
       qsa('[data-supplier-open]', target).forEach(btn => {
-        const open = () => {
-          const item = list.find(entry => entry.id === btn.dataset.supplierOpen);
-          if (item) renderReadSheet(item);
-        };
-        btn.onclick = open;
+        const item = list.find(entry => entry.id === btn.dataset.supplierOpen);
+        if (!item) return;
+        const open = () => renderReadSheet(item);
+        bindLongPressToCall(btn, item, open);
         btn.onkeydown = (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
