@@ -405,9 +405,8 @@
         <div class="supplier-sheet-identity">
           <img class="supplier-logo-large" src="${getSupplierLogoSrc(item)}" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_DATA_URL}'" alt="Logo ${esc(item.entrepriseNom || 'fournisseur')}">
           <div>
-            <div class="sheet-kicker">Fournisseur</div>
             <h3>${esc(item.entrepriseNom || 'Sans nom')}</h3>
-            <div class="muted supplier-detail-subtitle">${esc(identityLine || 'N/C')}</div>
+            <div class="muted supplier-detail-subtitle">Fiche fournisseur</div>
           </div>
         </div>
         <button type="button" class="icon-btn" data-supplier-close>✕</button>
@@ -437,7 +436,7 @@
               </div>
               <div>
                 <div class="detail-label">SIRET</div>
-                <div class="detail-value">${esc(item.siret || 'N/C')}</div>
+                <div class="detail-value">${esc(item.entrepriseSiret || item.siret || 'N/C')}</div>
               </div>
               <div>
                 <div class="detail-label">Téléphone</div>
