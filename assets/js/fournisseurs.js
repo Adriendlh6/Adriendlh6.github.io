@@ -362,96 +362,164 @@
     return `<div class="supplier-info-line"><span class="supplier-info-line__label">${label}</span><span class="supplier-info-line__value">${esc(value || '—')}</span></div>`;
   }
 
-  function infoActionLine(label, value, actionType){
+  function infoActionLine(label, value, actionType, naked = false){
     const clean = String(value || '').trim();
-    if (!clean) return infoLine(label, '—');
-    return `<div class="supplier-info-line"><span class="supplier-info-line__label">${label}</span><button type="button" class="supplier-info-line__value supplier-action-link" data-action-type="${esc(actionType)}" data-action-value="${esc(clean)}">${esc(clean)}</button></div>`;
+    if (!clean) return naked ? '<span class="muted">N/C</span>' : infoLine(label, '—');
+    const button = `<button type="button" class="supplier-info-line__value supplier-action-link" data-action-type="${esc(actionType)}" data-action-value="${esc(clean)}">${esc(clean)}</button>`;
+    if (naked) return button;
+    return `<div class="supplier-info-line"><span class="supplier-info-line__label">${label}</span>${button}</div>`;
   }
 
   function renderReadSheet(item){
     const sheet = qs('#supplier-sheet');
     const backdrop = qs('#supplier-sheet-backdrop');
     const contacts = Array.isArray(item.contacts) ? item.contacts : [];
+    const primaryContact = contacts.find(contact => contact?.principal) || null;
+    const identityLine = primaryContact
+      ? [ [primaryContact.prenom, primaryContact.nom].filter(Boolean).join(' ').trim(), primaryContact.qualite ? `(${primaryContact.qualite})` : '' ].filter(Boolean).join(' ')
+      : (item.entrepriseNom || 'N/C');
+    const contactsMarkup = contacts.length ? contacts.map((contact, idx) => `
+      <section class="card compact-card supplier-detail-card">
+        <div class="item-top">
+          <h4>Contact ${idx + 1}${contact.principal ? ' · Principal' : ''}</h4>
+          ${contact.principal ? '<span class="tag">Principal</span>' : ''}
+        </div>
+        <div class="detail-grid supplier-detail-grid">
+          <div>
+            <div class="detail-label">Nom / prénom</div>
+            <div class="detail-value">${esc([contact.prenom, contact.nom].filter(Boolean).join(' ') || 'N/C')}</div>
+          </div>
+          <div>
+            <div class="detail-label">Qualité</div>
+            <div class="detail-value">${esc(contact.qualite || 'N/C')}</div>
+          </div>
+          <div>
+            <div class="detail-label">Mail</div>
+            <div class="detail-value">${infoActionLine('', contact.mail, 'mail', true)}</div>
+          </div>
+          <div>
+            <div class="detail-label">Téléphone</div>
+            <div class="detail-value">${infoActionLine('', contact.telephone, 'tel', true)}</div>
+          </div>
+        </div>
+      </section>
+    `).join('') : `<section class="card compact-card placeholder-card"><h4>Contacts</h4><p class="muted">Aucun contact renseigné.</p></section>`;
     sheet.innerHTML = `
-      <div class="sheet-header supplier-sheet-header">
+      <div class="sheet-header supplier-sheet-header supplier-sheet-header--detail">
         <div class="supplier-sheet-identity">
           <img class="supplier-logo-large" src="${getSupplierLogoSrc(item)}" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_DATA_URL}'" alt="Logo ${esc(item.entrepriseNom || 'fournisseur')}">
           <div>
             <div class="sheet-kicker">Fournisseur</div>
             <h3>${esc(item.entrepriseNom || 'Sans nom')}</h3>
+            <div class="muted supplier-detail-subtitle">${esc(identityLine || 'N/C')}</div>
           </div>
         </div>
         <button type="button" class="icon-btn" data-supplier-close>✕</button>
       </div>
 
-      <div class="supplier-sheet-actions">
-        <button type="button" class="btn secondary" data-supplier-edit="${item.id}">Modifier</button>
-        <button type="button" class="btn secondary" data-supplier-print>Imprimer</button>
-        <button type="button" class="btn danger" data-supplier-archive="${item.id}">${item.archived ? 'Réactiver' : 'Archiver'}</button>
-      </div>
+      <section class="detail-panel supplier-detail-panel">
+        <div class="detail-actions-row">
+          <button class="icon-square-btn" type="button" data-supplier-edit="${item.id}" aria-label="Modifier" title="Modifier">✏️</button>
+          <button class="icon-square-btn" type="button" data-supplier-print aria-label="Imprimer" title="Imprimer">🖨️</button>
+          <button class="icon-square-btn ${item.archived ? '' : 'danger'}" type="button" data-supplier-archive="${item.id}" aria-label="${item.archived ? 'Réactiver' : 'Archiver'}" title="${item.archived ? 'Réactiver' : 'Archiver'}">${item.archived ? '↩️' : '🗂️'}</button>
+        </div>
 
-      <div class="supplier-tabs">
-        <button type="button" class="supplier-tab active" data-supplier-tab="infos">Infos</button>
-        <button type="button" class="supplier-tab" data-supplier-tab="historique">Historique</button>
-        <button type="button" class="supplier-tab" data-supplier-tab="produits">Produits</button>
-        <button type="button" class="supplier-tab" data-supplier-tab="facture">Facture</button>
-      </div>
+        <div class="detail-tabs" role="tablist" aria-label="Sections fournisseur">
+          <button class="detail-tab active" type="button" data-supplier-tab="infos" aria-selected="true">Infos</button>
+          <button class="detail-tab" type="button" data-supplier-tab="historique" aria-selected="false">Historique</button>
+          <button class="detail-tab" type="button" data-supplier-tab="produits" aria-selected="false">Produits</button>
+          <button class="detail-tab" type="button" data-supplier-tab="facture" aria-selected="false">Facture</button>
+        </div>
 
-      <div class="supplier-tab-panel" data-supplier-panel="infos">
-        <section class="supplier-card">
-          <h4>Infos entreprise</h4>
-          ${infoLine('Nom', item.entrepriseNom)}
-          ${infoActionLine('Téléphone', item.entrepriseTelephone, 'tel')}
-          ${infoActionLine('Mail', item.entrepriseMail, 'mail')}
-          ${infoActionLine('Adresse', item.entrepriseAdresse, 'map')}
-        </section>
-
-        ${contacts.map((contact, idx) => `
-          <section class="supplier-card">
-            <h4>Contact ${idx + 1}${contact.principal ? ' · Principal' : ''}</h4>
-            ${infoLine('Nom / prénom', [contact.prenom, contact.nom].filter(Boolean).join(' '))}
-            ${infoLine('Qualité', contact.qualite)}
-            ${infoActionLine('Mail', contact.mail, 'mail')}
-            ${infoActionLine('Téléphone', contact.telephone, 'tel')}
+        <div class="detail-tab-panel active" data-supplier-panel="infos">
+          <section class="card compact-card supplier-detail-card">
+            <div class="detail-info-stack">
+              <div>
+                <div class="detail-label">Nom du fournisseur</div>
+                <div class="detail-value detail-title-value">${esc(item.entrepriseNom || 'N/C')}</div>
+              </div>
+              <div>
+                <div class="detail-label">SIRET</div>
+                <div class="detail-value">${esc(item.siret || 'N/C')}</div>
+              </div>
+            </div>
           </section>
-        `).join('')}
 
-        <section class="supplier-card">
-          <h4>Approvisionnement</h4>
-          ${infoLine('Magasin physique', summarizeWeekdays(item.magasinPhysiqueJours))}
-          ${infoLine('Livraisons', summarizeDeliveryRules(item.livraisons))}
-        </section>
+          <section class="card compact-card supplier-detail-card">
+            <h4>Infos entreprise</h4>
+            <div class="detail-grid supplier-detail-grid">
+              <div>
+                <div class="detail-label">Téléphone</div>
+                <div class="detail-value">${infoActionLine('', item.entrepriseTelephone, 'tel', true)}</div>
+              </div>
+              <div>
+                <div class="detail-label">Mail</div>
+                <div class="detail-value">${infoActionLine('', item.entrepriseMail, 'mail', true)}</div>
+              </div>
+              <div class="field--full supplier-detail-address-block">
+                <div class="detail-label">Adresse</div>
+                <div class="detail-value">${infoActionLine('', item.entrepriseAdresse, 'map', true)}</div>
+              </div>
+            </div>
+          </section>
 
-        <section class="supplier-card">
-          <h4>Note interne</h4>
-          ${item.noteInterne ? `<p>${esc(item.noteInterne)}</p>` : '<div class="notice">Aucune note interne.</div>'}
-        </section>
-      </div>
+          ${contactsMarkup}
 
-      <div class="supplier-tab-panel hidden" data-supplier-panel="historique">
-        <section class="supplier-card">
-          <h4>Historique</h4>
-          ${(item.historique || []).length ? `<div class="supplier-history-list">${item.historique.slice(0, 20).map(entry => `
-            <div class="supplier-history-item">
-              <strong>${esc(entry.label || entry.action || 'Événement')}</strong>
-              <span>${new Date(entry.date).toLocaleDateString('fr-FR')}</span>
-            </div>`).join('')}</div>` : '<div class="notice">Historique à venir.</div>'}
-        </section>
-      </div>
+          <section class="card compact-card supplier-detail-card">
+            <h4>Approvisionnement</h4>
+            <div class="detail-grid supplier-detail-grid">
+              <div>
+                <div class="detail-label">Magasin physique</div>
+                <div class="detail-value">${esc(summarizeWeekdays(item.magasinPhysiqueJours) || 'N/C')}</div>
+              </div>
+              <div>
+                <div class="detail-label">Livraisons</div>
+                <div class="detail-value">${esc(summarizeDeliveryRules(item.livraisons) || 'N/C')}</div>
+              </div>
+            </div>
+          </section>
 
-      <div class="supplier-tab-panel hidden" data-supplier-panel="produits">
-        <section class="supplier-card"><h4>Produits</h4><div class="notice">Section à venir.</div></section>
-      </div>
+          <section class="card compact-card detail-note-card supplier-detail-card">
+            <h4>Note interne</h4>
+            ${item.noteInterne ? `<div class="detail-value supplier-detail-note">${esc(item.noteInterne)}</div>` : '<p class="muted">Aucune note interne.</p>'}
+          </section>
+        </div>
 
-      <div class="supplier-tab-panel hidden" data-supplier-panel="facture">
-        <section class="supplier-card"><h4>Facture</h4><div class="notice">Section à venir.</div></section>
-      </div>
+        <div class="detail-tab-panel" data-supplier-panel="historique">
+          <section class="card compact-card supplier-detail-card">
+            <h4>Historique</h4>
+            ${(item.historique || []).length ? `<div class="supplier-history-list">${item.historique.slice(0, 20).map(entry => `
+              <div class="supplier-history-item">
+                <strong>${esc(entry.label || entry.action || 'Événement')}</strong>
+                <span>${new Date(entry.date).toLocaleDateString('fr-FR')}</span>
+              </div>`).join('')}</div>` : '<p class="muted">Historique à venir.</p>'}
+          </section>
+        </div>
+
+        <div class="detail-tab-panel" data-supplier-panel="produits">
+          <section class="card compact-card placeholder-card">
+            <h4>Produits</h4>
+            <p class="muted">À venir. Cet onglet accueillera les produits liés au fournisseur.</p>
+          </section>
+        </div>
+
+        <div class="detail-tab-panel" data-supplier-panel="facture">
+          <section class="card compact-card placeholder-card">
+            <h4>Facture</h4>
+            <p class="muted">À venir. Cet onglet accueillera les documents et factures du fournisseur.</p>
+          </section>
+        </div>
+      </section>
     `;
     qsa('[data-supplier-close]', sheet).forEach(btn => btn.onclick = () => closeSheet(sheet, backdrop));
-    qsa('.supplier-tab', sheet).forEach(btn => {
+    qsa('.detail-tab', sheet).forEach(btn => {
       btn.onclick = () => {
-        qsa('.supplier-tab', sheet).forEach(tab => tab.classList.toggle('active', tab === btn));
-        qsa('[data-supplier-panel]', sheet).forEach(panel => panel.classList.toggle('hidden', panel.dataset.supplierPanel !== btn.dataset.supplierTab));
+        qsa('.detail-tab', sheet).forEach(tab => {
+          const active = tab === btn;
+          tab.classList.toggle('active', active);
+          tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        qsa('[data-supplier-panel]', sheet).forEach(panel => panel.classList.toggle('active', panel.dataset.supplierPanel === btn.dataset.supplierTab));
       };
     });
     qs('[data-supplier-edit]', sheet)?.addEventListener('click', () => renderEditSheet(item));

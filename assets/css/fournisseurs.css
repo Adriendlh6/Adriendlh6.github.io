@@ -266,3 +266,17 @@
 .supplier-card-lite,.supplier-card-lite *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .supplier-card-lite input,.supplier-card-lite textarea,.supplier-card-lite select,.supplier-card-lite .allow-select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 .supplier-card-lite,.supplier-row-menu,.supplier-sheet{touch-action:manipulation}
+
+/* Détail fournisseur sur la même présentation que la mercuriale */
+.supplier-sheet-header--detail{margin-bottom:10px}
+.supplier-detail-subtitle{margin-top:6px}
+.supplier-detail-panel{display:grid;gap:14px}
+.supplier-detail-card{margin-bottom:0}
+.supplier-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.supplier-detail-address-block{grid-column:1/-1}
+.supplier-detail-note{white-space:pre-wrap;line-height:1.45}
+.supplier-detail-card .detail-value .supplier-action-link{justify-self:start}
+.supplier-detail-card .item-top{align-items:center}
+@media (max-width: 720px){
+  .supplier-detail-grid{grid-template-columns:1fr}
+}
