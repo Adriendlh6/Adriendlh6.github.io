@@ -1,4 +1,5 @@
 (function(){
+  const DEFAULT_LOGODEV_PK = 'pk_DHXzHaieQNiOe8cU6Kxqjw';
   const STORE_LABELS = {
     ingredients: 'Mercuriale',
     fournisseurs: 'Fournisseurs',
@@ -95,6 +96,26 @@
         </article>
       </section>
 
+      <section class="settings-grid">
+        <article class="card settings-panel">
+          <div class="panel-head">
+            <div>
+              <h3>Logo.dev</h3>
+              <p class="muted">Clé publishable optionnelle pour récupérer automatiquement des logos depuis un domaine.</p>
+            </div>
+          </div>
+          <div class="field field--full">
+            <label>Clé publishable Logo.dev</label>
+            <input class="input" id="settings-logodev-key" type="text" value="${esc(window.localStorage.getItem('copilot.logoDevPk') || DEFAULT_LOGODEV_PK || '')}" placeholder="pk_...">
+          </div>
+          <div class="settings-actions-row">
+            <button type="button" class="btn" id="settings-logodev-clear-btn">Effacer</button>
+            <button type="button" class="btn primary" id="settings-logodev-save-btn">Enregistrer la clé</button>
+          </div>
+          <p class="notice hidden" id="settings-logodev-notice"></p>
+        </article>
+      </section>
+
       <section class="card settings-panel">
         <div class="panel-head">
           <div>
@@ -140,6 +161,9 @@
     const importBtn = qs('#settings-import-btn');
     const refreshBtn = qs('#settings-refresh-btn');
     const fileLabel = qs('#settings-import-file-label');
+    const logoDevKeyInput = qs('#settings-logodev-key');
+    const logoDevSaveBtn = qs('#settings-logodev-save-btn');
+    const logoDevClearBtn = qs('#settings-logodev-clear-btn');
 
     exportBtn?.addEventListener('click', async () => {
       clearNotice('#settings-export-notice');
@@ -178,6 +202,24 @@
       } catch (error) {
         setNotice('#settings-import-notice', `Import impossible : ${error?.message || error}`, 'error');
       }
+    });
+
+
+    logoDevSaveBtn?.addEventListener('click', () => {
+      clearNotice('#settings-logodev-notice');
+      const value = String(logoDevKeyInput?.value || DEFAULT_LOGODEV_PK || '').trim();
+      if (!value) {
+        setNotice('#settings-logodev-notice', 'Ajoute une clé publishable commençant par pk_.', 'error');
+        return;
+      }
+      window.localStorage.setItem('copilot.logoDevPk', value);
+      setNotice('#settings-logodev-notice', 'Clé Logo.dev enregistrée.', 'success');
+    });
+
+    logoDevClearBtn?.addEventListener('click', () => {
+      window.localStorage.removeItem('copilot.logoDevPk');
+      if (logoDevKeyInput) logoDevKeyInput.value = DEFAULT_LOGODEV_PK;
+      setNotice('#settings-logodev-notice', 'Retour à la clé Logo.dev intégrée.', 'success');
     });
 
     refreshBtn?.addEventListener('click', () => render());
