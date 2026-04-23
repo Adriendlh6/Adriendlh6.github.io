@@ -180,3 +180,12 @@
 @media (max-width: 640px){
   .supplier-form-footer{grid-template-columns:1fr}
 }
+
+
+/* Ajustement du formulaire fournisseur sur le modèle Mercuriale */
+.supplier-card--edit{background:var(--surface)}
+.supplier-card--edit .supplier-card__head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.supplier-card--edit h4{margin:0}
+.supplier-inline-head--contacts{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.supplier-inline-head--contacts p{margin:0}
+#supplier-contacts-wrap.list{gap:12px}

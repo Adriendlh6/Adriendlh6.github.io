@@ -251,60 +251,51 @@
     const sheet = qs('#supplier-sheet');
     const backdrop = qs('#supplier-sheet-backdrop');
     const draft = structuredClone(item || normalizeSupplier({ id: uid('supplier') }));
-    draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [emptyContact(), emptyContact()];
+    draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [];
 
     const draw = () => {
       sheet.innerHTML = `
-        <form id="supplier-edit-form">
+        <form id="supplier-edit-form" class="grid sheet-form" novalidate>
           <div class="sheet-header">
             <div>
-              <div class="sheet-kicker">${item ? 'Modifier le fournisseur' : 'Ajouter un fournisseur'}</div>
-              <h3>${esc(draft.entrepriseNom || 'Nouvelle fiche fournisseur')}</h3>
+              <h3>${item ? 'Modifier un fournisseur' : 'Ajouter un fournisseur'}</h3>
+              <p class="muted">Entreprise, contacts et organisation fournisseur.</p>
             </div>
-            <button type="button" class="icon-btn" data-supplier-close>✕</button>
+            <button type="button" class="icon-close-btn" data-supplier-close aria-label="Fermer">✕</button>
           </div>
 
-          <div class="supplier-tabs">
-            <button type="button" class="supplier-tab active" data-supplier-tab="infos">Infos</button>
-            <button type="button" class="supplier-tab" disabled>Historique</button>
-            <button type="button" class="supplier-tab" disabled>Produits</button>
-            <button type="button" class="supplier-tab" disabled>Facture</button>
+          <div class="form-grid">
+            <div class="field"><label>Nom de l'entreprise</label><input class="input" type="text" name="entrepriseNom" value="${esc(draft.entrepriseNom)}" required></div>
+            <div class="field"><label>Téléphone</label><input class="input" type="tel" name="entrepriseTelephone" value="${esc(draft.entrepriseTelephone)}" required></div>
+            <div class="field"><label>Mail</label><input class="input" type="email" name="entrepriseMail" value="${esc(draft.entrepriseMail)}" required></div>
+            <div class="field field--full"><label>Adresse</label><textarea class="input" name="entrepriseAdresse" rows="3" required>${esc(draft.entrepriseAdresse)}</textarea></div>
           </div>
 
-          <div class="supplier-tab-panel" data-supplier-panel="infos">
-            <section class="supplier-card supplier-card--edit">
-              <h4>Infos entreprise</h4>
-              <div class="form-grid">
-                <div class="field"><label>Nom de l'entreprise</label><input class="input" type="text" name="entrepriseNom" value="${esc(draft.entrepriseNom)}" required></div>
-                <div class="field"><label>Téléphone</label><input class="input" type="tel" name="entrepriseTelephone" value="${esc(draft.entrepriseTelephone)}" required></div>
-                <div class="field"><label>Mail</label><input class="input" type="email" name="entrepriseMail" value="${esc(draft.entrepriseMail)}" required></div>
-                <div class="field field--full"><label>Adresse</label><textarea class="input" name="entrepriseAdresse" rows="3" required>${esc(draft.entrepriseAdresse)}</textarea></div>
-              </div>
-            </section>
-
-            <section class="supplier-contacts-section">
+          <details class="details" open>
+            <summary>Contacts</summary>
+            <div class="details-content grid">
               <div class="supplier-inline-head supplier-inline-head--contacts">
-                <h4>Contacts</h4>
+                <p class="muted">Contacts facultatifs pour ce fournisseur.</p>
                 <button type="button" class="icon-square-btn primary" data-contact-add title="Ajouter un contact" aria-label="Ajouter un contact">＋</button>
               </div>
-              <div id="supplier-contacts-wrap">
-                ${draft.contacts.map((contact, idx) => contactFields(contact, idx)).join('')}
+              <div id="supplier-contacts-wrap" class="list">
+                ${draft.contacts.length ? draft.contacts.map((contact, idx) => contactFields(contact, idx)).join('') : '<p class="muted">Aucun contact ajouté.</p>'}
               </div>
-            </section>
+            </div>
+          </details>
 
-            <section class="supplier-card supplier-card--edit">
-              <h4>Organisation</h4>
-              <div class="form-grid">
-                <div class="field"><label>Jours de commande</label><input class="input" type="text" name="joursCommande" value="${esc(draft.joursCommande)}"></div>
-                <div class="field"><label>Jours de livraison</label><input class="input" type="text" name="joursLivraison" value="${esc(draft.joursLivraison)}"></div>
-                <div class="field field--full"><label>Note interne</label><textarea class="input" name="noteInterne" rows="4">${esc(draft.noteInterne)}</textarea></div>
-              </div>
-            </section>
-          </div>
+          <details class="details">
+            <summary>Organisation</summary>
+            <div class="details-content form-grid">
+              <div class="field"><label>Jours de commande</label><input class="input" type="text" name="joursCommande" value="${esc(draft.joursCommande)}"></div>
+              <div class="field"><label>Jours de livraison</label><input class="input" type="text" name="joursLivraison" value="${esc(draft.joursLivraison)}"></div>
+              <div class="field field--full"><label>Note interne</label><textarea class="input" name="noteInterne" rows="4">${esc(draft.noteInterne)}</textarea></div>
+            </div>
+          </details>
 
           <div class="sheet-footer-actions supplier-form-footer">
             <button type="button" class="btn secondary" data-supplier-cancel>Annuler</button>
-            <button type="submit" class="btn primary">Enregistrer</button>
+            <button type="submit" class="btn primary">Enregistrer le fournisseur</button>
           </div>
         </form>
       `;

@@ -552,3 +552,32 @@
   body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .ean-svg,
   body.printing-product #product-print-root .print-card .print-table td:nth-child(3) svg.ean-svg{width:43mm !important;max-width:43mm !important;max-height:13mm !important;margin:0 auto !important}
 }
+
+
+/* Ajustements finaux pop-up impression */
+.print-inline-check,
+.print-check-row{padding:0 !important;border:0 !important;background:transparent !important;border-radius:0 !important;min-height:auto !important}
+.print-inline-check.print-check-row--compact,
+.print-check-row.print-check-row--compact{padding:0 !important}
+.print-submenu{border:1px solid rgba(216,199,180,.75);border-radius:16px;background:#fff;overflow:hidden}
+.print-submenu[open] .print-submenu-summary{border-bottom:1px solid rgba(216,199,180,.55)}
+.print-submenu-summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.print-submenu-summary::-webkit-details-marker{display:none}
+.print-submenu-summary::after{content:'▾';font-size:.9rem;color:#8a7c6f}
+.print-submenu:not([open]) .print-submenu-summary::after{content:'▸'}
+@media print{
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(1),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(1){width:14% !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(2),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(2){width:13% !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(3),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3){width:26% !important;text-align:center !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(6),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(6){width:9% !important;text-align:center !important;white-space:nowrap !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(7),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(7),
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(8),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(8){width:9% !important;text-align:right !important;white-space:nowrap !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .ean-svg,
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) svg.ean-svg{width:42mm !important;max-width:42mm !important;max-height:13mm !important;margin:0 auto !important}
+}
