@@ -120,6 +120,9 @@
 }
 .supplier-info-line__label{color:var(--muted)}
 .supplier-info-line__value{word-break:break-word}
+.supplier-action-link{padding:0;border:0;background:none;color:var(--text);font:inherit;text-align:left;justify-self:start;cursor:pointer}
+.supplier-action-link:hover{opacity:.88}
+.supplier-action-link:focus{outline:2px solid color-mix(in srgb, var(--accent) 35%, transparent);outline-offset:2px;border-radius:6px}
 .supplier-history-list{display:grid;gap:8px}
 .supplier-history-item{
   display:flex;

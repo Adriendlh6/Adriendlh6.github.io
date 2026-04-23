@@ -100,6 +100,64 @@
     return String(value).replace(/[^+\d]/g, '');
   }
 
+  function sanitizeMail(value=''){
+    const mail = String(value || '').trim();
+    return /.+@.+\..+/.test(mail) ? mail : '';
+  }
+
+  function buildMapsUrl(value=''){
+    const address = String(value || '').trim();
+    return address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}` : '';
+  }
+
+  function bindLongPressAction(node, config){
+    if (!node || !config?.value) return;
+    let pressTimer = null;
+    let longPressTriggered = false;
+    const openAction = () => {
+      let href = '';
+      let prompt = '';
+      const label = config.label || config.value;
+      if (config.type === 'tel') {
+        href = `tel:${config.value}`;
+        prompt = `Appeler ${label} ?`;
+      } else if (config.type === 'mail') {
+        href = `mailto:${config.value}`;
+        prompt = `Envoyer un mail à ${label} ?`;
+      } else if (config.type === 'map') {
+        href = buildMapsUrl(config.value);
+        prompt = `Ouvrir l'adresse dans le GPS ?`;
+      }
+      if (!href) return;
+      if (window.confirm(prompt)) window.location.href = href;
+    };
+    const start = () => {
+      clearTimeout(pressTimer);
+      longPressTriggered = false;
+      pressTimer = setTimeout(() => {
+        longPressTriggered = true;
+        openAction();
+      }, 550);
+    };
+    const cancel = () => clearTimeout(pressTimer);
+    node.addEventListener('mousedown', start);
+    node.addEventListener('touchstart', start, { passive: true });
+    ['mouseup','mouseleave','touchend','touchcancel','touchmove'].forEach(evt => node.addEventListener(evt, cancel, { passive: true }));
+    node.addEventListener('click', (e) => {
+      if (!longPressTriggered) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      longPressTriggered = false;
+    });
+    node.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      openAction();
+    });
+  }
 
   function getSupplierLogoSrc(item){
     return item?.logoDataUrl || DEFAULT_LOGO_DATA_URL;
@@ -170,9 +228,9 @@
       entrepriseSiret: row.entrepriseSiret || row.siret || '',
       commercial: row.commercial || row.contact || '',
       contacts: Array.isArray(row.contacts) && row.contacts.length
-        ? row.contacts.map((contact, index) => ({ ...emptyContact(), ...contact, id: contact.id || uid('contact'), principal: Boolean(contact.principal) || (!row.contacts.some(entry => entry && entry.principal) && index === 0) }))
+        ? row.contacts.map((contact) => ({ ...emptyContact(), ...contact, id: contact.id || uid('contact'), principal: Boolean(contact?.principal) }))
         : (row.contact || row.telephone || row.mail
-          ? [{ ...emptyContact(), nom: row.contact || '', qualite: 'Commercial', mail: row.mail || '', telephone: row.telephone || '', principal: true }]
+          ? [{ ...emptyContact(), nom: row.contact || '', qualite: 'Commercial', mail: row.mail || '', telephone: row.telephone || '', principal: false }]
           : []),
       joursCommande: row.joursCommande || '',
       joursLivraison: row.joursLivraison || '',
@@ -201,14 +259,14 @@
     const now = new Date().toISOString();
     const existing = await AppDB.get('fournisseurs', draft.id).catch(() => null);
     const previousHistory = Array.isArray(existing?.historique) ? existing.historique : [];
-    const principalContact = getPrincipalContact(draft) || draft.contacts?.[0] || {};
+    const principalContact = getPrincipalContact(draft) || null;
     const record = {
       ...existing,
       ...draft,
       nom: draft.entrepriseNom,
-      contact: [principalContact.prenom, principalContact.nom].filter(Boolean).join(' ').trim() || draft.commercial || '',
-      telephone: principalContact.telephone || draft.entrepriseTelephone || '',
-      mail: principalContact.mail || draft.entrepriseMail || '',
+      contact: principalContact ? ([principalContact.prenom, principalContact.nom].filter(Boolean).join(' ').trim() || draft.commercial || '') : (draft.commercial || ''),
+      telephone: principalContact?.telephone || draft.entrepriseTelephone || '',
+      mail: principalContact?.mail || draft.entrepriseMail || '',
       adresse: draft.entrepriseAdresse || '',
       siret: draft.entrepriseSiret || '',
       entrepriseSiret: draft.entrepriseSiret || '',
@@ -301,6 +359,12 @@
     return `<div class="supplier-info-line"><span class="supplier-info-line__label">${label}</span><span class="supplier-info-line__value">${esc(value || '—')}</span></div>`;
   }
 
+  function infoActionLine(label, value, actionType){
+    const clean = String(value || '').trim();
+    if (!clean) return infoLine(label, '—');
+    return `<div class="supplier-info-line"><span class="supplier-info-line__label">${label}</span><button type="button" class="supplier-info-line__value supplier-action-link" data-action-type="${esc(actionType)}" data-action-value="${esc(clean)}">${esc(clean)}</button></div>`;
+  }
+
   function renderReadSheet(item){
     const sheet = qs('#supplier-sheet');
     const backdrop = qs('#supplier-sheet-backdrop');
@@ -334,9 +398,9 @@
         <section class="supplier-card">
           <h4>Infos entreprise</h4>
           ${infoLine('Nom', item.entrepriseNom)}
-          ${infoLine('Téléphone', item.entrepriseTelephone)}
-          ${infoLine('Mail', item.entrepriseMail)}
-          ${infoLine('Adresse', item.entrepriseAdresse)}
+          ${infoActionLine('Téléphone', item.entrepriseTelephone, 'tel')}
+          ${infoActionLine('Mail', item.entrepriseMail, 'mail')}
+          ${infoActionLine('Adresse', item.entrepriseAdresse, 'map')}
         </section>
 
         ${contacts.map((contact, idx) => `
@@ -344,8 +408,8 @@
             <h4>Contact ${idx + 1}${contact.principal ? ' · Principal' : ''}</h4>
             ${infoLine('Nom / prénom', [contact.prenom, contact.nom].filter(Boolean).join(' '))}
             ${infoLine('Qualité', contact.qualite)}
-            ${infoLine('Mail', contact.mail)}
-            ${infoLine('Téléphone', contact.telephone)}
+            ${infoActionLine('Mail', contact.mail, 'mail')}
+            ${infoActionLine('Téléphone', contact.telephone, 'tel')}
           </section>
         `).join('')}
 
@@ -393,6 +457,12 @@
       await archiveSupplier(item.id);
       closeSheet(sheet, backdrop);
       await render();
+    });
+    qsa('[data-action-type]', sheet).forEach(node => {
+      const type = node.dataset.actionType;
+      const rawValue = node.dataset.actionValue || '';
+      const value = type === 'tel' ? String(rawValue).replace(/[^+\d]/g, '') : (type === 'mail' ? sanitizeMail(rawValue) : rawValue);
+      bindLongPressAction(node, { type, value, label: rawValue });
     });
     openSheet(sheet, backdrop);
   }
@@ -695,7 +765,7 @@
       });
       qs('[data-contact-add]', sheet)?.addEventListener('click', () => {
         syncDraftFromForm();
-        draft.contacts.push({ ...emptyContact(), principal: draft.contacts.length === 0 });
+        draft.contacts.push({ ...emptyContact(), principal: false });
         uiState.contactsOpen = true;
         draw();
       });
@@ -799,10 +869,11 @@
       });
       qsa('input[name^="contact_principal_"]', sheet).forEach(input => {
         input.addEventListener('change', () => {
-          if (!input.checked) return;
-          qsa('input[name^="contact_principal_"]', sheet).forEach(other => {
-            if (other !== input) other.checked = false;
-          });
+          if (input.checked) {
+            qsa('input[name^="contact_principal_"]', sheet).forEach(other => {
+              if (other !== input) other.checked = false;
+            });
+          }
         });
       });
 
@@ -814,7 +885,7 @@
         syncDraftFromForm();
         draft.contacts = draft.contacts.filter(contact => [contact.nom, contact.prenom, contact.qualite, contact.mail, contact.telephone].some(Boolean));
 
-        const primaryContact = getPrincipalContact(draft) || draft.contacts?.[0] || null;
+        const primaryContact = getPrincipalContact(draft) || null;
         draft.commercial = primaryContact
           ? [primaryContact.prenom, primaryContact.nom].filter(Boolean).join(' ').trim()
           : '';
@@ -888,15 +959,17 @@
         .filter(item => showArchived ? item.archived : !item.archived)
         .filter(item => {
           if (!term) return true;
-          const c1 = item.contacts?.[0] || {};
+          const principal = getPrincipalContact(item) || {};
+          const contactBlob = (Array.isArray(item.contacts) ? item.contacts : []).flatMap(c => [c?.nom, c?.prenom, c?.telephone, c?.qualite, c?.mail]);
           return [
             item.entrepriseNom,
             item.nom,
             item.entrepriseTelephone,
-            c1.nom,
-            c1.prenom,
-            c1.telephone,
-            c1.qualite
+            principal.nom,
+            principal.prenom,
+            principal.telephone,
+            principal.qualite,
+            ...contactBlob
           ].filter(Boolean).join(' ').toLowerCase().includes(term);
         });
 
