@@ -66,40 +66,6 @@
         <article class="card settings-panel">
           <div class="panel-head">
             <div>
-              <h3>Exporter la base</h3>
-              <p class="muted">Télécharge un fichier JSON complet de la base actuelle.</p>
-            </div>
-          </div>
-          <div class="settings-actions-col">
-            <button type="button" class="btn primary" id="settings-export-btn">Exporter la base</button>
-          </div>
-          <p class="notice hidden" id="settings-export-notice"></p>
-        </article>
-
-        <article class="card settings-panel">
-          <div class="panel-head">
-            <div>
-              <h3>Importer une sauvegarde</h3>
-              <p class="muted">Importe un export JSON et remplace les données locales existantes.</p>
-            </div>
-          </div>
-          <label class="file-dropzone" for="settings-import-input">
-            <input id="settings-import-input" type="file" accept="application/json,.json" />
-            <span class="file-dropzone-title">Choisir un fichier JSON</span>
-            <span class="muted" id="settings-import-file-label">Aucun fichier sélectionné</span>
-          </label>
-          <div class="settings-actions-row">
-            <button type="button" class="btn" id="settings-refresh-btn">Actualiser</button>
-            <button type="button" class="btn primary" id="settings-import-btn" disabled>Importer la sauvegarde</button>
-          </div>
-          <p class="notice hidden" id="settings-import-notice"></p>
-        </article>
-      </section>
-
-      <section class="settings-grid">
-        <article class="card settings-panel">
-          <div class="panel-head">
-            <div>
               <h3>Logo.dev</h3>
               <p class="muted">Clé publishable optionnelle pour récupérer automatiquement des logos depuis un domaine.</p>
             </div>
@@ -161,9 +127,6 @@
     const importBtn = qs('#settings-import-btn');
     const refreshBtn = qs('#settings-refresh-btn');
     const fileLabel = qs('#settings-import-file-label');
-    const logoDevKeyInput = qs('#settings-logodev-key');
-    const logoDevSaveBtn = qs('#settings-logodev-save-btn');
-    const logoDevClearBtn = qs('#settings-logodev-clear-btn');
 
     exportBtn?.addEventListener('click', async () => {
       clearNotice('#settings-export-notice');
@@ -202,24 +165,6 @@
       } catch (error) {
         setNotice('#settings-import-notice', `Import impossible : ${error?.message || error}`, 'error');
       }
-    });
-
-
-    logoDevSaveBtn?.addEventListener('click', () => {
-      clearNotice('#settings-logodev-notice');
-      const value = String(logoDevKeyInput?.value || DEFAULT_LOGODEV_PK || '').trim();
-      if (!value) {
-        setNotice('#settings-logodev-notice', 'Ajoute une clé publishable commençant par pk_.', 'error');
-        return;
-      }
-      window.localStorage.setItem('copilot.logoDevPk', value);
-      setNotice('#settings-logodev-notice', 'Clé Logo.dev enregistrée.', 'success');
-    });
-
-    logoDevClearBtn?.addEventListener('click', () => {
-      window.localStorage.removeItem('copilot.logoDevPk');
-      if (logoDevKeyInput) logoDevKeyInput.value = DEFAULT_LOGODEV_PK;
-      setNotice('#settings-logodev-notice', 'Retour à la clé Logo.dev intégrée.', 'success');
     });
 
     refreshBtn?.addEventListener('click', () => render());

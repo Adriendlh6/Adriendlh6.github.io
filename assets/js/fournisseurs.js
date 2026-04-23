@@ -626,7 +626,7 @@
         uiState.logoOpen = true;
         try {
           const token = getLogoDevPublishableKey();
-          if (!token) throw new Error('Ajoute d’abord ta clé Logo.dev dans Paramètres.');
+          if (!token) throw new Error('Clé Logo.dev indisponible.');
           const domain = inferLogoDomain(draft);
           if (!domain) throw new Error('Ajoute un domaine ou un site web pour récupérer le logo.');
           draft.logoDomain = domain;
