@@ -465,7 +465,7 @@
           <details class="details" ${uiState.noteOpen ? 'open' : ''} data-details-section="note">
             <summary>Note interne</summary>
             <div class="details-content grid">
-              <div class="field field--full supplier-note-field"><label>Note interne</label><textarea class="input" name="noteInterne" rows="4">${esc(draft.noteInterne)}</textarea></div>
+              <div class="field field--full supplier-note-field"><textarea class="input" name="noteInterne" rows="4" placeholder="Ajouter une note interne">${esc(draft.noteInterne)}</textarea></div>
             </div>
           </details>
 
