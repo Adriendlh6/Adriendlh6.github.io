@@ -100,6 +100,36 @@
     return String(value).replace(/[^+\d]/g, '');
   }
 
+  function getLinkedProductsForSupplier(item){
+    const supplierId = String(item?.id || '');
+    if (!supplierId) return [];
+    return (ingredientsIndex || []).filter(ingredient => Array.isArray(ingredient?.offres) && ingredient.offres.some(offre => String(offre?.fournisseurId || '') === supplierId))
+      .map(ingredient => {
+        const linkedOffers = (ingredient.offres || []).filter(offre => String(offre?.fournisseurId || '') === supplierId);
+        const bestOffer = linkedOffers.find(offre => offre?.sourcePrincipale) || linkedOffers[0] || null;
+        return { ingredient, offer: bestOffer };
+      })
+      .sort((a, b) => String(a.ingredient?.nom || '').localeCompare(String(b.ingredient?.nom || ''), 'fr', { sensitivity: 'base' }));
+  }
+
+  function openLinkedProductDetail(productId){
+    if (!productId) return;
+    try { sessionStorage.setItem('copilot_open_product_id', String(productId)); } catch {}
+    if ((location.hash || '').replace('#','') !== 'mercuriale') location.hash = '#mercuriale';
+    else window.MercurialePage?.openDetailById?.(String(productId));
+  }
+
+
+  function getLocalCategoryById(id){
+    return (categoriesIndex || []).find(cat => String(cat?.id || '') === String(id || '')) || null;
+  }
+
+  function categoryChipMarkup(category){
+    if (!category) return '<span class="tag supplier-category-chip">Sans catégorie</span>';
+    const bg = category.couleur || '#8b5e34';
+    return `<span class="tag supplier-category-chip" style="--chip-color:${esc(bg)}">${esc(category.nom || 'Sans catégorie')}</span>`;
+  }
+
   function sanitizeMail(value=''){
     const mail = String(value || '').trim();
     return /.+@.+\..+/.test(mail) ? mail : '';
@@ -496,9 +526,24 @@
         </div>
 
         <div class="detail-tab-panel" data-supplier-panel="produits">
-          <section class="card compact-card placeholder-card">
+          <section class="card compact-card supplier-detail-card">
             <h4>Produits</h4>
-            <p class="muted">À venir. Cet onglet accueillera les produits liés au fournisseur.</p>
+            ${(() => {
+              const linkedProducts = getLinkedProductsForSupplier(item);
+              if (!linkedProducts.length) return '<p class="muted">Aucun produit lié à ce fournisseur.</p>';
+              return `<div class="supplier-linked-products">${linkedProducts.map(({ ingredient, offer }) => {
+                const category = getLocalCategoryById(ingredient.categorieId);
+                const price = offer && Number.isFinite(Number(offer.prixHTUnite)) && Number(offer.prixHTUnite) > 0 ? euro(offer.prixHTUnite) : 'N/C';
+                return `
+                  <button type="button" class="item product-card supplier-product-row" data-linked-product-open="${esc(ingredient.id)}">
+                    <div class="supplier-product-row__main">
+                      <strong>${esc(ingredient.nom || 'N/C')}</strong>
+                      <div class="toolbar chip-row">${categoryChipMarkup(category)}</div>
+                    </div>
+                    <div class="supplier-product-row__price">${esc(price)} HT</div>
+                  </button>`;
+              }).join('')}</div>`;
+            })()}
           </section>
         </div>
 
@@ -527,6 +572,9 @@
       await archiveSupplier(item.id);
       closeSheet(sheet, backdrop);
       await render();
+    });
+    qsa('[data-linked-product-open]', sheet).forEach(node => {
+      node.addEventListener('click', () => openLinkedProductDetail(node.dataset.linkedProductOpen));
     });
     qsa('[data-action-type]', sheet).forEach(node => {
       const type = node.dataset.actionType;
@@ -1080,7 +1128,14 @@
 
   async function render(){
     renderShell();
-    let list = await loadSuppliers();
+    const [suppliersList, loadedIngredients, categoriesRow] = await Promise.all([
+      loadSuppliers(),
+      AppDB.getAll('ingredients'),
+      AppDB.get('parametres', 'mercuriale_categories')
+    ]);
+    let list = suppliersList;
+    ingredientsIndex = Array.isArray(loadedIngredients) ? loadedIngredients : [];
+    categoriesIndex = Array.isArray(categoriesRow?.categories) ? categoriesRow.categories : [];
     const searchInput = qs('#suppliers-search-input');
     const printBtn = qs('#suppliers-print-btn');
     const addBtn = qs('#suppliers-add-btn');
