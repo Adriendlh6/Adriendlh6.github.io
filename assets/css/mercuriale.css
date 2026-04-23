@@ -248,6 +248,61 @@
 
 
 /* === Stabilisation UI des pop-up d'impression === */
+.print-chooser .print-inline-check,
+.print-chooser .print-check-row{
+  display:grid !important;
+  grid-template-columns:24px minmax(0,1fr) !important;
+  align-items:center !important;
+  column-gap:12px !important;
+  row-gap:0 !important;
+}
+.print-chooser .print-inline-check input[type="checkbox"],
+.print-chooser .print-inline-check input[type="radio"],
+.print-chooser .print-check-row input[type="checkbox"],
+.print-chooser .print-check-row input[type="radio"]{
+  width:24px !important;
+  min-width:24px !important;
+  max-width:24px !important;
+  height:24px !important;
+  min-height:24px !important;
+  max-height:24px !important;
+  margin:0 !important;
+  padding:0 !important;
+  border-radius:8px !important;
+  border:1px solid rgba(180,162,143,.95) !important;
+  background:#fff !important;
+  box-shadow:none !important;
+  appearance:auto !important;
+  -webkit-appearance:checkbox !important;
+  accent-color:#1e88ff !important;
+  justify-self:start !important;
+  align-self:center !important;
+  flex:none !important;
+}
+.print-chooser .print-inline-check span,
+.print-chooser .print-check-row span{
+  min-width:0 !important;
+  width:auto !important;
+  margin:0 !important;
+  padding:0 !important;
+  display:block !important;
+  white-space:normal !important;
+  overflow-wrap:anywhere !important;
+  word-break:normal !important;
+  text-align:left !important;
+}
+.print-chooser .print-options-subgrid--two{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+.print-chooser .print-options-card__head{
+  justify-content:flex-start !important;
+}
+.print-chooser .print-options-card__head .print-inline-check{
+  width:100% !important;
+}
+@media (max-width:720px){
+  .print-chooser .print-options-subgrid--two{grid-template-columns:1fr !important;}
+}
 .print-chooser{isolation:isolate}
 .print-chooser-dialog{grid-template-rows:auto 1fr;overscroll-behavior:contain}
 .print-chooser-body{min-width:0;overflow:visible}
@@ -392,25 +447,25 @@
 
   /* Détail produit : on libère de la place au code-barres */
   body.printing-product #product-print-root .print-card .print-table th:nth-child(1),
-  body.printing-product #product-print-root .print-card .print-table td:nth-child(1){width:17% !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(1){width:16% !important}
   body.printing-product #product-print-root .print-card .print-table th:nth-child(2),
-  body.printing-product #product-print-root .print-card .print-table td:nth-child(2){width:10% !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(2){width:9% !important}
   body.printing-product #product-print-root .print-card .print-table th:nth-child(3),
-  body.printing-product #product-print-root .print-card .print-table td:nth-child(3){width:24% !important;text-align:center !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3){width:28% !important;text-align:center !important}
   body.printing-product #product-print-root .print-card .print-table th:nth-child(4),
-  body.printing-product #product-print-root .print-card .print-table td:nth-child(4){width:11% !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(4){width:10% !important}
   body.printing-product #product-print-root .print-card .print-table th:nth-child(5),
-  body.printing-product #product-print-root .print-card .print-table td:nth-child(5){width:10% !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(5){width:9% !important}
   body.printing-product #product-print-root .print-card .print-table th:nth-child(6),
-  body.printing-product #product-print-root .print-card .print-table td:nth-child(6){width:6% !important;text-align:center !important;white-space:nowrap !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(6){width:5% !important;text-align:center !important;white-space:nowrap !important}
   body.printing-product #product-print-root .print-card .print-table th:nth-child(7),
   body.printing-product #product-print-root .print-card .print-table td:nth-child(7),
   body.printing-product #product-print-root .print-card .print-table th:nth-child(8),
-  body.printing-product #product-print-root .print-card .print-table td:nth-child(8){width:11% !important;text-align:right !important;white-space:nowrap !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(8){width:10% !important;text-align:right !important;white-space:nowrap !important}
   body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .print-ean-block,
   body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .print-ean-block--compact{width:100% !important;max-width:none !important;display:flex !important;align-items:center !important;justify-content:center !important}
   body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .ean-svg,
-  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) svg.ean-svg{width:38mm !important;max-width:38mm !important;max-height:13mm !important;margin:0 auto !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) svg.ean-svg{width:42mm !important;max-width:42mm !important;max-height:13mm !important;margin:0 auto !important
 
   @page{margin:7mm 5mm 8mm 5mm}
 }
