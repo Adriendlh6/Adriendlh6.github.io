@@ -88,7 +88,7 @@
     host.innerHTML = `
       <section id="${PAGE_ID}" class="suppliers-page">
         <section class="item suppliers-shell-card">
-          <div class="suppliers-shell-head mercuriale-header">
+          <div class="suppliers-shell-head">
             <div class="suppliers-shell-copy">
               <h2 class="suppliers-title">Gestion des fournisseurs</h2>
               <p class="suppliers-subtitle">Référentiel fournisseurs, contacts et informations de gestion.</p>
