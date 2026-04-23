@@ -245,6 +245,39 @@
 .print-chooser-actions .btn{display:inline-flex;align-items:center;justify-content:center;text-align:center}
 .print-chooser-actions .btn span{line-height:1.1;text-align:center}
 
+
+
+/* === Stabilisation UI des pop-up d'impression === */
+.print-chooser{isolation:isolate}
+.print-chooser-dialog{grid-template-rows:auto 1fr;overscroll-behavior:contain}
+.print-chooser-body{min-width:0;overflow:visible}
+.print-options-form{grid-template-columns:minmax(0,1fr);gap:16px}
+.print-options-grid,.print-options-grid--single{align-items:start}
+.print-options-card{align-content:start;box-shadow:inset 0 1px 0 rgba(255,255,255,.72)}
+.print-options-card__head{align-items:flex-start;flex-wrap:wrap}
+.print-options-card__head > *{min-width:0}
+.print-options-card h4,.print-options-card__head h4{display:block;line-height:1.15}
+.print-options-checks{gap:8px}
+.print-inline-check{display:inline-flex;align-items:flex-start;gap:10px;padding:7px 10px;border:1px solid rgba(219,204,187,.9);border-radius:12px;background:rgba(255,255,255,.68)}
+.print-inline-check input{margin-top:2px}
+.print-inline-check span{line-height:1.2}
+.print-check-row{align-items:flex-start}
+.print-check-row span{line-height:1.2}
+.print-options-card .field-label{display:block;font-weight:700}
+.print-options-card .input,.print-options-card .print-select{display:block}
+.print-chooser-actions{flex-wrap:wrap;align-items:center}
+#print-mercuriale-chooser .print-chooser-actions,
+#mercuriale-print-chooser .print-chooser-actions{justify-content:flex-end}
+#mercuriale-export-xls-btn{margin-right:auto}
+@media (max-width:720px){
+  .print-chooser-head{align-items:flex-start}
+  .print-options-card__head{gap:8px}
+  .print-inline-check{width:100%}
+  .print-chooser-actions{display:grid;grid-template-columns:1fr;gap:10px}
+  #mercuriale-export-xls-btn{margin-right:0}
+  .print-chooser-btn,.print-chooser-actions .btn{width:100%}
+}
+
 /* === Restauration mise en page impression produit et mercuriale === */
 @media print{
   .print-page{padding:10mm 9mm 11mm !important;max-width:none !important;width:100% !important;margin:0 !important}
@@ -356,6 +389,29 @@
   .print-card .print-table td:nth-child(3) .ean-svg,.print-card .print-table td:nth-child(3) svg.ean-svg{display:block !important;margin:0 auto !important;width:32mm !important;max-width:32mm !important;height:auto !important}
   .print-card .print-table td:nth-child(3) .print-ean-number,.print-card .print-table td:nth-child(3) .barcode-number{text-align:center !important;width:100% !important;margin:0 auto !important}
   .mercuriale-print-table th:nth-child(2),.mercuriale-print-table td:nth-child(2){text-align:center !important}
+
+  /* Détail produit : on libère de la place au code-barres */
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(1),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(1){width:17% !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(2),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(2){width:10% !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(3),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3){width:24% !important;text-align:center !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(4),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(4){width:11% !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(5),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(5){width:10% !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(6),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(6){width:6% !important;text-align:center !important;white-space:nowrap !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(7),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(7),
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(8),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(8){width:11% !important;text-align:right !important;white-space:nowrap !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .print-ean-block,
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .print-ean-block--compact{width:100% !important;max-width:none !important;display:flex !important;align-items:center !important;justify-content:center !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .ean-svg,
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) svg.ean-svg{width:38mm !important;max-width:38mm !important;max-height:13mm !important;margin:0 auto !important}
+
   @page{margin:7mm 5mm 8mm 5mm}
 }
 
