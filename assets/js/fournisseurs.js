@@ -132,6 +132,7 @@
       entrepriseTelephone: row.entrepriseTelephone || row.telephone || '',
       entrepriseMail: row.entrepriseMail || row.mail || '',
       entrepriseAdresse: row.entrepriseAdresse || row.adresse || '',
+      entrepriseSiret: row.entrepriseSiret || row.siret || '',
       commercial: row.commercial || row.contact || '',
       contacts: Array.isArray(row.contacts) && row.contacts.length
         ? row.contacts.map(contact => ({ ...emptyContact(), ...contact, id: contact.id || uid('contact') }))
@@ -174,6 +175,8 @@
       telephone: draft.entrepriseTelephone || contact1.telephone || '',
       mail: draft.entrepriseMail || contact1.mail || '',
       adresse: draft.entrepriseAdresse || '',
+      siret: draft.entrepriseSiret || '',
+      entrepriseSiret: draft.entrepriseSiret || '',
       siteWeb: draft.siteWeb || draft.logoDomain || '',
       logoDomain: draft.logoDomain || draft.siteWeb || '',
       updatedAt: now,
@@ -474,6 +477,7 @@
       draft.telephone = draft.entrepriseTelephone;
       draft.entrepriseMail = String(fd.get('entrepriseMail') || '').trim();
       draft.entrepriseAdresse = String(fd.get('entrepriseAdresse') || '').trim();
+      draft.entrepriseSiret = String(fd.get('entrepriseSiret') || '').trim();
       draft.logoUrl = String(fd.get('logoUrl') || '').trim();
       draft.logoDomain = normalizeDomain(fd.get('logoDomain') || '');
       draft.siteWeb = draft.logoDomain;
@@ -511,9 +515,10 @@
 
           <div class="form-grid">
             <div class="field"><label>Nom de l'entreprise</label><input class="input" type="text" name="entrepriseNom" value="${esc(draft.entrepriseNom)}" required></div>
-            <div class="field"><label>Téléphone</label><input class="input" type="tel" name="entrepriseTelephone" value="${esc(draft.entrepriseTelephone)}" required></div>
-            <div class="field"><label>Mail</label><input class="input" type="email" name="entrepriseMail" value="${esc(draft.entrepriseMail)}" required></div>
-            <div class="field field--full"><label>Adresse</label><textarea class="input" name="entrepriseAdresse" rows="3" required>${esc(draft.entrepriseAdresse)}</textarea></div>
+            <div class="field"><label>Téléphone</label><input class="input" type="tel" name="entrepriseTelephone" value="${esc(draft.entrepriseTelephone)}"></div>
+            <div class="field"><label>Mail</label><input class="input" type="email" name="entrepriseMail" value="${esc(draft.entrepriseMail)}"></div>
+            <div class="field"><label>SIRET</label><input class="input" type="text" inputmode="numeric" name="entrepriseSiret" value="${esc(draft.entrepriseSiret)}" placeholder="Optionnel"></div>
+            <div class="field field--full"><label>Adresse</label><textarea class="input" name="entrepriseAdresse" rows="3">${esc(draft.entrepriseAdresse)}</textarea></div>
           </div>
 
           <details class="details" ${uiState.logoOpen ? 'open' : ''} data-details-section="logo">
