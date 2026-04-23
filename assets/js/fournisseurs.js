@@ -282,7 +282,7 @@
       <section class="supplier-card supplier-card--edit">
         <div class="supplier-card__head">
           <h4>Contact ${idx + 1}</h4>
-          ${idx > 0 ? `<button type="button" class="text-btn danger" data-contact-remove="${idx}">Supprimer</button>` : ''}
+          <button type="button" class="text-btn danger" data-contact-remove="${idx}">Supprimer</button>
         </div>
         <div class="form-grid">
           <div class="field"><label>Nom</label><input class="input" type="text" name="contact_nom_${idx}" value="${esc(contact.nom)}"></div>
@@ -369,7 +369,7 @@
     draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [];
     draft.magasinPhysiqueJours = normalizeWeekdays(draft.magasinPhysiqueJours);
     draft.livraisons = Array.isArray(draft.livraisons) && draft.livraisons.length ? draft.livraisons : [];
-    const uiState = { contactsOpen: true, organisationOpen: true };
+    const uiState = { contactsOpen: false, organisationOpen: false };
 
     const draw = () => {
       sheet.innerHTML = `

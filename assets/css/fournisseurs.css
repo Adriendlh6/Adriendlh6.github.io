@@ -246,3 +246,10 @@
 }
 
 .supplier-note-field{margin-top:2px}
+
+
+/* Correctifs formulaire organisation */
+.supplier-organization-grid > .field{min-width:0;}
+.supplier-organization-grid input[type="time"],
+.supplier-organization-grid .input[type="time"]{min-width:0;width:100%;max-width:100%;}
+.supplier-organization-grid .field{overflow:hidden;}
