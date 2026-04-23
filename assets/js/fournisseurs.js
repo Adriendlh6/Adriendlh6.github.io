@@ -379,9 +379,9 @@
       ? [ [primaryContact.prenom, primaryContact.nom].filter(Boolean).join(' ').trim(), primaryContact.qualite ? `(${primaryContact.qualite})` : '' ].filter(Boolean).join(' ')
       : (item.entrepriseNom || 'N/C');
     const contactsMarkup = contacts.length ? contacts.map((contact, idx) => `
-      <section class="card compact-card supplier-detail-card">
-        <div class="item-top">
-          <h4>Contact ${idx + 1}${contact.principal ? ' · Principal' : ''}</h4>
+      <section class="card compact-card supplier-detail-card supplier-contact-card">
+        <div class="item-top supplier-contact-top">
+          <h4><span class="supplier-contact-index">Contact ${idx + 1}</span>${contact.qualite ? ` <span class="supplier-contact-role">(${esc(contact.qualite)})</span>` : ''}</h4>
           ${contact.principal ? '<span class="tag">Principal</span>' : ''}
         </div>
         <div class="detail-grid supplier-detail-grid">
@@ -390,20 +390,16 @@
             <div class="detail-value">${esc([contact.prenom, contact.nom].filter(Boolean).join(' ') || 'N/C')}</div>
           </div>
           <div>
-            <div class="detail-label">Qualité</div>
-            <div class="detail-value">${esc(contact.qualite || 'N/C')}</div>
-          </div>
-          <div>
-            <div class="detail-label">Mail</div>
-            <div class="detail-value">${infoActionLine('', contact.mail, 'mail', true)}</div>
-          </div>
-          <div>
             <div class="detail-label">Téléphone</div>
             <div class="detail-value">${infoActionLine('', contact.telephone, 'tel', true)}</div>
           </div>
+          <div class="field--full">
+            <div class="detail-label">Mail</div>
+            <div class="detail-value">${infoActionLine('', contact.mail, 'mail', true)}</div>
+          </div>
         </div>
       </section>
-    `).join('') : `<section class="card compact-card placeholder-card"><h4>Contacts</h4><p class="muted">Aucun contact renseigné.</p></section>`;
+    `).join('') : `<section class="card compact-card placeholder-card"><div class="supplier-block-title"><span class="supplier-block-title__icon">👥</span><span>Contacts</span></div><p class="muted">Aucun contact renseigné.</p></section>`;
     sheet.innerHTML = `
       <div class="sheet-header supplier-sheet-header supplier-sheet-header--detail">
         <div class="supplier-sheet-identity">
@@ -433,21 +429,16 @@
 
         <div class="detail-tab-panel active" data-supplier-panel="infos">
           <section class="card compact-card supplier-detail-card">
-            <div class="detail-info-stack">
+            <div class="supplier-block-title"><span class="supplier-block-title__icon">🏢</span><span>Entreprise</span></div>
+            <div class="detail-grid supplier-detail-grid">
               <div>
-                <div class="detail-label">Nom du fournisseur</div>
+                <div class="detail-label">Nom</div>
                 <div class="detail-value detail-title-value">${esc(item.entrepriseNom || 'N/C')}</div>
               </div>
               <div>
                 <div class="detail-label">SIRET</div>
                 <div class="detail-value">${esc(item.siret || 'N/C')}</div>
               </div>
-            </div>
-          </section>
-
-          <section class="card compact-card supplier-detail-card">
-            <h4>Infos entreprise</h4>
-            <div class="detail-grid supplier-detail-grid">
               <div>
                 <div class="detail-label">Téléphone</div>
                 <div class="detail-value">${infoActionLine('', item.entrepriseTelephone, 'tel', true)}</div>
@@ -463,24 +454,33 @@
             </div>
           </section>
 
-          ${contactsMarkup}
-
-          <section class="card compact-card supplier-detail-card">
-            <h4>Approvisionnement</h4>
-            <div class="detail-grid supplier-detail-grid">
-              <div>
-                <div class="detail-label">Magasin physique</div>
-                <div class="detail-value">${esc(summarizeWeekdays(item.magasinPhysiqueJours) || 'N/C')}</div>
-              </div>
-              <div>
-                <div class="detail-label">Livraisons</div>
-                <div class="detail-value">${esc(summarizeDeliveryRules(item.livraisons) || 'N/C')}</div>
-              </div>
+          <details class="details supplier-read-details" data-read-details="contacts">
+            <summary><span class="supplier-block-title"><span class="supplier-block-title__icon">👥</span><span>Contacts</span></span></summary>
+            <div class="details-content supplier-read-details__content">
+              ${contactsMarkup}
             </div>
-          </section>
+          </details>
+
+          <details class="details supplier-read-details" data-read-details="approvisionnement">
+            <summary><span class="supplier-block-title"><span class="supplier-block-title__icon">📦</span><span>Approvisionnement</span></span></summary>
+            <div class="details-content supplier-read-details__content">
+              <section class="card compact-card supplier-detail-card supplier-inner-card">
+                <div class="detail-grid supplier-detail-grid">
+                  <div>
+                    <div class="detail-label">Magasin physique</div>
+                    <div class="detail-value">${esc(summarizeWeekdays(item.magasinPhysiqueJours) || 'N/C')}</div>
+                  </div>
+                  <div>
+                    <div class="detail-label">Livraisons</div>
+                    <div class="detail-value">${esc(summarizeDeliveryRules(item.livraisons) || 'N/C')}</div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </details>
 
           <section class="card compact-card detail-note-card supplier-detail-card">
-            <h4>Note interne</h4>
+            <div class="supplier-block-title"><span class="supplier-block-title__icon">📝</span><span>Note interne</span></div>
             ${item.noteInterne ? `<div class="detail-value supplier-detail-note">${esc(item.noteInterne)}</div>` : '<p class="muted">Aucune note interne.</p>'}
           </section>
         </div>
