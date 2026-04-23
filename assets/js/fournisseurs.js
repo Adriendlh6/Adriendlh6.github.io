@@ -76,6 +76,8 @@
           : []),
       joursCommande: row.joursCommande || '',
       joursLivraison: row.joursLivraison || '',
+      magasinPhysiqueJours: normalizeWeekdays(row.magasinPhysiqueJours || row.joursMagasin || ''),
+      livraisons: normalizeDeliveryRules(row),
       noteInterne: row.noteInterne || row.notes || '',
       archived: Boolean(row.archived),
       historique: Array.isArray(row.historique) ? row.historique : [],
@@ -234,10 +236,14 @@
         `).join('')}
 
         <section class="supplier-card">
-          <h4>Organisation</h4>
+          <h4>Approvisionnement</h4>
           ${infoLine('Magasin physique', summarizeWeekdays(item.magasinPhysiqueJours))}
           ${infoLine('Livraisons', summarizeDeliveryRules(item.livraisons))}
-          ${infoLine('Note', item.noteInterne)}
+        </section>
+
+        <section class="supplier-card">
+          <h4>Note interne</h4>
+          ${item.noteInterne ? `<p>${esc(item.noteInterne)}</p>` : '<div class="notice">Aucune note interne.</div>'}
         </section>
       </div>
 
@@ -369,7 +375,7 @@
     draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [];
     draft.magasinPhysiqueJours = normalizeWeekdays(draft.magasinPhysiqueJours);
     draft.livraisons = Array.isArray(draft.livraisons) && draft.livraisons.length ? draft.livraisons : [];
-    const uiState = { contactsOpen: false, organisationOpen: false };
+    const uiState = { contactsOpen: false, approvisionnementOpen: false, noteOpen: false };
 
     function syncDraftFromForm(){
       const form = qs('#supplier-edit-form', sheet);
@@ -389,8 +395,8 @@
         heureLimite: String(fd.get(`livraison_heure_${idx}`) || '').trim(),
         recurrence: String(fd.get(`livraison_recurrence_${idx}`) || 'all').trim() || 'all'
       }));
-      draft.joursCommande = summarizeDeliveryRules(draft.livraisons);
-      draft.joursLivraison = summarizeWeekdays(draft.magasinPhysiqueJours);
+      draft.joursCommande = draft.livraisons.map(rule => rule.jourCommande).filter(Boolean).join(', ');
+      draft.joursLivraison = draft.livraisons.map(rule => rule.jourLivraison).filter(Boolean).join(', ');
       draft.noteInterne = String(fd.get('noteInterne') || '').trim();
       draft.contacts = draft.contacts.map((contact, idx) => ({
         ...contact,
@@ -433,8 +439,8 @@
             </div>
           </details>
 
-          <details class="details" ${uiState.organisationOpen ? 'open' : ''} data-details-section="organisation">
-            <summary>Organisation</summary>
+          <details class="details" ${uiState.approvisionnementOpen ? 'open' : ''} data-details-section="approvisionnement">
+            <summary>Approvisionnement</summary>
             <div class="details-content grid">
               <section class="supplier-card supplier-card--edit">
                 <div class="supplier-dot-title"><span class="supplier-dot"></span><h4>Magasin physique</h4></div>
@@ -453,7 +459,12 @@
                   ${draft.livraisons.length ? draft.livraisons.map((rule, idx) => deliveryRuleFields(rule, idx)).join('') : '<p class="muted">Aucun paramètre de livraison ajouté.</p>'}
                 </div>
               </section>
+            </div>
+          </details>
 
+          <details class="details" ${uiState.noteOpen ? 'open' : ''} data-details-section="note">
+            <summary>Note interne</summary>
+            <div class="details-content grid">
               <div class="field field--full supplier-note-field"><label>Note interne</label><textarea class="input" name="noteInterne" rows="4">${esc(draft.noteInterne)}</textarea></div>
             </div>
           </details>
@@ -481,19 +492,20 @@
       qsa('[data-delivery-remove]', sheet).forEach(btn => btn.onclick = () => {
         syncDraftFromForm();
         draft.livraisons.splice(Number(btn.dataset.deliveryRemove), 1);
-        uiState.organisationOpen = true;
+        uiState.approvisionnementOpen = true;
         draw();
       });
       qs('[data-delivery-add]', sheet)?.addEventListener('click', () => {
         syncDraftFromForm();
         draft.livraisons.push(emptyDeliveryRule());
-        uiState.organisationOpen = true;
+        uiState.approvisionnementOpen = true;
         draw();
       });
       qsa('[data-details-section]', sheet).forEach(details => {
         details.addEventListener('toggle', () => {
           if (details.dataset.detailsSection === 'contacts') uiState.contactsOpen = details.open;
-          if (details.dataset.detailsSection === 'organisation') uiState.organisationOpen = details.open;
+          if (details.dataset.detailsSection === 'approvisionnement') uiState.approvisionnementOpen = details.open;
+          if (details.dataset.detailsSection === 'note') uiState.noteOpen = details.open;
         });
       });
 
