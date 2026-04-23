@@ -261,3 +261,8 @@
   .suppliers-selection-bar__actions .btn{flex:1 1 auto}
   .supplier-row-menu__body{grid-template-columns:1fr}
 }
+
+
+.supplier-card-lite,.supplier-card-lite *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.supplier-card-lite input,.supplier-card-lite textarea,.supplier-card-lite select,.supplier-card-lite .allow-select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+.supplier-card-lite,.supplier-row-menu,.supplier-sheet{touch-action:manipulation}

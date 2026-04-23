@@ -21,6 +21,12 @@
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
 html.sheet-open,body.sheet-open{overflow:hidden;height:100%}
 button,input,select,textarea{font:inherit}
+
+html{-webkit-text-size-adjust:100%;touch-action:manipulation}
+body{-webkit-tap-highlight-color:transparent}
+input,textarea,select{font-size:16px}
+.no-select,.icon-btn,.icon-square-btn,.btn,.nav-link,.item,.product-card,.supplier-card-lite,.supplier-sheet,.supplier-row-menu{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select,[contenteditable="true"],.allow-select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 button{cursor:pointer}
 .hidden{display:none!important}
 
