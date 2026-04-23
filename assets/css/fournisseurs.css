@@ -195,7 +195,7 @@
 .supplier-dot{width:10px;height:10px;border-radius:999px;background:var(--brand);flex:0 0 auto}
 .supplier-dot-title h4{margin:0}
 .supplier-card--delivery{margin-bottom:0}
-.supplier-organization-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.supplier-organization-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 .multi-select{
   position:relative;
 }
@@ -244,3 +244,5 @@
 @media (max-width: 920px){
   .supplier-organization-grid{grid-template-columns:1fr}
 }
+
+.supplier-note-field{margin-top:2px}
