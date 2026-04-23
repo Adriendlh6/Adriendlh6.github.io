@@ -487,3 +487,68 @@
   .print-chooser-actions{margin:0 -12px -10px;padding:10px 12px 0}
   .print-chooser-btn{min-width:110px;min-height:46px}
 }
+
+
+/* === Ajustements pop-up impression & code-barres === */
+.print-inline-check,
+.print-check-row{
+  padding:0 !important;
+  border:none !important;
+  background:transparent !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+.print-options-checks{
+  display:grid;
+  gap:10px;
+}
+.print-submenu{
+  border:1px solid rgba(216,199,180,.75) !important;
+  border-radius:16px !important;
+  background:#fff !important;
+  overflow:hidden;
+  box-shadow:none !important;
+}
+.print-submenu-summary{
+  padding:12px 14px !important;
+  font-weight:700 !important;
+  background:#fff !important;
+}
+.print-submenu-body{
+  padding:0 14px 14px !important;
+  display:grid;
+  gap:10px;
+  background:#fff !important;
+}
+.print-category-panel{
+  gap:10px !important;
+}
+.print-chooser .print-options-subgrid--two,
+.print-chooser .print-submenu-body{
+  grid-template-columns:1fr !important;
+}
+.print-options-card__head{
+  align-items:center !important;
+}
+.print-chooser .print-inline-check,
+.print-chooser .print-check-row{
+  grid-template-columns:24px minmax(0,1fr) !important;
+  align-items:center !important;
+}
+
+@media print{
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(1),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(1){width:15% !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(2),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(2){width:11% !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(3),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3){width:27% !important;text-align:center !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(6),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(6){width:8% !important;text-align:center !important;white-space:nowrap !important}
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(7),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(7),
+  body.printing-product #product-print-root .print-card .print-table th:nth-child(8),
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(8){width:10% !important;text-align:right !important;white-space:nowrap !important}
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) .ean-svg,
+  body.printing-product #product-print-root .print-card .print-table td:nth-child(3) svg.ean-svg{width:43mm !important;max-width:43mm !important;max-height:13mm !important;margin:0 auto !important}
+}
