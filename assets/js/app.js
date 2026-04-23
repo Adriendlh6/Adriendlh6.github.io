@@ -1,7 +1,8 @@
-const APP_VERSION = 'v3.0';
+const APP_VERSION = 'v3.1';
 const ROUTES = {
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
   fournisseurs: { title: 'Fournisseurs', file: 'pages/fournisseurs.html' },
+  parametres: { title: 'Paramètres', file: 'pages/parametres.html' },
 };
 
 const ROUTE_ASSETS = {
@@ -12,6 +13,10 @@ const ROUTE_ASSETS = {
   fournisseurs: {
     css: ['assets/css/fournisseurs.css'],
     js: ['assets/js/fournisseurs.js']
+  },
+  parametres: {
+    css: ['assets/css/parametres.css'],
+    js: ['assets/js/parametres.js']
   }
 };
 
@@ -41,6 +46,7 @@ function unloadRouteAssets(){
   qsa('[data-route-asset]').forEach(node => node.remove());
   delete window.FournisseursPage;
   delete window.MercurialePage;
+  delete window.ParametresPage;
 }
 
 function loadScriptAsset(src){
@@ -72,6 +78,7 @@ async function ensureRouteAssets(route){
 async function initCurrentPage(){
   if (state.route === 'mercuriale') return window.MercurialePage?.render?.();
   if (state.route === 'fournisseurs') return window.FournisseursPage?.render?.();
+  if (state.route === 'parametres') return window.ParametresPage?.render?.();
 }
 
 function renderRouteError(route, error){
