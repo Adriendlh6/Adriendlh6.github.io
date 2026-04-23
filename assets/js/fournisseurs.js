@@ -339,7 +339,7 @@
           </div>
           <div class="field">
             <label>Heure limite de commande</label>
-            <input class="input" type="time" name="livraison_heure_${idx}" value="${esc(rule.heureLimite || '')}">
+            <input class="input supplier-time-input" type="time" name="livraison_heure_${idx}" value="${esc(rule.heureLimite || '')}" step="900">
           </div>
           <div class="field">
             <label>Récurrence</label>

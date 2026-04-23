@@ -253,3 +253,27 @@
 .supplier-organization-grid input[type="time"],
 .supplier-organization-grid .input[type="time"]{min-width:0;width:100%;max-width:100%;}
 .supplier-organization-grid .field{overflow:hidden;}
+
+.supplier-time-input{
+  -webkit-appearance:none;
+  appearance:none;
+  box-sizing:border-box;
+  display:block;
+  inline-size:100%;
+  min-inline-size:0;
+  max-inline-size:100%;
+  min-height:48px;
+  padding-right:14px;
+  overflow:hidden;
+  background:#fff;
+}
+.supplier-time-input::-webkit-date-and-time-value{
+  text-align:left;
+}
+.supplier-time-input::-webkit-calendar-picker-indicator{
+  opacity:.8;
+  margin:0;
+}
+@supports (-webkit-touch-callout: none){
+  .supplier-time-input{font-size:16px;}
+}
