@@ -229,3 +229,12 @@
   .supplier-logo-editor{grid-template-columns:1fr}
   .supplier-logo-preview{width:96px;height:96px}
 }
+
+
+.supplier-mini-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:70}
+.supplier-mini-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,520px);background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 24px 80px rgba(29,17,8,.24);padding:14px;display:grid;gap:14px;z-index:75}
+.supplier-mini-modal__head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.supplier-mini-modal__head h4{margin:0}
+.supplier-mini-modal__body{display:grid;gap:12px}
+.supplier-mini-modal__actions{position:static;padding-top:0;background:none}
+@media (max-width:640px){.supplier-mini-modal{width:min(94vw,420px);padding:12px;border-radius:22px}}

@@ -451,7 +451,18 @@
     draft.contacts = Array.isArray(draft.contacts) && draft.contacts.length ? draft.contacts : [];
     draft.magasinPhysiqueJours = normalizeWeekdays(draft.magasinPhysiqueJours);
     draft.livraisons = Array.isArray(draft.livraisons) && draft.livraisons.length ? draft.livraisons : [];
-    const uiState = { logoOpen: false, contactsOpen: false, approvisionnementOpen: false, noteOpen: false, logoError: '' };
+    const uiState = {
+      logoOpen: false,
+      contactsOpen: false,
+      approvisionnementOpen: false,
+      noteOpen: false,
+      logoError: '',
+      logoUrlOpen: false,
+      logoDevOpen: false,
+      logoUrlInput: draft.logoUrl || '',
+      logoDevDomain: draft.logoDomain || draft.siteWeb || '',
+      logoDevName: draft.entrepriseNom || ''
+    };
 
     function syncDraftFromForm(){
       const form = qs('#supplier-edit-form', sheet);
@@ -512,20 +523,12 @@
                 <div class="supplier-logo-editor">
                   <img class="supplier-logo-preview" src="${getSupplierLogoSrc(draft)}" onerror="this.onerror=null;this.src='${DEFAULT_LOGO_DATA_URL}'" alt="Aperçu du logo">
                   <div class="supplier-logo-controls">
-                    <div class="field field--full">
-                      <label>URL du logo</label>
-                      <input class="input" type="url" name="logoUrl" value="${esc(draft.logoUrl || '')}" placeholder="https://...">
-                    </div>
-                    <div class="field field--full">
-                      <label>Domaine / site web</label>
-                      <input class="input" type="text" name="logoDomain" value="${esc(draft.logoDomain || draft.siteWeb || '')}" placeholder="puratos.fr">
-                    </div>
                     <div class="supplier-logo-actions">
-                      <button type="button" class="btn secondary" data-logo-import>Importer depuis l'URL</button>
-                      <button type="button" class="btn secondary" data-logo-autofetch>Récupérer via Logo.dev</button>
+                      <button type="button" class="btn secondary" data-logo-open-url>Importer depuis l'URL</button>
+                      <button type="button" class="btn secondary" data-logo-open-dev>Récupérer via Logo.dev</button>
                       <button type="button" class="btn secondary" data-logo-reset>Logo par défaut</button>
                     </div>
-                    <p class="muted supplier-logo-help">Tu peux soit importer une image via URL, soit récupérer automatiquement un logo depuis un domaine avec Logo.dev.</p>
+                    <p class="muted supplier-logo-help">Le logo reste affiché ici après import. Les URLs sont masquées du formulaire principal.</p>
                     ${uiState.logoError ? `<p class="form-error">${esc(uiState.logoError)}</p>` : ''}
                   </div>
                 </div>
@@ -580,6 +583,57 @@
             <button type="button" class="btn secondary" data-supplier-cancel>Annuler</button>
             <button type="submit" class="btn primary">Enregistrer le fournisseur</button>
           </div>
+
+          ${uiState.logoUrlOpen ? `
+            <div class="supplier-mini-modal-backdrop" data-logo-dialog-close></div>
+            <div class="supplier-mini-modal" role="dialog" aria-modal="true" aria-labelledby="supplier-logo-url-title">
+              <div class="supplier-mini-modal__head">
+                <div>
+                  <div class="sheet-kicker">Logo</div>
+                  <h4 id="supplier-logo-url-title">Importer depuis une URL</h4>
+                </div>
+                <button type="button" class="icon-close-btn" data-logo-dialog-close aria-label="Fermer">✕</button>
+              </div>
+              <div class="supplier-mini-modal__body grid">
+                <div class="field field--full">
+                  <label>URL du logo</label>
+                  <input class="input" type="url" data-logo-url-input value="${esc(uiState.logoUrlInput || '')}" placeholder="https://...">
+                </div>
+              </div>
+              <div class="sheet-footer-actions supplier-mini-modal__actions">
+                <button type="button" class="btn secondary" data-logo-dialog-close>Annuler</button>
+                <button type="button" class="btn primary" data-logo-import-confirm>Importer</button>
+              </div>
+            </div>
+          ` : ''}
+
+          ${uiState.logoDevOpen ? `
+            <div class="supplier-mini-modal-backdrop" data-logo-dev-close></div>
+            <div class="supplier-mini-modal" role="dialog" aria-modal="true" aria-labelledby="supplier-logo-dev-title">
+              <div class="supplier-mini-modal__head">
+                <div>
+                  <div class="sheet-kicker">Logo</div>
+                  <h4 id="supplier-logo-dev-title">Récupérer via Logo.dev</h4>
+                </div>
+                <button type="button" class="icon-close-btn" data-logo-dev-close aria-label="Fermer">✕</button>
+              </div>
+              <div class="supplier-mini-modal__body grid">
+                <div class="field field--full">
+                  <label>Domaine</label>
+                  <input class="input" type="text" data-logo-dev-domain value="${esc(uiState.logoDevDomain || '')}" placeholder="puratos.fr">
+                </div>
+                <div class="field field--full">
+                  <label>Nom de l’entreprise</label>
+                  <input class="input" type="text" data-logo-dev-name value="${esc(uiState.logoDevName || draft.entrepriseNom || '')}" placeholder="Puratos">
+                </div>
+                <p class="muted supplier-logo-help">Si un domaine est renseigné, il est prioritaire. Sinon, la recherche se fait avec le nom de l’entreprise.</p>
+              </div>
+              <div class="sheet-footer-actions supplier-mini-modal__actions">
+                <button type="button" class="btn secondary" data-logo-dev-close>Annuler</button>
+                <button type="button" class="btn primary" data-logo-dev-confirm>Récupérer</button>
+              </div>
+            </div>
+          ` : ''}
         </form>
       `;
       bindMultiSelectSummary(sheet);
@@ -608,31 +662,71 @@
         uiState.approvisionnementOpen = true;
         draw();
       });
-      qs('[data-logo-import]', sheet)?.addEventListener('click', async () => {
+      qs('[data-logo-open-url]', sheet)?.addEventListener('click', () => {
         syncDraftFromForm();
         uiState.logoError = '';
         uiState.logoOpen = true;
+        uiState.logoUrlInput = draft.logoUrl || '';
+        uiState.logoUrlOpen = true;
+        draw();
+      });
+      qsa('[data-logo-dialog-close]', sheet).forEach(btn => btn.addEventListener('click', () => {
+        uiState.logoUrlOpen = false;
+        draw();
+      }));
+      qs('[data-logo-import-confirm]', sheet)?.addEventListener('click', async () => {
+        syncDraftFromForm();
+        uiState.logoError = '';
+        uiState.logoOpen = true;
+        uiState.logoUrlInput = String(qs('[data-logo-url-input]', sheet)?.value || '').trim();
         try {
+          if (!uiState.logoUrlInput) throw new Error('Ajoute une URL de logo.');
+          draft.logoUrl = uiState.logoUrlInput;
           const imported = await fetchLogoAsDataUrl(draft.logoUrl);
           draft.logoDataUrl = imported;
+          uiState.logoUrlOpen = false;
         } catch (error) {
           uiState.logoError = error?.message || 'Import du logo impossible';
         }
         draw();
       });
-      qs('[data-logo-autofetch]', sheet)?.addEventListener('click', async () => {
+      qs('[data-logo-open-dev]', sheet)?.addEventListener('click', () => {
         syncDraftFromForm();
         uiState.logoError = '';
         uiState.logoOpen = true;
+        uiState.logoDevDomain = draft.logoDomain || draft.siteWeb || '';
+        uiState.logoDevName = draft.entrepriseNom || '';
+        uiState.logoDevOpen = true;
+        draw();
+      });
+      qsa('[data-logo-dev-close]', sheet).forEach(btn => btn.addEventListener('click', () => {
+        uiState.logoDevOpen = false;
+        draw();
+      }));
+      qs('[data-logo-dev-confirm]', sheet)?.addEventListener('click', async () => {
+        syncDraftFromForm();
+        uiState.logoError = '';
+        uiState.logoOpen = true;
+        uiState.logoDevDomain = normalizeDomain(qs('[data-logo-dev-domain]', sheet)?.value || '');
+        uiState.logoDevName = String(qs('[data-logo-dev-name]', sheet)?.value || '').trim();
         try {
           const token = getLogoDevPublishableKey();
           if (!token) throw new Error('Clé Logo.dev indisponible.');
-          const domain = inferLogoDomain(draft);
-          if (!domain) throw new Error('Ajoute un domaine ou un site web pour récupérer le logo.');
-          draft.logoDomain = domain;
-          draft.siteWeb = domain;
-          draft.logoUrl = buildLogoDevUrl(domain, token);
-          draft.logoDataUrl = await fetchLogoAsDataUrl(draft.logoUrl);
+          const domain = uiState.logoDevDomain || inferLogoDomain(draft);
+          const name = uiState.logoDevName || draft.entrepriseNom;
+          let resolvedUrl = '';
+          if (domain) {
+            draft.logoDomain = domain;
+            draft.siteWeb = domain;
+            resolvedUrl = buildLogoDevUrl(domain, token);
+          } else if (name) {
+            resolvedUrl = buildLogoDevNameUrl(name, token);
+          } else {
+            throw new Error('Ajoute un domaine ou un nom d’entreprise.');
+          }
+          draft.logoUrl = resolvedUrl;
+          draft.logoDataUrl = await fetchLogoAsDataUrl(resolvedUrl);
+          uiState.logoDevOpen = false;
         } catch (error) {
           uiState.logoError = error?.message || 'Récupération automatique du logo impossible';
         }
