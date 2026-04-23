@@ -155,3 +155,28 @@
   .suppliers-shell-actions{gap:8px}
   .suppliers-search-row{grid-template-columns:1fr}
 }
+
+
+.supplier-inline-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin:4px 0 10px;
+}
+.supplier-inline-head h4{margin:0}
+.supplier-contacts-section{display:grid;gap:8px;margin-bottom:12px}
+.supplier-form-footer{
+  margin-top:4px;
+}
+.supplier-form-footer .btn{
+  min-height:52px;
+}
+.supplier-card--edit .field label::after{content:''}
+.supplier-card--edit .field:has([required]) label::after{
+  content:' *';
+  color:var(--danger);
+}
+@media (max-width: 640px){
+  .supplier-form-footer{grid-template-columns:1fr}
+}

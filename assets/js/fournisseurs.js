@@ -264,11 +264,6 @@
             <button type="button" class="icon-btn" data-supplier-close>✕</button>
           </div>
 
-          <div class="supplier-sheet-actions">
-            <button type="button" class="btn secondary" data-supplier-cancel>Annuler</button>
-            <button type="submit" class="btn">Enregistrer</button>
-          </div>
-
           <div class="supplier-tabs">
             <button type="button" class="supplier-tab active" data-supplier-tab="infos">Infos</button>
             <button type="button" class="supplier-tab" disabled>Historique</button>
@@ -280,20 +275,22 @@
             <section class="supplier-card supplier-card--edit">
               <h4>Infos entreprise</h4>
               <div class="form-grid">
-                <div class="field"><label>Nom</label><input class="input" type="text" name="entrepriseNom" value="${esc(draft.entrepriseNom)}" required></div>
-                <div class="field"><label>Téléphone</label><input class="input" type="tel" name="entrepriseTelephone" value="${esc(draft.entrepriseTelephone)}"></div>
-                <div class="field"><label>Mail</label><input class="input" type="email" name="entrepriseMail" value="${esc(draft.entrepriseMail)}"></div>
-                <div class="field field--full"><label>Adresse</label><textarea class="input" name="entrepriseAdresse" rows="3">${esc(draft.entrepriseAdresse)}</textarea></div>
+                <div class="field"><label>Nom de l'entreprise</label><input class="input" type="text" name="entrepriseNom" value="${esc(draft.entrepriseNom)}" required></div>
+                <div class="field"><label>Téléphone</label><input class="input" type="tel" name="entrepriseTelephone" value="${esc(draft.entrepriseTelephone)}" required></div>
+                <div class="field"><label>Mail</label><input class="input" type="email" name="entrepriseMail" value="${esc(draft.entrepriseMail)}" required></div>
+                <div class="field field--full"><label>Adresse</label><textarea class="input" name="entrepriseAdresse" rows="3" required>${esc(draft.entrepriseAdresse)}</textarea></div>
               </div>
             </section>
 
-            <div id="supplier-contacts-wrap">
-              ${draft.contacts.map((contact, idx) => contactFields(contact, idx)).join('')}
-            </div>
-
-            <div class="toolbar">
-              <button type="button" class="btn secondary" data-contact-add>Ajouter un contact</button>
-            </div>
+            <section class="supplier-contacts-section">
+              <div class="supplier-inline-head supplier-inline-head--contacts">
+                <h4>Contacts</h4>
+                <button type="button" class="icon-square-btn primary" data-contact-add title="Ajouter un contact" aria-label="Ajouter un contact">＋</button>
+              </div>
+              <div id="supplier-contacts-wrap">
+                ${draft.contacts.map((contact, idx) => contactFields(contact, idx)).join('')}
+              </div>
+            </section>
 
             <section class="supplier-card supplier-card--edit">
               <h4>Organisation</h4>
@@ -303,6 +300,11 @@
                 <div class="field field--full"><label>Note interne</label><textarea class="input" name="noteInterne" rows="4">${esc(draft.noteInterne)}</textarea></div>
               </div>
             </section>
+          </div>
+
+          <div class="sheet-footer-actions supplier-form-footer">
+            <button type="button" class="btn secondary" data-supplier-cancel>Annuler</button>
+            <button type="submit" class="btn primary">Enregistrer</button>
           </div>
         </form>
       `;
