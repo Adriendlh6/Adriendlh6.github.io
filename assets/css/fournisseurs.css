@@ -319,3 +319,41 @@
 .supplier-product-row .chip-row{margin:0}
 
 .supplier-category-chip{background:color-mix(in srgb, var(--chip-color, #8b5e34) 18%, #fff);color:var(--chip-color, #8b5e34);border:1px solid color-mix(in srgb, var(--chip-color, #8b5e34) 32%, #fff)}
+
+/* Impression liste fournisseurs : gabarit aligné sur la mercuriale */
+.suppliers-print-root{display:none}
+
+@media print{
+  body.printing-suppliers .app-shell,
+  body.printing-suppliers .sheet-backdrop,
+  body.printing-suppliers .bottom-sheet,
+  body.printing-suppliers .topbar,
+  body.printing-suppliers .footer,
+  body.printing-suppliers .sidebar{display:none !important}
+  body.printing-suppliers{background:#fff}
+  body.printing-suppliers .suppliers-print-root{display:block !important}
+  body.printing-suppliers *{visibility:hidden}
+  body.printing-suppliers .suppliers-print-root,
+  body.printing-suppliers .suppliers-print-root *{visibility:visible}
+  body.printing-suppliers .suppliers-print-root{position:absolute;inset:0;padding:0;margin:0}
+
+  .suppliers-print-page{padding:18mm 14mm;color:#111;background:#fff;font-size:12pt}
+  .suppliers-print-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;margin-bottom:8mm}
+  .suppliers-print-header h1{margin:0 0 2mm;font-size:20pt;line-height:1.05}
+  .suppliers-print-header .print-app-name{font-weight:700;font-size:11pt}
+  .suppliers-print-header .print-subtitle{color:#444;font-size:10pt}
+  .suppliers-print-header .print-logo{display:block !important;width:22mm !important;height:22mm !important;object-fit:contain !important;flex:0 0 22mm !important}
+  .suppliers-print-card{border:1px solid #ccc;border-radius:4mm;padding:5mm;break-inside:avoid;overflow:visible}
+  .suppliers-print-table{width:100%;border-collapse:collapse;font-size:9.2pt;table-layout:fixed}
+  .suppliers-print-table th,
+  .suppliers-print-table td{border:1px solid #ccc;padding:2mm;text-align:left;vertical-align:top;word-break:break-word;line-height:1.18}
+  .suppliers-print-table thead th{background:#f0f0f0;font-weight:700}
+  .suppliers-print-table th:nth-child(1),.suppliers-print-table td:nth-child(1){width:21%}
+  .suppliers-print-table th:nth-child(2),.suppliers-print-table td:nth-child(2){width:15%}
+  .suppliers-print-table th:nth-child(3),.suppliers-print-table td:nth-child(3){width:19%}
+  .suppliers-print-table th:nth-child(4),.suppliers-print-table td:nth-child(4){width:13%}
+  .suppliers-print-table th:nth-child(5),.suppliers-print-table td:nth-child(5){width:16%}
+  .suppliers-print-table th:nth-child(6),.suppliers-print-table td:nth-child(6){width:16%}
+  .supplier-print-name strong{display:block;line-height:1.15}
+  .supplier-print-status{margin-top:1.2mm;color:#777;font-size:8pt}
+}
