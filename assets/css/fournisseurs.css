@@ -357,3 +357,39 @@
   .supplier-print-name strong{display:block;line-height:1.15}
   .supplier-print-status{margin-top:1.2mm;color:#777;font-size:8pt}
 }
+
+/* Impression liste fournisseurs */
+.suppliers-print-root{display:none}
+.suppliers-print-empty{text-align:center;color:#666;padding:8mm !important}
+
+@media print{
+  body.printing-suppliers .app-shell,
+  body.printing-suppliers .sheet-backdrop,
+  body.printing-suppliers .bottom-sheet,
+  body.printing-suppliers .topbar,
+  body.printing-suppliers .footer,
+  body.printing-suppliers .sidebar{display:none !important}
+  body.printing-suppliers{background:#fff}
+  body.printing-suppliers .suppliers-print-root{display:block !important}
+  body.printing-suppliers *{visibility:hidden}
+  body.printing-suppliers .suppliers-print-root,
+  body.printing-suppliers .suppliers-print-root *{visibility:visible}
+  body.printing-suppliers .suppliers-print-root{position:absolute;inset:0;padding:0;margin:0}
+
+  .print-page{padding:18mm 14mm;color:#111;background:#fff;font-size:12pt}
+  .print-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12mm;margin-bottom:8mm}
+  .print-header h1{margin:0 0 2mm;font-size:20pt;line-height:1.08}
+  .print-logo{width:34mm;height:auto;object-fit:contain}
+  .print-app-name{font-weight:700;font-size:11pt;margin-bottom:1mm}
+  .print-subtitle{color:#444;font-size:10pt}
+  .print-card{border:1px solid #ccc;border-radius:4mm;padding:5mm;break-inside:avoid;overflow:visible}
+  .print-table{width:100%;border-collapse:collapse;font-size:9.2pt}
+  .print-table th,.print-table td{border:1px solid #ccc;padding:2mm;text-align:left;vertical-align:top}
+  .print-table thead th{background:#f0f0f0;font-weight:700}
+  .suppliers-print-table th:nth-child(1){width:25%}
+  .suppliers-print-table th:nth-child(2){width:14%}
+  .suppliers-print-table th:nth-child(3){width:18%}
+  .suppliers-print-table th:nth-child(4){width:13%}
+  .suppliers-print-table th:nth-child(5){width:15%}
+  .suppliers-print-table th:nth-child(6){width:15%}
+}

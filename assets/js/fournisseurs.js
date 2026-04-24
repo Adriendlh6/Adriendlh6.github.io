@@ -1064,38 +1064,87 @@
     document.body.append(backdrop, modal);
   }
 
-  function printSuppliersSelection(items){
-    if (!Array.isArray(items) || !items.length) return;
-    const content = `
-      <html>
-        <head>
-          <title>Impression fournisseurs</title>
-          <style>
-            body{font-family:Arial,sans-serif;padding:24px;color:#111}
-            h1{font-size:22px;margin:0 0 18px}
-            table{width:100%;border-collapse:collapse}
-            th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:14px;vertical-align:top}
-            th{background:#f6f6f6}
-          </style>
-        </head>
-        <body>
-          <h1>Fournisseurs sélectionnés</h1>
-          <table>
-            <thead><tr><th>Entreprise</th><th>Interlocuteur</th><th>Téléphone</th></tr></thead>
-            <tbody>
-              ${items.map(item => `<tr><td>${esc(item.entrepriseNom || item.nom || 'N/C')}</td><td>${esc(getSupplierDisplayContact(item))}</td><td>${esc(getSupplierDisplayPhone(item))}</td></tr>`).join('')}
-            </tbody>
+  function getSupplierPrintRoot(){
+    let root = document.getElementById('suppliers-print-root');
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'suppliers-print-root';
+      root.className = 'suppliers-print-root';
+      document.body.appendChild(root);
+    }
+    return root;
+  }
+
+  function formatPrintDate(){
+    try {
+      return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short' }).format(new Date());
+    } catch {
+      return new Date().toLocaleString('fr-FR');
+    }
+  }
+
+  function buildSuppliersPrintMarkup(items, options={}){
+    const rows = Array.isArray(items) ? items : [];
+    const title = options.selection ? 'Liste fournisseurs — sélection' : 'Liste fournisseurs';
+    const subtitle = rows.length + ' fournisseur' + (rows.length > 1 ? 's' : '') + ' · Édité le ' + formatPrintDate();
+    const bodyRows = rows.length ? rows.map(item => {
+      return '<tr>'
+        + '<td><strong>' + esc(item.entrepriseNom || item.nom || 'N/C') + '</strong></td>'
+        + '<td>' + esc(item.entrepriseSiret || item.siret || 'N/C') + '</td>'
+        + '<td>' + esc(getSupplierDisplayContact(item) || 'N/C') + '</td>'
+        + '<td>' + esc(getSupplierDisplayPhone(item) || 'N/C') + '</td>'
+        + '<td>' + esc(item.entrepriseMail || item.mail || 'N/C') + '</td>'
+        + '<td>' + esc(item.entrepriseAdresse || item.adresse || 'N/C') + '</td>'
+        + '</tr>';
+    }).join('') : '<tr><td colspan="6" class="suppliers-print-empty">Aucun fournisseur à imprimer.</td></tr>';
+    return `
+      <section class="print-page suppliers-print-page">
+        <header class="print-header">
+          <div>
+            <div class="print-app-name">Copilot Boulangerie</div>
+            <h1>${esc(title)}</h1>
+            <div class="print-subtitle">${esc(subtitle)}</div>
+          </div>
+          <img src="assets/img/print-logo.png" alt="Copilot boulangerie" class="print-logo">
+        </header>
+
+        <section class="print-card">
+          <table class="print-table suppliers-print-table">
+            <thead>
+              <tr>
+                <th>Fournisseur</th>
+                <th>SIRET</th>
+                <th>Interlocuteur</th>
+                <th>Téléphone</th>
+                <th>Mail</th>
+                <th>Adresse</th>
+              </tr>
+            </thead>
+            <tbody>${bodyRows}</tbody>
           </table>
-        </body>
-      </html>
+        </section>
+      </section>
     `;
-    const win = window.open('', '_blank', 'noopener,noreferrer,width=900,height=700');
-    if (!win) return;
-    win.document.open();
-    win.document.write(content);
-    win.document.close();
-    win.focus();
-    setTimeout(() => win.print(), 150);
+  }
+
+  function printSuppliers(items, options={}){
+    const rows = Array.isArray(items) ? items : [];
+    if (!rows.length) {
+      alert('Aucun fournisseur à imprimer.');
+      return;
+    }
+    const root = getSupplierPrintRoot();
+    root.innerHTML = buildSuppliersPrintMarkup(rows, options);
+    document.body.classList.add('printing-suppliers');
+    const cleanup = () => {
+      document.body.classList.remove('printing-suppliers');
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
+    setTimeout(() => {
+      window.print();
+      setTimeout(cleanup, 800);
+    }, 80);
   }
 
   function bindRowInteractions(node, item, handlers={}){
@@ -1148,6 +1197,7 @@
     let showArchived = false;
     let selectionMode = false;
     const selectedIds = new Set();
+    let currentVisibleItems = [];
 
     const refreshList = async () => {
       list = await loadSuppliers();
@@ -1187,16 +1237,11 @@
       selectionBar.innerHTML = `
         <div class="suppliers-selection-bar__copy">${selectedIds.size} sélectionné${selectedIds.size > 1 ? 's' : ''}</div>
         <div class="suppliers-selection-bar__actions">
-          <button type="button" class="icon-square-btn" data-selection-print title="Imprimer la sélection">🖨️</button>
           <button type="button" class="icon-square-btn" data-selection-archive title="Archiver la sélection">🗂️</button>
           <button type="button" class="btn secondary" data-selection-cancel>Annuler</button>
         </div>
       `;
       qs('[data-selection-cancel]', selectionBar)?.addEventListener('click', exitSelectionMode);
-      qs('[data-selection-print]', selectionBar)?.addEventListener('click', () => {
-        const items = list.filter(item => selectedIds.has(item.id));
-        printSuppliersSelection(items);
-      });
       qs('[data-selection-archive]', selectionBar)?.addEventListener('click', async () => {
         const items = list.filter(item => selectedIds.has(item.id));
         for (const item of items) await archiveSupplier(item.id);
@@ -1224,6 +1269,7 @@
             ...contactBlob
           ].filter(Boolean).join(' ').toLowerCase().includes(term);
         });
+      currentVisibleItems = filtered;
 
       target.innerHTML = filtered.length
         ? filtered.map(item => supplierRowMarkup(item, { selected: selectedIds.has(item.id) })).join('')
@@ -1268,10 +1314,10 @@
     printBtn?.addEventListener('click', () => {
       if (selectionMode && selectedIds.size) {
         const items = list.filter(item => selectedIds.has(item.id));
-        printSuppliersSelection(items);
+        printSuppliers(items, { selection: true });
         return;
       }
-      alert("Impression fournisseurs à venir.");
+      printSuppliers(currentVisibleItems, { selection: false });
     });
     archivedToggle?.addEventListener('click', () => {
       showArchived = !showArchived;
