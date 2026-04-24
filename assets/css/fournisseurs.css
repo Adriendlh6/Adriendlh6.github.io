@@ -425,11 +425,11 @@
   body.printing-suppliers #suppliers-print-root .suppliers-print-table th:nth-child(2),
   body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(2){width:13% !important}
   body.printing-suppliers #suppliers-print-root .suppliers-print-table th:nth-child(3),
-  body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(3){width:18% !important}
+  body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(3){width:15% !important;white-space:nowrap !important}
   body.printing-suppliers #suppliers-print-root .suppliers-print-table th:nth-child(4),
-  body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(4){width:12% !important;white-space:nowrap !important}
+  body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(4){width:16% !important}
   body.printing-suppliers #suppliers-print-root .suppliers-print-table th:nth-child(5),
-  body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(5){width:16% !important}
+  body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(5){width:22% !important}
   body.printing-suppliers #suppliers-print-root .suppliers-print-table th:nth-child(6),
-  body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(6){width:18% !important}
+  body.printing-suppliers #suppliers-print-root .suppliers-print-table td:nth-child(6){width:11% !important;text-align:center !important;white-space:nowrap !important}
 }

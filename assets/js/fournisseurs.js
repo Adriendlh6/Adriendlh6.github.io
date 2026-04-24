@@ -65,6 +65,34 @@
     }).join(' · ');
   }
 
+  const WEEKDAY_SHORT_LABELS = {
+    Lundi: 'Lu',
+    Mardi: 'Ma',
+    Mercredi: 'Me',
+    Jeudi: 'Je',
+    Vendredi: 'Ve',
+    Samedi: 'Sa',
+    Dimanche: 'Di'
+  };
+
+  function shortWeekday(value){
+    const clean = String(value || '').trim();
+    return WEEKDAY_SHORT_LABELS[clean] || clean || 'N/C';
+  }
+
+  function formatDeliveryRulesForPrint(rules){
+    if (!Array.isArray(rules) || !rules.length) return 'N/C';
+    const lines = rules
+      .map(rule => {
+        const from = shortWeekday(rule?.jourCommande);
+        const to = shortWeekday(rule?.jourLivraison);
+        if (from === 'N/C' && to === 'N/C') return '';
+        return `${from} -> ${to}`;
+      })
+      .filter(Boolean);
+    return lines.length ? lines.join(' · ') : 'N/C';
+  }
+
   function firstNonEmpty(...values){
     for (const value of values){
       const clean = String(value || '').trim();
@@ -1091,10 +1119,10 @@
       return '<tr>'
         + '<td><strong>' + esc(item.entrepriseNom || item.nom || 'N/C') + '</strong></td>'
         + '<td>' + esc(item.entrepriseSiret || item.siret || 'N/C') + '</td>'
-        + '<td>' + esc(getSupplierDisplayContact(item) || 'N/C') + '</td>'
         + '<td>' + esc(getSupplierDisplayPhone(item) || 'N/C') + '</td>'
         + '<td>' + esc(item.entrepriseMail || item.mail || 'N/C') + '</td>'
         + '<td>' + esc(item.entrepriseAdresse || item.adresse || 'N/C') + '</td>'
+        + '<td>' + esc(formatDeliveryRulesForPrint(item.livraisons)) + '</td>'
         + '</tr>';
     }).join('') : '<tr><td colspan="6" class="suppliers-print-empty">Aucun fournisseur à imprimer.</td></tr>';
     return `
@@ -1116,10 +1144,10 @@
               <tr>
                 <th>Fournisseur</th>
                 <th>SIRET</th>
-                <th>Interlocuteur</th>
                 <th>Téléphone</th>
                 <th>Mail</th>
                 <th>Adresse</th>
+                <th>Livraison</th>
               </tr>
             </thead>
             <tbody>${bodyRows}</tbody>
