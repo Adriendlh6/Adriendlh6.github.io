@@ -43,12 +43,16 @@
     <details class="details" open>
       <summary><span class="section-icon">📊</span> Données financières</summary>
       <div class="details-content form-grid">
-        <div class="field"><label class="label-with-help">Chiffre d’affaires HT annuel <button type="button" class="field-info-btn" data-help="Total annuel des ventes hors taxes. Sert de base possible pour répartir les frais généraux." aria-label="Aide : chiffre d’affaires HT annuel">i</button></label><input name="caHT" inputmode="decimal"></div>
-        <div class="field"><label class="label-with-help">Achats matières HT annuels <button type="button" class="field-info-btn" data-help="Total annuel des achats de matières premières hors taxes : farines, beurre, œufs, emballages directement liés aux produits, etc." aria-label="Aide : achats matières HT annuels">i</button></label><input name="achatsMatieresHT" inputmode="decimal"></div>
-        <div class="field"><label class="label-with-help">Frais généraux annuels <button type="button" class="field-info-btn" data-help="Charges indirectes annuelles à répartir dans les coûts de revient : loyer, énergie, assurances, comptabilité, entretien, abonnements, petits équipements, etc." aria-label="Aide : frais généraux annuels">i</button></label><input name="fraisGeneraux" inputmode="decimal"></div>
-        <div class="field"><label class="label-with-help">Masse salariale production <button type="button" class="field-info-btn" data-help="Coût annuel du personnel directement lié à la production : salaires chargés, apprentis, extras de production si concernés." aria-label="Aide : masse salariale production">i</button></label><input name="masseSalarialeProduction" inputmode="decimal"></div>
-        <div class="field"><label class="label-with-help">Heures productives annuelles <button type="button" class="field-info-btn" data-help="Nombre d’heures réellement consacrées à la production sur l’année. Sert au calcul du coût horaire repère." aria-label="Aide : heures productives annuelles">i</button></label><input name="heuresProductives" inputmode="decimal"></div>
-        <div class="field"><label class="label-with-help">Base de répartition <button type="button" class="field-info-btn" data-help="Base utilisée pour répartir les frais généraux dans les futurs coûts de revient. À choisir selon la méthode que tu veux appliquer." aria-label="Aide : base de répartition">i</button></label><select name="baseRepartition"><option value=""></option><option value="ca">Chiffre d’affaires HT</option><option value="matiere">Achats matières HT</option><option value="salaires">Masse salariale production</option></select></div>
+        <div class="field"><label>Chiffre d’affaires HT annuel</label><input name="caHT" inputmode="decimal"></div>
+        <div class="field"><label>Achats matières HT annuels</label><input name="achatsMatieresHT" inputmode="decimal"></div>
+        <div class="field"><label>Frais généraux annuels</label><input name="fraisGeneraux" inputmode="decimal"></div>
+        <div class="field"><label>Masse salariale production</label><input name="masseSalarialeProduction" inputmode="decimal"></div>
+        <div class="field"><label>Heures productives annuelles</label><input name="heuresProductives" inputmode="decimal"></div>
+        <div class="field"><label>Base de répartition</label><select name="baseRepartition"><option value=""></option><option value="ca">Chiffre d’affaires HT</option><option value="matiere">Achats matières HT</option><option value="salaires">Masse salariale production</option></select></div>
+        <section class="base-help-card form-grid-span-full" aria-live="polite">
+          <div class="base-help-title"><span class="section-icon">💡</span><strong>Aide au choix de la base de répartition</strong></div>
+          <div id="company-base-help" class="base-help-content"></div>
+        </section>
       </div>
     </details>
 
