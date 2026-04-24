@@ -325,6 +325,7 @@
 .suppliers-print-empty{text-align:center;color:#666;padding:8mm !important}
 
 @media print{
+  @page{margin:6mm 4mm 7mm 4mm}
   body.printing-suppliers > *:not(#suppliers-print-root){display:none !important}
   body.printing-suppliers{background:#fff !important;color:#111 !important}
   body.printing-suppliers #suppliers-print-root{
@@ -351,7 +352,7 @@
     width:100% !important;
     max-width:none !important;
     margin:0 !important;
-    padding:18mm 14mm !important;
+    padding:8mm 6mm !important;
     background:#fff !important;
     color:#111 !important;
     font-size:12pt !important;
