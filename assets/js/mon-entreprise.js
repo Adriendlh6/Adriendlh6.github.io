@@ -100,15 +100,31 @@
     return `<div class="field form-grid-span-full"><label for="${esc(name)}">${esc(label)}</label><textarea id="${esc(name)}" name="${esc(name)}" rows="${rows}">${esc(value)}</textarea></div>`;
   }
 
-  function updateKpis(){
-    const calc=compute(company || empty());
-    const coef=calc.coefficient?new Intl.NumberFormat('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(calc.coefficient):'N/C';
-    const rate=calc.base.amount?pct(calc.rate):'N/C';
-    const hour=calc.coutHoraire?`${euro(calc.coutHoraire)} / h`:'N/C';
-    const a=qs('#company-kpi-coef'), b=qs('#company-kpi-rate'), d=qs('#company-kpi-hour');
-    if(a) a.textContent=coef;
-    if(b) b.textContent=rate;
-    if(d) d.textContent=hour;
+  function ncl(v){ return String(v || '').trim() || 'N/C'; }
+
+  function renderIdentitySummary(){
+    const root=qs('#company-identity-summary');
+    if(!root) return;
+    const c=company || empty();
+    const title=ncl(c.nomCommercial || c.raisonSociale);
+    const legal=ncl(c.raisonSociale || c.nomCommercial);
+    root.innerHTML=`
+      <div class="company-identity-summary-logo">
+        <img src="${esc(companyLogoSrc(c))}" alt="Logo entreprise">
+      </div>
+      <div class="company-identity-summary-main">
+        <div class="company-identity-summary-head">
+          <span>Carte d’identité</span>
+          <strong>${esc(title)}</strong>
+        </div>
+        <div class="company-identity-summary-grid">
+          <div><small>Raison sociale</small><b>${esc(legal)}</b></div>
+          <div><small>SIRET</small><b>${esc(ncl(c.siret))}</b></div>
+          <div><small>Téléphone</small><b>${esc(ncl(c.telephone))}</b></div>
+          <div><small>Mail</small><b>${esc(ncl(c.mail))}</b></div>
+          <div class="span-full"><small>Adresse</small><b>${esc(ncl(c.adresse))}</b></div>
+        </div>
+      </div>`;
   }
 
   function row({id, icon, title, subtitle, meta}){
@@ -138,7 +154,7 @@
       ${row({id:'calculation', icon:'🧮', title:'Coefficient frais généraux', subtitle:`Coefficient : ${coef} · Taux : ${calc.base.amount ? pct(calc.rate) : 'N/C'}`, meta:calc.coutHoraire ? `${euro(calc.coutHoraire)} / h` : ''})}
       ${row({id:'note', icon:'📝', title:'Note interne', subtitle:c.note ? 'Note renseignée' : 'Aucune note', meta:''})}
     `;
-    updateKpis();
+    renderIdentitySummary();
   }
 
   function openSheet(title, icon, body, onSave, options={}){
@@ -196,7 +212,7 @@
   async function persist(){
     company=normalize({...company, updatedAt:new Date().toISOString()});
     await AppDB.put(STORE, company);
-    updateKpis();
+    renderIdentitySummary();
   }
 
   function openIdentity(){
@@ -423,11 +439,6 @@
       if(section==='financial') openFinancial();
       if(section==='calculation') openCalculation();
       if(section==='note') openNote();
-    });
-    qs('#save-company-top-btn')?.addEventListener('click', async ()=>{
-      await persist();
-      const btn=qs('#save-company-top-btn');
-      if(btn){ const old=btn.textContent; btn.textContent='✓'; setTimeout(()=>btn.textContent=old,700); }
     });
   }
 
