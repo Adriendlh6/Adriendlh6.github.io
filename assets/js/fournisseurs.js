@@ -1129,7 +1129,7 @@
       <section class="print-page suppliers-print-page">
         <header class="print-header print-header--product suppliers-print-header">
           <div class="print-header-brand">
-            <img src="assets/img/print-logo.png" alt="Copilot boulangerie" class="print-logo">
+            <span class="print-logo-frame"><img src="assets/img/print-logo.png" alt="Copilot boulangerie" class="print-logo"></span>
             <div>
               <div class="print-app-name">Copilot boulangerie</div>
               <h1>${esc(title)}</h1>
@@ -1166,21 +1166,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="format-detection" content="telephone=no,email=no,address=no,date=no">
   <title>Impression fournisseurs</title>
   <style>
     @page{margin:6mm 4mm 7mm 4mm}
     *{box-sizing:border-box}
     html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     .suppliers-print-page{display:block;width:100%;max-width:none;margin:0;padding:8mm 6mm;background:#fff;color:#111;font-size:12pt}
-    .suppliers-print-header{display:flex;align-items:center;justify-content:flex-start;gap:8mm;margin-bottom:3.5mm}
+    .suppliers-print-header{display:flex;align-items:center;justify-content:flex-start;gap:8mm;margin:0 0 3.5mm 0}
     .print-header-brand{display:flex;align-items:center;gap:5mm}
-    .print-logo{display:block;width:22mm;height:22mm;object-fit:contain;flex:0 0 22mm}
+    .print-logo-frame{width:22mm;height:22mm;flex:0 0 22mm;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .print-logo{display:block;width:22mm;height:22mm;object-fit:contain;object-position:center center;max-width:22mm;max-height:22mm}
     .print-app-name{font-weight:700;font-size:11pt;margin-bottom:1mm}
     .suppliers-print-header h1{margin:0 0 1mm;font-size:18pt;line-height:1.08}
     .print-subtitle{color:#444;font-size:10pt}
     .suppliers-print-card{border:1px solid #ccc;border-radius:4mm;padding:4.5mm;break-inside:auto;page-break-inside:auto;overflow:visible}
     .suppliers-print-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.7pt}
-    .suppliers-print-table th,.suppliers-print-table td{border:1px solid #ccc;padding:1.8mm 1.6mm;text-align:left;vertical-align:middle;line-height:1.14;word-break:break-word;overflow-wrap:anywhere}
+    .suppliers-print-table th,.suppliers-print-table td{border:1px solid #ccc;padding:1.8mm 1.6mm;text-align:left;vertical-align:middle;line-height:1.14;word-break:break-word;overflow-wrap:anywhere;color:#111 !important;text-decoration:none !important}
+    .suppliers-print-table a,.suppliers-print-table a:visited,.suppliers-print-table a:active{color:#111 !important;text-decoration:none !important}
     .suppliers-print-table thead th{background:#f7f2ea;color:#4d3a28;font-weight:700;font-size:8.1pt;letter-spacing:.01em}
     .suppliers-print-table th:nth-child(1),.suppliers-print-table td:nth-child(1){width:23%}
     .suppliers-print-table th:nth-child(2),.suppliers-print-table td:nth-child(2){width:13%}
