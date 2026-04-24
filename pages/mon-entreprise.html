@@ -1,105 +1,17 @@
-<section class="card company-page">
-  <div class="company-header">
+<section class="company-page" id="company-page">
+  <div class="company-main-header card">
     <div>
       <h2>Mon entreprise</h2>
-      <p class="muted">Identité, informations de devis et données financières pour les coûts de revient.</p>
+      <p class="muted">Informations générales, devis, salariés et paramètres financiers.</p>
     </div>
-    <div class="company-actions">
-      <button id="save-company-top-btn" class="icon-square-btn primary" type="button" aria-label="Enregistrer" title="Enregistrer">✓</button>
-    </div>
+    <button id="save-company-top-btn" class="icon-square-btn primary" type="button" aria-label="Enregistrer" title="Enregistrer">✓</button>
   </div>
 
   <div class="company-summary-grid">
-    <article class="company-kpi-card"><span>Coefficient frais généraux</span><strong id="company-kpi-coef">N/C</strong><small>À appliquer selon la base choisie.</small></article>
-    <article class="company-kpi-card"><span>Taux frais généraux</span><strong id="company-kpi-rate">N/C</strong><small>Frais généraux / base de répartition.</small></article>
-    <article class="company-kpi-card"><span>Coût horaire repère</span><strong id="company-kpi-hour">N/C</strong><small>MO production + frais généraux / heures productives.</small></article>
+    <article class="company-kpi-card"><span>Coefficient frais généraux</span><strong id="company-kpi-coef">N/C</strong><small>Selon la base de répartition.</small></article>
+    <article class="company-kpi-card"><span>Taux frais généraux</span><strong id="company-kpi-rate">N/C</strong><small>Frais généraux / base.</small></article>
+    <article class="company-kpi-card"><span>Coût horaire repère</span><strong id="company-kpi-hour">N/C</strong><small>Production + frais généraux / heures.</small></article>
   </div>
 
-  <form id="company-form" class="grid company-form" novalidate>
-    <details class="details">
-      <summary><span class="section-icon">🏢</span> Identité de l’entreprise</summary>
-      <div class="details-content form-grid">
-        <div class="field"><label>Nom commercial</label><input name="nomCommercial" autocomplete="organization"></div>
-        <div class="field"><label>Raison sociale</label><input name="raisonSociale" autocomplete="organization"></div>
-        <div class="field"><label>SIRET</label><input name="siret" inputmode="numeric" autocomplete="off"></div>
-        <div class="field"><label>TVA intracommunautaire</label><input name="tvaIntracom" autocomplete="off"></div>
-        <div class="field"><label>Téléphone</label><input name="telephone" inputmode="tel" autocomplete="tel"></div>
-        <div class="field"><label>Mail</label><input name="mail" type="email" autocomplete="email"></div>
-        <div class="field form-grid-span-full"><label>Adresse</label><textarea name="adresse" rows="3" autocomplete="street-address"></textarea></div>
-      </div>
-    </details>
-
-    <details class="details">
-      <summary><span class="section-icon">🧾</span> Informations devis</summary>
-      <div class="details-content form-grid">
-        <div class="field"><label>Validité des devis</label><input name="validiteDevisJours" inputmode="numeric"></div>
-        <div class="field"><label>Délai de paiement</label><input name="delaiPaiement"></div>
-        <div class="field"><label>TVA par défaut</label><select name="tvaDefault"><option value=""></option><option value="0">0 %</option><option value="2.1">2,1 %</option><option value="5.5">5,5 %</option><option value="10">10 %</option><option value="20">20 %</option></select></div>
-        <div class="field"><label>Préfixe devis</label><input name="prefixeDevis"></div>
-        <div class="field form-grid-span-full"><label>Mentions / conditions par défaut</label><textarea name="mentionsDevis" rows="4"></textarea></div>
-      </div>
-    </details>
-
-    <details class="details">
-      <summary><span class="section-icon">📊</span> Données financières</summary>
-      <div class="details-content form-grid">
-        <div class="field"><label>Chiffre d’affaires HT annuel <button type="button" class="info-dot" data-info-title="Chiffre d’affaires HT" data-info="Total des ventes hors taxes sur une année complète. Il sert de base simple si tu veux répartir les frais généraux par rapport au niveau de vente.">i</button></label><input name="caHT" inputmode="decimal"></div>
-        <div class="field"><label>Achats matières HT annuels <button type="button" class="info-dot" data-info-title="Achats matières HT" data-info="Total annuel des achats de matières premières hors taxes. Cette base est utile si les ingrédients pilotent fortement le coût de revient.">i</button></label><input name="achatsMatieresHT" inputmode="decimal"></div>
-        <div class="field"><label>Frais généraux annuels <button type="button" class="info-dot" data-info-title="Frais généraux" data-info="Charges indirectes annuelles : loyer, énergie, assurance, entretien, petit matériel, frais administratifs, comptabilité, abonnements, etc. Hors matières directes.">i</button></label><input name="fraisGeneraux" inputmode="decimal"></div>
-        <div class="field"><label>Masse salariale vente / direction <button type="button" class="info-dot" data-info-title="Masse salariale vente / direction" data-info="Salaires, charges, primes et rémunérations liées à la vente, l’administratif, la gestion et la direction. À distinguer de la rémunération directement liée à la production.">i</button></label><input name="masseSalarialeVenteDirection" inputmode="decimal"></div>
-        <div class="field"><label>Rémunération production annuelle <button type="button" class="info-dot" data-info-title="Rémunération production" data-info="Coût annuel employeur des personnes qui produisent directement. Le mini-menu Personnel de production peut remplir ce montant automatiquement.">i</button></label><input name="masseSalarialeProduction" inputmode="decimal"></div>
-        <div class="field"><label>Semaines productives annuelles <button type="button" class="info-dot" data-info-title="Semaines productives" data-info="Nombre de semaines réellement travaillées en production sur l’année, après congés, fermetures, absences prévisibles et formations.">i</button></label><input name="semainesProductives" inputmode="decimal"></div>
-        <div class="field"><label>Heures productives annuelles <button type="button" class="info-dot" data-info-title="Heures productives" data-info="Total annuel des heures réellement passées en production. Le calcul peut être automatisé depuis le mini-menu Personnel de production.">i</button></label><input name="heuresProductives" inputmode="decimal"></div>
-        <div class="field"><label>Base de répartition <button type="button" class="info-dot" data-info-title="Base de répartition" data-info="Base utilisée pour répartir les frais généraux dans les futurs coûts de revient : chiffre d’affaires, matières ou rémunération de production.">i</button></label><select name="baseRepartition"><option value=""></option><option value="ca">Chiffre d’affaires HT</option><option value="matiere">Achats matières HT</option><option value="salaires">Rémunération production</option></select></div>
-
-        <details class="details helper-details production-staff-card form-grid-span-full">
-          <summary><span class="section-icon">👨‍🍳</span> Personnel de production</summary>
-          <div class="details-content production-staff-content">
-            <div class="production-staff-head">
-              <p>Ajoute uniquement le personnel directement affecté à la production. Le coût annuel employeur inclut salaire, charges et primes.</p>
-              <button type="button" class="btn secondary small" id="add-production-staff-btn">+ Ajouter un salarié</button>
-            </div>
-            <div id="production-staff-list" class="production-staff-list"></div>
-            <div class="production-staff-summary" id="production-staff-summary"></div>
-          </div>
-        </details>
-
-        <details class="details helper-details base-help-card form-grid-span-full">
-          <summary><span class="section-icon">💡</span> Aide au choix de la base de répartition</summary>
-          <div id="company-base-help" class="base-help-content details-content" aria-live="polite"></div>
-        </details>
-
-        <details class="details helper-details production-hours-help form-grid-span-full">
-          <summary><span class="section-icon">⏱️</span> Méthode pour calculer les heures productives annuelles</summary>
-          <div class="details-content hours-method-content">
-            <p><strong>Méthode recommandée :</strong> partir du personnel réellement en production, puis multiplier les heures hebdomadaires par les semaines productives de l’année.</p>
-            <div class="hours-formula">Heures productives annuelles = somme des heures hebdomadaires production × semaines productives annuelles</div>
-            <ul>
-              <li>Retirer les congés, jours fériés, fermetures, absences prévisibles et formations.</li>
-              <li>Retirer aussi le temps non productif : commandes, administratif, réception fournisseur, pauses longues, gestion.</li>
-              <li>La moyenne des heures par salarié est calculée automatiquement dans le tableau Personnel de production.</li>
-            </ul>
-          </div>
-        </details>
-      </div>
-    </details>
-
-    <details class="details company-result-card">
-      <summary><span class="section-icon">🧮</span> Calcul du coefficient de frais généraux</summary>
-      <div class="details-content">
-        <p class="muted">Ce coefficient servira de repère pour les futurs calculs de coûts de revient.</p>
-        <div id="company-calculation-grid" class="company-calculation-grid"></div>
-      </div>
-    </details>
-
-    <details class="details">
-      <summary><span class="section-icon">📝</span> Note interne</summary>
-      <div class="details-content"><textarea name="note" rows="5"></textarea></div>
-    </details>
-
-    <div class="sheet-footer-actions company-footer-actions">
-      <button id="reset-company-btn" class="btn secondary" type="button">Réinitialiser</button>
-      <button class="btn primary" type="submit">Enregistrer mon entreprise</button>
-    </div>
-  </form>
+  <div id="company-lines" class="company-lines" aria-live="polite"></div>
 </section>
