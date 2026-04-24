@@ -1157,24 +1157,102 @@
     `;
   }
 
+  function buildSuppliersPrintDocument(items, options={}){
+    const logoUrl = new URL('assets/img/print-logo.png', window.location.href).href;
+    const markup = buildSuppliersPrintMarkup(items, options)
+      .replace('src="assets/img/print-logo.png"', 'src="' + esc(logoUrl) + '"');
+    return `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Impression fournisseurs</title>
+  <style>
+    @page{margin:6mm 4mm 7mm 4mm}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .suppliers-print-page{display:block;width:100%;max-width:none;margin:0;padding:8mm 6mm;background:#fff;color:#111;font-size:12pt}
+    .suppliers-print-header{display:flex;align-items:center;justify-content:flex-start;gap:8mm;margin-bottom:3.5mm}
+    .print-header-brand{display:flex;align-items:center;gap:5mm}
+    .print-logo{display:block;width:22mm;height:22mm;object-fit:contain;flex:0 0 22mm}
+    .print-app-name{font-weight:700;font-size:11pt;margin-bottom:1mm}
+    .suppliers-print-header h1{margin:0 0 1mm;font-size:18pt;line-height:1.08}
+    .print-subtitle{color:#444;font-size:10pt}
+    .suppliers-print-card{border:1px solid #ccc;border-radius:4mm;padding:4.5mm;break-inside:auto;page-break-inside:auto;overflow:visible}
+    .suppliers-print-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.7pt}
+    .suppliers-print-table th,.suppliers-print-table td{border:1px solid #ccc;padding:1.8mm 1.6mm;text-align:left;vertical-align:middle;line-height:1.14;word-break:break-word;overflow-wrap:anywhere}
+    .suppliers-print-table thead th{background:#f7f2ea;color:#4d3a28;font-weight:700;font-size:8.1pt;letter-spacing:.01em}
+    .suppliers-print-table th:nth-child(1),.suppliers-print-table td:nth-child(1){width:23%}
+    .suppliers-print-table th:nth-child(2),.suppliers-print-table td:nth-child(2){width:13%}
+    .suppliers-print-table th:nth-child(3),.suppliers-print-table td:nth-child(3){width:15%;white-space:nowrap}
+    .suppliers-print-table th:nth-child(4),.suppliers-print-table td:nth-child(4){width:16%}
+    .suppliers-print-table th:nth-child(5),.suppliers-print-table td:nth-child(5){width:22%}
+    .suppliers-print-table th:nth-child(6),.suppliers-print-table td:nth-child(6){width:11%;text-align:center;white-space:nowrap}
+    .suppliers-print-empty{text-align:center;color:#666;padding:8mm !important}
+  </style>
+</head>
+<body>${markup}</body>
+</html>`;
+  }
+
   function printSuppliers(items, options={}){
     const rows = Array.isArray(items) ? items : [];
     if (!rows.length) {
       alert('Aucun fournisseur à imprimer.');
       return;
     }
-    const root = getSupplierPrintRoot();
-    root.innerHTML = buildSuppliersPrintMarkup(rows, options);
-    document.body.classList.add('printing-suppliers');
+
+    const previous = document.getElementById('suppliers-print-frame');
+    if (previous) previous.remove();
+
+    const frame = document.createElement('iframe');
+    frame.id = 'suppliers-print-frame';
+    frame.title = 'Impression fournisseurs';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.position = 'fixed';
+    frame.style.left = '-10000px';
+    frame.style.top = '0';
+    frame.style.width = '1px';
+    frame.style.height = '1px';
+    frame.style.border = '0';
+    frame.style.opacity = '0';
+    frame.style.pointerEvents = 'none';
+    document.body.appendChild(frame);
+
+    const doc = frame.contentDocument || frame.contentWindow?.document;
+    if (!doc || !frame.contentWindow) {
+      frame.remove();
+      alert('Impossible de préparer l’impression.');
+      return;
+    }
+
     const cleanup = () => {
-      document.body.classList.remove('printing-suppliers');
-      window.removeEventListener('afterprint', cleanup);
+      setTimeout(() => frame.remove(), 600);
     };
-    window.addEventListener('afterprint', cleanup);
-    setTimeout(() => {
-      window.print();
-      setTimeout(cleanup, 800);
-    }, 80);
+
+    let launched = false;
+    const launchPrint = () => {
+      if (launched) return;
+      launched = true;
+      try {
+        frame.contentWindow.focus();
+        frame.contentWindow.addEventListener('afterprint', cleanup, { once:true });
+        setTimeout(() => {
+          frame.contentWindow.print();
+          setTimeout(cleanup, 15000);
+        }, 120);
+      } catch (error) {
+        console.error('[fournisseurs:print]', error);
+        cleanup();
+        alert('Impossible de lancer l’impression.');
+      }
+    };
+
+    frame.onload = launchPrint;
+    doc.open();
+    doc.write(buildSuppliersPrintDocument(rows, options));
+    doc.close();
+    setTimeout(launchPrint, 300);
   }
 
   function bindRowInteractions(node, item, handlers={}){
