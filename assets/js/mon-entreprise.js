@@ -182,7 +182,7 @@
         <form class="company-sheet-body" id="company-sheet-form">${body}</form>
         <footer class="sheet-footer-actions company-sheet-footer">
           <button type="button" class="btn secondary" data-sheet-close>Annuler</button>
-          ${options.readonly ? '' : '<button type="submit" class="btn primary">Enregistrer</button>'}
+          ${options.readonly ? '' : '<button type="submit" form="company-sheet-form" class="btn primary">Enregistrer</button>'}
         </footer>
       </section>`;
     document.body.appendChild(wrap);
