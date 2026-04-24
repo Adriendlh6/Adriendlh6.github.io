@@ -115,6 +115,7 @@
   function openLinkedProductDetail(productId){
     if (!productId) return;
     try { sessionStorage.setItem('copilot_open_product_id', String(productId)); } catch {}
+    if (typeof window.loadRoute === 'function') return window.loadRoute('mercuriale');
     if ((location.hash || '').replace('#','') !== 'mercuriale') location.hash = '#mercuriale';
     else window.MercurialePage?.openDetailById?.(String(productId));
   }

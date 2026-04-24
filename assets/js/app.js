@@ -118,6 +118,13 @@ async function loadRoute(route){
 function openSidebar(){ qs('#sidebar').classList.add('open'); qs('#overlay').classList.remove('hidden'); }
 function closeSidebar(){ qs('#sidebar').classList.remove('open'); qs('#overlay').classList.add('hidden'); }
 
+window.loadRoute = loadRoute;
+
+function handleHashChange(){
+  const next = (location.hash || '#mercuriale').replace('#','');
+  if (next && next !== state.route) loadRoute(next);
+}
+
 function initShell(){
   qs('#footerVersion').textContent = APP_VERSION;
   qsa('.nav-link').forEach(btn => btn.onclick = () => loadRoute(btn.dataset.route));
@@ -125,6 +132,7 @@ function initShell(){
   qs('#overlay').onclick = closeSidebar;
   const initial = (location.hash || '#mercuriale').replace('#','');
   loadRoute(initial);
+  window.addEventListener('hashchange', handleHashChange);
 }
 
 document.addEventListener('DOMContentLoaded', initShell);
