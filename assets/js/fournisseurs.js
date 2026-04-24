@@ -1099,16 +1099,18 @@
     }).join('') : '<tr><td colspan="6" class="suppliers-print-empty">Aucun fournisseur à imprimer.</td></tr>';
     return `
       <section class="print-page suppliers-print-page">
-        <header class="print-header">
-          <div>
-            <div class="print-app-name">Copilot Boulangerie</div>
-            <h1>${esc(title)}</h1>
-            <div class="print-subtitle">${esc(subtitle)}</div>
+        <header class="print-header print-header--product suppliers-print-header">
+          <div class="print-header-brand">
+            <img src="assets/img/print-logo.png" alt="Copilot boulangerie" class="print-logo">
+            <div>
+              <div class="print-app-name">Copilot boulangerie</div>
+              <h1>${esc(title)}</h1>
+              <div class="print-subtitle">${esc(subtitle)}</div>
+            </div>
           </div>
-          <img src="assets/img/print-logo.png" alt="Copilot boulangerie" class="print-logo">
         </header>
 
-        <section class="print-card">
+        <section class="print-card suppliers-print-card">
           <table class="print-table suppliers-print-table">
             <thead>
               <tr>
