@@ -19,10 +19,10 @@
     <details class="details" open>
       <summary><span class="section-icon">🏢</span> Identité de l’entreprise</summary>
       <div class="details-content form-grid">
-        <div class="field"><label>Nom commercial</label><input name="nomCommercial" autocomplete="organization" placeholder="Ex : Maison André"></div>
-        <div class="field"><label>Raison sociale</label><input name="raisonSociale" autocomplete="organization" placeholder="Ex : SARL Maison André"></div>
-        <div class="field"><label>SIRET</label><input name="siret" inputmode="numeric" autocomplete="off" placeholder="14 chiffres"></div>
-        <div class="field"><label>TVA intracommunautaire</label><input name="tvaIntracom" autocomplete="off" placeholder="FR..."></div>
+        <div class="field"><label>Nom commercial</label><input name="nomCommercial" autocomplete="organization"></div>
+        <div class="field"><label>Raison sociale</label><input name="raisonSociale" autocomplete="organization"></div>
+        <div class="field"><label>SIRET</label><input name="siret" inputmode="numeric" autocomplete="off"></div>
+        <div class="field"><label>TVA intracommunautaire</label><input name="tvaIntracom" autocomplete="off"></div>
         <div class="field"><label>Téléphone</label><input name="telephone" inputmode="tel" autocomplete="tel"></div>
         <div class="field"><label>Mail</label><input name="mail" type="email" autocomplete="email"></div>
         <div class="field form-grid-span-full"><label>Adresse</label><textarea name="adresse" rows="3" autocomplete="street-address"></textarea></div>
@@ -32,23 +32,23 @@
     <details class="details" open>
       <summary><span class="section-icon">🧾</span> Informations devis</summary>
       <div class="details-content form-grid">
-        <div class="field"><label>Validité des devis</label><input name="validiteDevisJours" inputmode="numeric" placeholder="30"></div>
-        <div class="field"><label>Délai de paiement</label><input name="delaiPaiement" placeholder="À réception, 30 jours..."></div>
-        <div class="field"><label>TVA par défaut</label><select name="tvaDefault"><option value="0">0 %</option><option value="2.1">2,1 %</option><option value="5.5" selected>5,5 %</option><option value="10">10 %</option><option value="20">20 %</option></select></div>
-        <div class="field"><label>Préfixe devis</label><input name="prefixeDevis" placeholder="DEV"></div>
-        <div class="field form-grid-span-full"><label>Mentions / conditions par défaut</label><textarea name="mentionsDevis" rows="4" placeholder="Conditions de règlement, pénalités, livraison..."></textarea></div>
+        <div class="field"><label>Validité des devis</label><input name="validiteDevisJours" inputmode="numeric"></div>
+        <div class="field"><label>Délai de paiement</label><input name="delaiPaiement"></div>
+        <div class="field"><label>TVA par défaut</label><select name="tvaDefault"><option value=""></option><option value="0">0 %</option><option value="2.1">2,1 %</option><option value="5.5">5,5 %</option><option value="10">10 %</option><option value="20">20 %</option></select></div>
+        <div class="field"><label>Préfixe devis</label><input name="prefixeDevis"></div>
+        <div class="field form-grid-span-full"><label>Mentions / conditions par défaut</label><textarea name="mentionsDevis" rows="4"></textarea></div>
       </div>
     </details>
 
     <details class="details" open>
       <summary><span class="section-icon">📊</span> Données financières</summary>
       <div class="details-content form-grid">
-        <div class="field"><label>Chiffre d’affaires HT annuel</label><input name="caHT" inputmode="decimal" placeholder="0,00"></div>
-        <div class="field"><label>Achats matières HT annuels</label><input name="achatsMatieresHT" inputmode="decimal" placeholder="0,00"></div>
-        <div class="field"><label>Frais généraux annuels</label><input name="fraisGeneraux" inputmode="decimal" placeholder="0,00"></div>
-        <div class="field"><label>Masse salariale production</label><input name="masseSalarialeProduction" inputmode="decimal" placeholder="0,00"></div>
-        <div class="field"><label>Heures productives annuelles</label><input name="heuresProductives" inputmode="decimal" placeholder="0"></div>
-        <div class="field"><label>Base de répartition</label><select name="baseRepartition"><option value="ca">Chiffre d’affaires HT</option><option value="matiere">Achats matières HT</option><option value="salaires">Masse salariale production</option></select></div>
+        <div class="field"><label>Chiffre d’affaires HT annuel</label><input name="caHT" inputmode="decimal"></div>
+        <div class="field"><label>Achats matières HT annuels</label><input name="achatsMatieresHT" inputmode="decimal"></div>
+        <div class="field"><label>Frais généraux annuels</label><input name="fraisGeneraux" inputmode="decimal"></div>
+        <div class="field"><label>Masse salariale production</label><input name="masseSalarialeProduction" inputmode="decimal"></div>
+        <div class="field"><label>Heures productives annuelles</label><input name="heuresProductives" inputmode="decimal"></div>
+        <div class="field"><label>Base de répartition</label><select name="baseRepartition"><option value=""></option><option value="ca">Chiffre d’affaires HT</option><option value="matiere">Achats matières HT</option><option value="salaires">Masse salariale production</option></select></div>
       </div>
     </details>
 
@@ -60,7 +60,7 @@
 
     <details class="details">
       <summary><span class="section-icon">📝</span> Note interne</summary>
-      <div class="details-content"><textarea name="note" rows="5" placeholder="Hypothèses, méthode de calcul, remarques comptables..."></textarea></div>
+      <div class="details-content"><textarea name="note" rows="5"></textarea></div>
     </details>
 
     <div class="sheet-footer-actions company-footer-actions">
