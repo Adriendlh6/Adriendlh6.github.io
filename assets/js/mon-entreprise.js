@@ -56,6 +56,16 @@
 
   function empty(){ return normalize({}); }
 
+  function ensureDatabase(){
+    if(!window.AppDB || typeof AppDB.get !== 'function' || typeof AppDB.put !== 'function'){
+      throw new Error('Base de données indisponible : AppDB non chargé.');
+    }
+  }
+
+  function cloneCompanyForStorage(c){
+    return normalize(JSON.parse(JSON.stringify(c || empty())));
+  }
+
   function staffStats(list, semainesProductives){
     const staff=normalizeStaff(list).filter(item => item.nom || item.coutAnnuelEmployeur || item.heuresSemaine);
     const count=staff.length;
@@ -210,7 +220,8 @@
   function fd(form, name){ return String(new FormData(form).get(name) || '').trim(); }
 
   async function persist(){
-    company=normalize({...company, updatedAt:new Date().toISOString()});
+    ensureDatabase();
+    company = cloneCompanyForStorage({...company, id:ID, updatedAt:new Date().toISOString()});
     await AppDB.put(STORE, company);
     renderIdentitySummary();
   }
@@ -444,7 +455,14 @@
 
   async function render(){
     let stored=null;
-    try{ stored=await AppDB.get(STORE, ID); }catch(e){ console.error('[mon-entreprise]', e); }
+    try{
+      ensureDatabase();
+      stored=await AppDB.get(STORE, ID);
+    }catch(e){
+      console.error('[mon-entreprise]', e);
+      const root=qs('#company-lines');
+      if(root) root.innerHTML='<div class="card module-error"><h3>Base de données indisponible</h3><p>La page Mon entreprise ne peut pas lire ou écrire les données pour le moment.</p></div>';
+    }
     company=stored?normalize(stored):empty();
     renderLines();
     bindEvents();

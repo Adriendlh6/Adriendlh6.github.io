@@ -1,4 +1,4 @@
-const APP_VERSION = 'v3.5';
+const APP_VERSION = 'v3.7';
 const ROUTES = {
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
   fournisseurs: { title: 'Fournisseurs', file: 'pages/fournisseurs.html' },
