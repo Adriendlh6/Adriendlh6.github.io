@@ -80,9 +80,9 @@
     return WEEKDAY_SHORT_LABELS[clean] || clean || 'N/C';
   }
 
-  function formatDeliveryRulesForPrint(rules){
-    if (!Array.isArray(rules) || !rules.length) return 'N/C';
-    const lines = rules
+  function deliveryRuleLinesForPrint(rules){
+    if (!Array.isArray(rules) || !rules.length) return [];
+    return rules
       .map(rule => {
         const from = shortWeekday(rule?.jourCommande);
         const to = shortWeekday(rule?.jourLivraison);
@@ -90,7 +90,17 @@
         return `${from} -> ${to}`;
       })
       .filter(Boolean);
+  }
+
+  function formatDeliveryRulesForPrint(rules){
+    const lines = deliveryRuleLinesForPrint(rules);
     return lines.length ? lines.join(' · ') : 'N/C';
+  }
+
+  function formatDeliveryRulesHtmlForPrint(rules){
+    const lines = deliveryRuleLinesForPrint(rules);
+    if (!lines.length) return 'N/C';
+    return lines.map(line => `<span class="print-delivery-line">${esc(line)}</span>`).join('');
   }
 
   function firstNonEmpty(...values){
@@ -598,7 +608,7 @@
       };
     });
     qs('[data-supplier-edit]', sheet)?.addEventListener('click', () => renderEditSheet(item));
-    qs('[data-supplier-print]', sheet)?.addEventListener('click', () => alert("Impression fournisseur à venir."));
+    qs('[data-supplier-print]', sheet)?.addEventListener('click', () => printSupplierDetail(item));
     qs('[data-supplier-archive]', sheet)?.addEventListener('click', async () => {
       await archiveSupplier(item.id);
       closeSheet(sheet, backdrop);
@@ -1122,7 +1132,7 @@
         + '<td>' + esc(getSupplierDisplayPhone(item) || 'N/C') + '</td>'
         + '<td>' + esc(item.entrepriseMail || item.mail || 'N/C') + '</td>'
         + '<td>' + esc(item.entrepriseAdresse || item.adresse || 'N/C') + '</td>'
-        + '<td>' + esc(formatDeliveryRulesForPrint(item.livraisons)) + '</td>'
+        + '<td class="print-delivery-cell">' + formatDeliveryRulesHtmlForPrint(item.livraisons) + '</td>'
         + '</tr>';
     }).join('') : '<tr><td colspan="6" class="suppliers-print-empty">Aucun fournisseur à imprimer.</td></tr>';
     return `
@@ -1190,12 +1200,108 @@
     .suppliers-print-table th:nth-child(3),.suppliers-print-table td:nth-child(3){width:15%;white-space:nowrap}
     .suppliers-print-table th:nth-child(4),.suppliers-print-table td:nth-child(4){width:16%}
     .suppliers-print-table th:nth-child(5),.suppliers-print-table td:nth-child(5){width:22%}
-    .suppliers-print-table th:nth-child(6),.suppliers-print-table td:nth-child(6){width:11%;text-align:center;white-space:nowrap}
+    .suppliers-print-table th:nth-child(6),.suppliers-print-table td:nth-child(6){width:11%;text-align:center;white-space:normal}
+    .print-delivery-cell{line-height:1.22 !important;white-space:normal !important;text-align:center !important}
+    .print-delivery-line{display:block;white-space:nowrap}
     .suppliers-print-empty{text-align:center;color:#666;padding:8mm !important}
   </style>
 </head>
 <body>${markup}</body>
 </html>`;
+  }
+
+  function supplierDetailPrintDocument(item){
+    const logoUrl = new URL('assets/img/print-logo.png', window.location.href).href;
+    const title = item?.entrepriseNom || item?.nom || 'Fournisseur';
+    const subtitle = 'Fiche fournisseur · Édité le ' + formatPrintDate();
+    const contacts = Array.isArray(item?.contacts) ? item.contacts : [];
+    const contactRows = contacts.length ? contacts.map((contact, idx) => {
+      const fullName = [contact?.prenom, contact?.nom].filter(Boolean).join(' ').trim() || 'N/C';
+      const role = contact?.qualite ? ' (' + contact.qualite + ')' : '';
+      return '<tr>'
+        + '<td><strong>Contact ' + (idx + 1) + esc(role) + '</strong></td>'
+        + '<td>' + esc(fullName) + '</td>'
+        + '<td>' + esc(contact?.telephone || 'N/C') + '</td>'
+        + '<td>' + esc(contact?.mail || 'N/C') + '</td>'
+        + '</tr>';
+    }).join('') : '<tr><td colspan="4" class="suppliers-print-empty">Aucun contact renseigné.</td></tr>';
+    const deliveryRows = Array.isArray(item?.livraisons) && item.livraisons.length ? item.livraisons.map((rule, idx) => {
+      const recurrence = rule?.recurrence === 'even' ? 'Semaines paires' : (rule?.recurrence === 'odd' ? 'Semaines impaires' : 'Toutes les semaines');
+      return '<tr>'
+        + '<td><strong>Livraison ' + (idx + 1) + '</strong></td>'
+        + '<td>' + esc(shortWeekday(rule?.jourCommande)) + '</td>'
+        + '<td>' + esc(shortWeekday(rule?.jourLivraison)) + '</td>'
+        + '<td>' + esc(rule?.heureLimite || 'N/C') + '</td>'
+        + '<td>' + esc(recurrence) + '</td>'
+        + '</tr>';
+    }).join('') : '<tr><td colspan="5" class="suppliers-print-empty">Aucun paramètre de livraison.</td></tr>';
+    const note = item?.noteInterne || 'Aucune note interne.';
+    const markup = ''
+      + '<section class="print-page suppliers-print-page supplier-detail-print-page">'
+      + '<header class="print-header print-header--product suppliers-print-header"><div class="print-header-brand">'
+      + '<span class="print-logo-frame"><img src="' + esc(logoUrl) + '" alt="Copilot boulangerie" class="print-logo"></span>'
+      + '<div><div class="print-app-name">Copilot boulangerie</div><h1>' + esc(title) + '</h1><div class="print-subtitle">' + esc(subtitle) + '</div></div>'
+      + '</div></header>'
+      + '<section class="print-card suppliers-print-card supplier-detail-print-card"><h2>Entreprise</h2>'
+      + '<div class="supplier-print-info-grid">'
+      + '<div><span>Nom</span><strong>' + esc(item?.entrepriseNom || item?.nom || 'N/C') + '</strong></div>'
+      + '<div><span>SIRET</span><strong>' + esc(item?.entrepriseSiret || item?.siret || 'N/C') + '</strong></div>'
+      + '<div><span>Téléphone</span><strong>' + esc(item?.entrepriseTelephone || item?.telephone || 'N/C') + '</strong></div>'
+      + '<div><span>Mail</span><strong>' + esc(item?.entrepriseMail || item?.mail || 'N/C') + '</strong></div>'
+      + '<div class="supplier-print-full"><span>Adresse</span><strong>' + esc(item?.entrepriseAdresse || item?.adresse || 'N/C') + '</strong></div>'
+      + '</div></section>'
+      + '<section class="print-card suppliers-print-card supplier-detail-print-card"><h2>Contacts</h2>'
+      + '<table class="print-table suppliers-print-table supplier-detail-print-table"><thead><tr><th>Contact</th><th>Nom / prénom</th><th>Téléphone</th><th>Mail</th></tr></thead><tbody>' + contactRows + '</tbody></table></section>'
+      + '<section class="print-card suppliers-print-card supplier-detail-print-card"><h2>Approvisionnement</h2>'
+      + '<div class="supplier-print-info-grid"><div class="supplier-print-full"><span>Magasin physique</span><strong>' + esc(summarizeWeekdays(item?.magasinPhysiqueJours) || 'N/C') + '</strong></div></div>'
+      + '<table class="print-table suppliers-print-table supplier-detail-print-table supplier-delivery-detail-table"><thead><tr><th>Mode</th><th>Commande</th><th>Livraison</th><th>Heure limite</th><th>Récurrence</th></tr></thead><tbody>' + deliveryRows + '</tbody></table></section>'
+      + '<section class="print-card suppliers-print-card supplier-detail-print-card"><h2>Note interne</h2><p class="supplier-print-note">' + esc(note) + '</p></section>'
+      + '</section>';
+    return `<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="format-detection" content="telephone=no,email=no,address=no,date=no"><title>Fiche fournisseur</title><style>
+@page{margin:6mm 4mm 7mm 4mm}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.suppliers-print-page{display:block;width:100%;max-width:none;margin:0;padding:8mm 6mm;background:#fff;color:#111;font-size:12pt}.suppliers-print-header{display:flex;align-items:center;justify-content:flex-start;gap:8mm;margin:0 0 3.5mm 0}.print-header-brand{display:flex;align-items:center;gap:5mm}.print-logo-frame{width:22mm;height:22mm;flex:0 0 22mm;display:flex;align-items:center;justify-content:center;overflow:hidden}.print-logo{display:block;width:22mm;height:22mm;object-fit:contain;object-position:center center;max-width:22mm;max-height:22mm}.print-app-name{font-weight:700;font-size:11pt;margin-bottom:1mm}.suppliers-print-header h1{margin:0 0 1mm;font-size:18pt;line-height:1.08}.print-subtitle{color:#444;font-size:10pt}.suppliers-print-card{border:1px solid #ccc;border-radius:4mm;padding:4.5mm;break-inside:auto;page-break-inside:auto;overflow:visible;margin-bottom:5mm}.suppliers-print-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.7pt}.suppliers-print-table th,.suppliers-print-table td{border:1px solid #ccc;padding:1.8mm 1.6mm;text-align:left;vertical-align:middle;line-height:1.14;word-break:break-word;overflow-wrap:anywhere;color:#111!important;text-decoration:none!important}.suppliers-print-table thead th{background:#f7f2ea;color:#4d3a28;font-weight:700;font-size:8.1pt;letter-spacing:.01em}.suppliers-print-empty{text-align:center;color:#666;padding:8mm!important}.supplier-detail-print-card h2{margin:0 0 3mm;font-size:13pt;color:#9b6a36;text-transform:uppercase;letter-spacing:.02em}.supplier-print-info-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3mm;font-size:9.5pt}.supplier-print-info-grid div{border:1px solid #ddd;border-radius:3mm;padding:3mm;background:#fffdf9}.supplier-print-info-grid span{display:block;color:#777;font-size:8pt;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:1mm}.supplier-print-info-grid strong{display:block;color:#111;font-size:10.5pt;line-height:1.2;word-break:break-word}.supplier-print-full{grid-column:1/-1}.supplier-detail-print-table th,.supplier-detail-print-table td{white-space:normal!important}.supplier-delivery-detail-table{margin-top:3mm}.supplier-print-note{margin:0;white-space:pre-wrap;font-size:9.5pt;line-height:1.35;color:#111}
+</style></head><body>${markup}</body></html>`;
+  }
+
+  function printSupplierDetail(item){
+    if (!item) return alert('Fournisseur introuvable.');
+    const previous = document.getElementById('suppliers-print-frame');
+    if (previous) previous.remove();
+    const frame = document.createElement('iframe');
+    frame.id = 'suppliers-print-frame';
+    frame.title = 'Impression fiche fournisseur';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.position = 'fixed';
+    frame.style.left = '-10000px';
+    frame.style.top = '0';
+    frame.style.width = '1px';
+    frame.style.height = '1px';
+    frame.style.border = '0';
+    frame.style.opacity = '0';
+    frame.style.pointerEvents = 'none';
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument || frame.contentWindow?.document;
+    if (!doc || !frame.contentWindow) { frame.remove(); alert('Impossible de préparer l’impression.'); return; }
+    const cleanup = () => setTimeout(() => frame.remove(), 600);
+    let launched = false;
+    const launchPrint = () => {
+      if (launched) return;
+      launched = true;
+      try {
+        frame.contentWindow.focus();
+        frame.contentWindow.addEventListener('afterprint', cleanup, { once:true });
+        setTimeout(() => { frame.contentWindow.print(); setTimeout(cleanup, 15000); }, 120);
+      } catch (error) {
+        console.error('[fournisseurs:print-detail]', error);
+        cleanup();
+        alert('Impossible de lancer l’impression.');
+      }
+    };
+    frame.onload = launchPrint;
+    doc.open();
+    doc.write(supplierDetailPrintDocument(item));
+    doc.close();
+    setTimeout(launchPrint, 300);
   }
 
   function printSuppliers(items, options={}){
