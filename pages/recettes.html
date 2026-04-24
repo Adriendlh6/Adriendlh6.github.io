@@ -1,0 +1,106 @@
+<section class="card recettes-page">
+  <div class="recettes-header">
+    <div>
+      <h2>Gestion des recettes</h2>
+      <p class="muted">Fiches recettes, coût matière et prix de vente.</p>
+    </div>
+    <div class="recettes-actions">
+      <button id="open-recipe-sheet-btn" class="icon-square-btn primary" type="button" aria-label="Ajouter une recette" title="Ajouter une recette"><span aria-hidden="true">＋</span></button>
+    </div>
+  </div>
+
+  <section class="card recettes-toolbar-card">
+    <div class="recettes-toolbar-topline">
+      <div class="field recettes-search-field">
+        <label for="recipes-search">Recherche</label>
+        <input id="recipes-search" type="search" placeholder="Nom de recette ou catégorie" autocomplete="off">
+      </div>
+      <button id="toggle-recipes-filters-btn" class="icon-square-btn" type="button" aria-label="Afficher les filtres" aria-expanded="false" title="Filtres"><span aria-hidden="true">⛃</span></button>
+    </div>
+    <div id="recipes-filters-panel" class="recettes-filters-panel hidden">
+      <div class="recettes-toolbar-grid">
+        <div class="field">
+          <label for="recipes-filter-category">Catégorie</label>
+          <select id="recipes-filter-category"><option value="">Toutes les catégories</option></select>
+        </div>
+        <div class="field">
+          <label for="recipes-sort">Tri</label>
+          <select id="recipes-sort">
+            <option value="az">A à Z</option>
+            <option value="cost-asc">Coût croissant</option>
+            <option value="cost-desc">Coût décroissant</option>
+            <option value="updated-desc">Dernière modification</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="recipes-empty" class="notice hidden">Aucune recette enregistrée.</div>
+  <div id="recipes-list" class="list recipes-list"></div>
+</section>
+
+<div id="recipe-sheet-backdrop" class="sheet-backdrop hidden"></div>
+<section id="recipe-sheet" class="bottom-sheet hidden" aria-hidden="true">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div>
+      <h3 id="recipe-sheet-title">Ajouter une recette</h3>
+      <p class="muted">Informations générales, ingrédients et prix de vente.</p>
+    </div>
+    <button id="close-recipe-sheet-btn" class="icon-close-btn" type="button" aria-label="Fermer">✕</button>
+  </div>
+
+  <form id="recipe-form" class="grid sheet-form" novalidate>
+    <input type="hidden" name="id">
+    <details class="details" open>
+      <summary>Informations recette</summary>
+      <div class="details-content form-grid">
+        <div class="field"><label for="recipe-nom">Nom de la recette</label><input id="recipe-nom" name="nom" required autocomplete="off"></div>
+        <div class="field"><label for="recipe-categorie">Catégorie</label><input id="recipe-categorie" name="categorie" list="recipe-category-list" placeholder="Ex : Viennoiserie" autocomplete="off"><datalist id="recipe-category-list"></datalist></div>
+        <div class="field"><label for="recipe-portions">Quantité produite</label><input id="recipe-portions" name="portions" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+        <div class="field"><label for="recipe-unite-sortie">Unité</label><input id="recipe-unite-sortie" name="uniteSortie" placeholder="pièces, kg, plaques..." autocomplete="off"></div>
+      </div>
+    </details>
+
+    <details class="details" open>
+      <summary>Ingrédients</summary>
+      <div class="details-content grid">
+        <div id="recipe-lines-editor" class="recipe-lines-editor"></div>
+        <div class="toolbar toolbar-end"><button id="add-recipe-line-btn" class="btn secondary" type="button">Ajouter un ingrédient</button></div>
+      </div>
+    </details>
+
+    <details class="details" open>
+      <summary>Prix de vente</summary>
+      <div class="details-content form-grid">
+        <div class="field"><label for="recipe-prix-vente-ht">Prix de vente HT</label><input id="recipe-prix-vente-ht" name="prixVenteHT" inputmode="decimal" autocomplete="off" placeholder="0,00"></div>
+        <div class="field"><label for="recipe-tva">TVA</label><select id="recipe-tva" name="tva"><option value="0">0 %</option><option value="2.1">2,1 %</option><option value="5.5" selected>5,5 %</option><option value="10">10 %</option><option value="20">20 %</option></select></div>
+        <div class="recipe-cost-preview form-grid-span-full" id="recipe-cost-preview"></div>
+      </div>
+    </details>
+
+    <details class="details">
+      <summary>Note interne</summary>
+      <div class="details-content"><textarea name="note" rows="4" placeholder="Tourage, cuisson, organisation, remarques..."></textarea></div>
+    </details>
+
+    <div class="sheet-footer-actions">
+      <button id="cancel-recipe-btn" class="btn secondary" type="button">Annuler</button>
+      <button class="btn primary" type="submit">Enregistrer la recette</button>
+    </div>
+  </form>
+</section>
+
+<div id="recipe-detail-sheet-backdrop" class="sheet-backdrop hidden"></div>
+<section id="recipe-detail-sheet" class="bottom-sheet hidden" aria-hidden="true">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div>
+      <h3 id="recipe-detail-title">Détail recette</h3>
+      <p class="muted">Fiche recette et coût matière.</p>
+    </div>
+    <button id="close-recipe-detail-sheet-btn" class="icon-close-btn" type="button" aria-label="Fermer">✕</button>
+  </div>
+  <div id="recipe-detail-content" class="grid"></div>
+</section>
