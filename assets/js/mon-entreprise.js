@@ -8,9 +8,11 @@
   function pct(v){ return Number.isFinite(Number(v)) ? `${new Intl.NumberFormat('fr-FR',{maximumFractionDigits:1}).format(Number(v))} %` : 'N/C'; }
   function numberLabel(v, digits=1){ return Number(v||0) ? new Intl.NumberFormat('fr-FR',{maximumFractionDigits:digits}).format(Number(v||0)) : 'N/C'; }
   function cleanPhone(v){ return String(v || '').trim(); }
+  function companyLogoSrc(c){ return (c && c.logoDataUrl) ? c.logoDataUrl : DEFAULT_COMPANY_LOGO; }
 
   const STORE='entreprise';
   const ID='mon-entreprise';
+  const DEFAULT_COMPANY_LOGO='assets/img/print-logo.png';
   let company=null;
 
   function normalizeStaff(list){
@@ -47,6 +49,7 @@
       baseRepartition:data.baseRepartition||'',
       personnelProduction:normalizeStaff(data.personnelProduction),
       note:data.note||'',
+      logoDataUrl:data.logoDataUrl||'',
       updatedAt:data.updatedAt||new Date().toISOString()
     };
   }
@@ -168,6 +171,7 @@
       renderLines();
     });
     if(options.readonly){ form?.addEventListener('submit', e=>e.preventDefault()); }
+    return wrap;
   }
 
   function closeSheet(){ qs('.company-sheet-modal')?.remove(); }
@@ -197,7 +201,22 @@
 
   function openIdentity(){
     const c=company || empty();
-    openSheet('Infos entreprise', '🏢', `<div class="form-grid">
+    const modal=openSheet('Infos entreprise', '🏢', `<div class="company-identity-card">
+      <div class="company-identity-logo-wrap">
+        <img class="company-identity-logo" data-company-logo-preview src="${esc(companyLogoSrc(c))}" alt="Logo entreprise">
+      </div>
+      <div class="company-identity-main">
+        <strong>Carte d’identité de l’entreprise</strong>
+        <small>Logo, informations légales et coordonnées utilisées pour les futurs devis.</small>
+        <div class="company-logo-actions">
+          <button type="button" class="btn secondary" data-company-logo-import>Importer un logo</button>
+          <button type="button" class="btn secondary" data-company-logo-default>Logo par défaut</button>
+        </div>
+      </div>
+      <input type="file" accept="image/*" data-company-logo-file hidden>
+      <input type="hidden" name="logoDataUrl" value="${esc(c.logoDataUrl || '')}">
+    </div>
+    <div class="form-grid">
       ${field('nomCommercial','Nom commercial',c.nomCommercial,'autocomplete="organization"')}
       ${field('raisonSociale','Raison sociale',c.raisonSociale,'autocomplete="organization"')}
       ${field('siret','SIRET',c.siret,'inputmode="numeric" autocomplete="off"')}
@@ -207,11 +226,34 @@
       ${textarea('adresse','Adresse',c.adresse,3)}
     </div>`, async form=>{
       Object.assign(company, {
+        logoDataUrl:fd(form,'logoDataUrl'),
         nomCommercial:fd(form,'nomCommercial'), raisonSociale:fd(form,'raisonSociale'), siret:fd(form,'siret'), tvaIntracom:fd(form,'tvaIntracom'),
         telephone:cleanPhone(fd(form,'telephone')), mail:fd(form,'mail'), adresse:fd(form,'adresse')
       });
     });
+
+    const fileInput=qs('[data-company-logo-file]', modal);
+    const hidden=qs('input[name="logoDataUrl"]', modal);
+    const preview=qs('[data-company-logo-preview]', modal);
+    qs('[data-company-logo-import]', modal)?.addEventListener('click', ()=>fileInput?.click());
+    qs('[data-company-logo-default]', modal)?.addEventListener('click', ()=>{
+      if(hidden) hidden.value='';
+      if(preview) preview.src=DEFAULT_COMPANY_LOGO;
+    });
+    fileInput?.addEventListener('change', ()=>{
+      const file=fileInput.files && fileInput.files[0];
+      if(!file) return;
+      if(!file.type.startsWith('image/')){ alert('Le fichier choisi doit être une image.'); return; }
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const value=String(reader.result || '');
+        if(hidden) hidden.value=value;
+        if(preview) preview.src=value || DEFAULT_COMPANY_LOGO;
+      };
+      reader.readAsDataURL(file);
+    });
   }
+
 
   function openQuote(){
     const c=company || empty();
