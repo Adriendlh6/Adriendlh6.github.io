@@ -43,16 +43,29 @@
     <details class="details" open>
       <summary><span class="section-icon">📊</span> Données financières</summary>
       <div class="details-content form-grid">
-        <div class="field"><label>Chiffre d’affaires HT annuel</label><input name="caHT" inputmode="decimal"></div>
-        <div class="field"><label>Achats matières HT annuels</label><input name="achatsMatieresHT" inputmode="decimal"></div>
-        <div class="field"><label>Frais généraux annuels</label><input name="fraisGeneraux" inputmode="decimal"></div>
-        <div class="field"><label>Masse salariale production</label><input name="masseSalarialeProduction" inputmode="decimal"></div>
-        <div class="field"><label>Heures productives annuelles</label><input name="heuresProductives" inputmode="decimal"></div>
-        <div class="field"><label>Base de répartition</label><select name="baseRepartition"><option value=""></option><option value="ca">Chiffre d’affaires HT</option><option value="matiere">Achats matières HT</option><option value="salaires">Masse salariale production</option></select></div>
-        <section class="base-help-card form-grid-span-full" aria-live="polite">
-          <div class="base-help-title"><span class="section-icon">💡</span><strong>Aide au choix de la base de répartition</strong></div>
-          <div id="company-base-help" class="base-help-content"></div>
-        </section>
+        <div class="field"><label>Chiffre d’affaires HT annuel <span class="info-dot" title="Total des ventes hors taxes sur une année complète.">i</span></label><input name="caHT" inputmode="decimal"></div>
+        <div class="field"><label>Achats matières HT annuels <span class="info-dot" title="Total annuel des achats de matières premières hors taxes.">i</span></label><input name="achatsMatieresHT" inputmode="decimal"></div>
+        <div class="field"><label>Frais généraux annuels <span class="info-dot" title="Charges indirectes annuelles : loyer, énergie, assurance, entretien, petit matériel, frais administratifs… hors matières directes.">i</span></label><input name="fraisGeneraux" inputmode="decimal"></div>
+        <div class="field"><label>Masse salariale production <span class="info-dot" title="Salaires et charges liés aux personnes qui produisent directement.">i</span></label><input name="masseSalarialeProduction" inputmode="decimal"></div>
+        <div class="field"><label>Heures productives annuelles <span class="info-dot" title="Total des heures réellement passées à produire sur l’année.">i</span></label><input name="heuresProductives" inputmode="decimal"></div>
+        <div class="field"><label>Base de répartition <span class="info-dot" title="Base utilisée pour répartir les frais généraux dans les futurs coûts de revient.">i</span></label><select name="baseRepartition"><option value=""></option><option value="ca">Chiffre d’affaires HT</option><option value="matiere">Achats matières HT</option><option value="salaires">Masse salariale production</option></select></div>
+        <details class="details helper-details base-help-card form-grid-span-full">
+          <summary><span class="section-icon">💡</span> Aide au choix de la base de répartition</summary>
+          <div id="company-base-help" class="base-help-content details-content" aria-live="polite"></div>
+        </details>
+
+        <details class="details helper-details production-hours-help form-grid-span-full">
+          <summary><span class="section-icon">⏱️</span> Méthode pour calculer les heures productives annuelles</summary>
+          <div class="details-content hours-method-content">
+            <p><strong>Méthode recommandée :</strong> compter uniquement les heures réellement passées en production, pas les heures de présence totales.</p>
+            <div class="hours-formula">Heures productives annuelles = personnes en production × heures productives par semaine × semaines travaillées</div>
+            <ul>
+              <li>Retirer les congés, jours fériés, absences prévisibles et formations.</li>
+              <li>Retirer aussi le temps non productif : commandes, nettoyage administratif, gestion, pauses longues, réception fournisseur.</li>
+              <li>Garder cette valeur comme base stable pour calculer un coût horaire repère.</li>
+            </ul>
+          </div>
+        </details>
       </div>
     </details>
 
