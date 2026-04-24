@@ -1,8 +1,9 @@
-const APP_VERSION = 'v3.2';
+const APP_VERSION = 'v3.3';
 const ROUTES = {
   mercuriale: { title: 'Mercuriale', file: 'pages/mercuriale.html' },
   fournisseurs: { title: 'Fournisseurs', file: 'pages/fournisseurs.html' },
   recettes: { title: 'Recettes', file: 'pages/recettes.html' },
+  monentreprise: { title: 'Mon entreprise', file: 'pages/mon-entreprise.html' },
   parametres: { title: 'Paramètres', file: 'pages/parametres.html' },
 };
 
@@ -18,6 +19,10 @@ const ROUTE_ASSETS = {
   recettes: {
     css: ['assets/css/recettes.css'],
     js: ['assets/js/recettes.js']
+  },
+  monentreprise: {
+    css: ['assets/css/mon-entreprise.css'],
+    js: ['assets/js/mon-entreprise.js']
   },
   parametres: {
     css: ['assets/css/parametres.css'],
@@ -52,6 +57,7 @@ function unloadRouteAssets(){
   delete window.FournisseursPage;
   delete window.MercurialePage;
   delete window.RecettesPage;
+  delete window.MonEntreprisePage;
   delete window.ParametresPage;
 }
 
@@ -85,6 +91,7 @@ async function initCurrentPage(){
   if (state.route === 'mercuriale') return window.MercurialePage?.render?.();
   if (state.route === 'fournisseurs') return window.FournisseursPage?.render?.();
   if (state.route === 'recettes') return window.RecettesPage?.render?.();
+  if (state.route === 'monentreprise') return window.MonEntreprisePage?.render?.();
   if (state.route === 'parametres') return window.ParametresPage?.render?.();
 }
 

@@ -1,7 +1,7 @@
 (function(){
   const DB_NAME = 'copilot-boulangerie-db';
-  const DB_VERSION = 1;
-  const STORES = ['ingredients','fournisseurs','recettes','parametres'];
+  const DB_VERSION = 2;
+  const STORES = ['ingredients','fournisseurs','recettes','entreprise','parametres'];
 
   function openDb(){
     return new Promise((resolve,reject)=>{
