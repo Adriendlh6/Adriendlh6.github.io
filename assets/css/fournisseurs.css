@@ -310,15 +310,12 @@
 .supplier-contact-role{color:var(--muted);font-weight:600}
 .supplier-contact-index{font-weight:700}
 
-.supplier-linked-products{display:grid;gap:10px}
-.supplier-product-row{width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:14px 16px;cursor:pointer}
-.supplier-product-row__main{display:grid;gap:6px;min-width:0}
-.supplier-product-row__main strong{font-size:1rem;color:var(--text)}
-.supplier-product-row__price{font-weight:700;color:var(--brand);white-space:nowrap;flex:0 0 auto}
+.supplier-linked-products{display:grid;gap:8px}
+.supplier-product-row{width:100%;text-align:left;display:block;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:10px 12px;cursor:pointer}
+.supplier-product-row__main{display:grid;gap:5px;min-width:0;width:100%}
+.supplier-product-row__headline{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.supplier-product-row__headline strong{font-size:.95rem;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.supplier-product-row__price{font-weight:700;color:var(--brand);white-space:nowrap;flex:0 0 auto;font-size:.92rem}
 .supplier-product-row .chip-row{margin:0}
-@media (max-width:640px){
-  .supplier-product-row{align-items:flex-start;flex-direction:column}
-  .supplier-product-row__price{align-self:flex-end}
-}
 
 .supplier-category-chip{background:color-mix(in srgb, var(--chip-color, #8b5e34) 18%, #fff);color:var(--chip-color, #8b5e34);border:1px solid color-mix(in srgb, var(--chip-color, #8b5e34) 32%, #fff)}

@@ -538,10 +538,12 @@
                 return `
                   <button type="button" class="item product-card supplier-product-row" data-linked-product-open="${esc(ingredient.id)}">
                     <div class="supplier-product-row__main">
-                      <strong>${esc(ingredient.nom || 'N/C')}</strong>
+                      <div class="supplier-product-row__headline">
+                        <strong>${esc(ingredient.nom || 'N/C')}</strong>
+                        <span class="supplier-product-row__price">${esc(price)} HT</span>
+                      </div>
                       <div class="toolbar chip-row">${categoryChipMarkup(category)}</div>
                     </div>
-                    <div class="supplier-product-row__price">${esc(price)} HT</div>
                   </button>`;
               }).join('')}</div>`;
             })()}
