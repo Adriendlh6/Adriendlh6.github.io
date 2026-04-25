@@ -1,0 +1,30 @@
+.barcode-scanner-root,
+.barcode-scanner-root *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.barcode-scanner-root{position:fixed;inset:0;z-index:99999;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#2f241c;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.barcode-scanner-backdrop{position:absolute;inset:0;background:rgba(29,22,17,.48);backdrop-filter:blur(3px)}
+.barcode-scanner-sheet{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);width:min(680px,calc(100vw - 20px));max-height:calc(100vh - 24px);overflow:auto;background:#fffaf3;border:1px solid rgba(139,94,52,.22);border-radius:24px;box-shadow:0 22px 60px rgba(46,35,27,.28);padding:14px}
+.barcode-scanner-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:4px 4px 12px}
+.barcode-scanner-kicker{margin:0 0 3px;color:#8b5e34;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.barcode-scanner-header h2{margin:0;font-size:20px;line-height:1.15;color:#2b2119}
+.barcode-scanner-icon{width:40px;height:40px;border:1px solid rgba(139,94,52,.22);border-radius:14px;background:#fff;color:#2b2119;font-size:18px;font-weight:800;cursor:pointer}
+.barcode-scanner-camera{position:relative;overflow:hidden;border-radius:22px;background:#17120e;min-height:330px;border:1px solid rgba(139,94,52,.18)}
+.barcode-scanner-video{display:block;width:100%;height:min(58vh,460px);min-height:330px;object-fit:cover;background:#15110d}
+.barcode-scanner-frame{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:min(78%,420px);height:150px;border:1px solid rgba(255,255,255,.24);border-radius:22px;box-shadow:0 0 0 999px rgba(0,0,0,.22)}
+.barcode-scanner-frame span{position:absolute;width:34px;height:34px;border-color:#f5c06c;border-style:solid}
+.barcode-scanner-frame span:nth-child(1){left:-2px;top:-2px;border-width:4px 0 0 4px;border-radius:18px 0 0 0}
+.barcode-scanner-frame span:nth-child(2){right:-2px;top:-2px;border-width:4px 4px 0 0;border-radius:0 18px 0 0}
+.barcode-scanner-frame span:nth-child(3){right:-2px;bottom:-2px;border-width:0 4px 4px 0;border-radius:0 0 18px 0}
+.barcode-scanner-frame span:nth-child(4){left:-2px;bottom:-2px;border-width:0 0 4px 4px;border-radius:0 0 0 18px}
+.barcode-scanner-frame i{position:absolute;left:12px;right:12px;top:50%;height:3px;border-radius:999px;background:#f5c06c;box-shadow:0 0 18px rgba(245,192,108,.7);animation:barcodeScannerLine 1.45s ease-in-out infinite}
+@keyframes barcodeScannerLine{0%,100%{transform:translateY(-54px)}50%{transform:translateY(54px)}}
+.barcode-scanner-status{position:absolute;left:14px;right:14px;bottom:12px;margin:0;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;text-align:center;backdrop-filter:blur(3px)}
+.barcode-scanner-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.barcode-scanner-btn,.barcode-scanner-primary{height:44px;border-radius:14px;border:1px solid rgba(139,94,52,.22);background:#fff;color:#2b2119;font-weight:800;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;text-decoration:none}
+.barcode-scanner-btn.active,.barcode-scanner-primary{background:#8b5e34;border-color:#8b5e34;color:#fff}
+.barcode-scanner-manual{margin-top:10px;border:1px solid rgba(139,94,52,.16);border-radius:16px;background:#fff;overflow:hidden}
+.barcode-scanner-manual summary{padding:13px 14px;font-weight:800;cursor:pointer;list-style:none}
+.barcode-scanner-manual summary::-webkit-details-marker{display:none}
+.barcode-scanner-manual form{display:grid;grid-template-columns:1fr auto;gap:8px;padding:0 12px 12px}
+.barcode-scanner-input{width:100%;min-width:0;height:44px;border-radius:14px;border:1px solid rgba(139,94,52,.22);background:#fff;font-size:16px;padding:0 12px;color:#2b2119;user-select:text;-webkit-user-select:text}
+@media(max-width:560px){.barcode-scanner-sheet{bottom:0;width:100vw;max-height:100vh;border-radius:24px 24px 0 0}.barcode-scanner-camera{min-height:310px}.barcode-scanner-video{height:54vh;min-height:310px}.barcode-scanner-actions{grid-template-columns:1fr}.barcode-scanner-manual form{grid-template-columns:1fr}.barcode-scanner-primary{width:100%}}
+@media(prefers-reduced-motion:reduce){.barcode-scanner-frame i{animation:none}}

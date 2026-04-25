@@ -1,0 +1,355 @@
+{
+  "ingredients": [
+    {
+      "id": "ing_far_t45",
+      "nom": "Farine T45",
+      "categorieId": "cat_farines",
+      "unite": "kg",
+      "allergenes": ["gluten"],
+      "nutrition": {
+        "energie": "1450",
+        "matieresGrasses": "1.2",
+        "acidesGrasSatures": "0.2",
+        "glucides": "72",
+        "sucres": "1.4",
+        "proteines": "10",
+        "sel": "0.01"
+      },
+      "offres": [
+        {
+          "id": "off_far_t45_moulin",
+          "fournisseurId": "four_moulin_demo",
+          "marque": "Moulin Démo",
+          "reference": "FAR-T45-25",
+          "ean": "3760000000010",
+          "conditionnement": "Sac 25 kg",
+          "quantiteColis": "25",
+          "unite": "kg",
+          "tva": "5.5",
+          "prixHTUnite": 0.92,
+          "prixTTCUnite": 0.9706,
+          "prixHTColis": 23,
+          "prixTTCColis": 24.265,
+          "sourcePrincipale": true
+        }
+      ],
+      "archived": false,
+      "createdAt": "2026-04-24T10:00:00.000Z",
+      "updatedAt": "2026-04-24T10:00:00.000Z"
+    },
+    {
+      "id": "ing_beurre_demo",
+      "nom": "Beurre doux 82% MG",
+      "categorieId": "cat_produits_laitiers",
+      "unite": "kg",
+      "allergenes": ["lait"],
+      "nutrition": {
+        "energie": "3050",
+        "matieresGrasses": "82",
+        "acidesGrasSatures": "54",
+        "glucides": "0.8",
+        "sucres": "0.8",
+        "proteines": "0.7",
+        "sel": "0.02"
+      },
+      "offres": [
+        {
+          "id": "off_beurre_laiterie",
+          "fournisseurId": "four_laiterie_demo",
+          "marque": "Laiterie Démo",
+          "reference": "BEU-82-10",
+          "ean": "3760000000027",
+          "conditionnement": "Plaque 10 kg",
+          "quantiteColis": "10",
+          "unite": "kg",
+          "tva": "5.5",
+          "prixHTUnite": 6.4,
+          "prixTTCUnite": 6.752,
+          "prixHTColis": 64,
+          "prixTTCColis": 67.52,
+          "sourcePrincipale": true
+        }
+      ],
+      "archived": false,
+      "createdAt": "2026-04-24T10:05:00.000Z",
+      "updatedAt": "2026-04-24T10:05:00.000Z"
+    },
+    {
+      "id": "ing_sucre_demo",
+      "nom": "Sucre semoule",
+      "categorieId": "cat_epicerie",
+      "unite": "kg",
+      "allergenes": [],
+      "nutrition": {
+        "energie": "1700",
+        "matieresGrasses": "0",
+        "acidesGrasSatures": "0",
+        "glucides": "100",
+        "sucres": "100",
+        "proteines": "0",
+        "sel": "0"
+      },
+      "offres": [
+        {
+          "id": "off_sucre_epicerie",
+          "fournisseurId": "four_epicerie_demo",
+          "marque": "Sucre Démo",
+          "reference": "SUC-25",
+          "ean": "3760000000034",
+          "conditionnement": "Sac 25 kg",
+          "quantiteColis": "25",
+          "unite": "kg",
+          "tva": "5.5",
+          "prixHTUnite": 1.15,
+          "prixTTCUnite": 1.2133,
+          "prixHTColis": 28.75,
+          "prixTTCColis": 30.3313,
+          "sourcePrincipale": true
+        }
+      ],
+      "archived": false,
+      "createdAt": "2026-04-24T10:10:00.000Z",
+      "updatedAt": "2026-04-24T10:10:00.000Z"
+    }
+  ],
+  "fournisseurs": [
+    {
+      "id": "four_moulin_demo",
+      "nom": "Moulin Démo",
+      "entrepriseNom": "Moulin Démo",
+      "entrepriseSiret": "12345678900011",
+      "entrepriseTelephone": "03 44 00 00 01",
+      "telephone": "03 44 00 00 01",
+      "entrepriseMail": "contact@moulin-demo.fr",
+      "entrepriseAdresse": "1 rue des Farines, 60000 Beauvais",
+      "contacts": [
+        {
+          "id": "contact_moulin_1",
+          "nom": "Martin",
+          "prenom": "Claire",
+          "qualite": "Commerciale",
+          "telephone": "06 00 00 00 01",
+          "mail": "claire.martin@moulin-demo.fr",
+          "principal": true
+        }
+      ],
+      "livraisons": [
+        {
+          "id": "liv_moulin_1",
+          "jourCommande": "Lundi",
+          "jourLivraison": "Mercredi",
+          "heureLimite": "12:00",
+          "recurrence": "all"
+        }
+      ],
+      "magasinPhysiqueJours": [],
+      "noteInterne": "Données de test.",
+      "archived": false,
+      "historique": [],
+      "produits": [],
+      "factures": [],
+      "logoDataUrl": "",
+      "createdAt": "2026-04-24T09:00:00.000Z",
+      "updatedAt": "2026-04-24T09:00:00.000Z"
+    },
+    {
+      "id": "four_laiterie_demo",
+      "nom": "Laiterie Démo",
+      "entrepriseNom": "Laiterie Démo",
+      "entrepriseSiret": "12345678900029",
+      "entrepriseTelephone": "03 44 00 00 02",
+      "telephone": "03 44 00 00 02",
+      "entrepriseMail": "commande@laiterie-demo.fr",
+      "entrepriseAdresse": "2 rue du Lait, 60000 Beauvais",
+      "contacts": [],
+      "livraisons": [
+        {
+          "id": "liv_laiterie_1",
+          "jourCommande": "Mardi",
+          "jourLivraison": "Vendredi",
+          "heureLimite": "10:00",
+          "recurrence": "all"
+        }
+      ],
+      "magasinPhysiqueJours": [],
+      "noteInterne": "Données de test.",
+      "archived": false,
+      "historique": [],
+      "produits": [],
+      "factures": [],
+      "logoDataUrl": "",
+      "createdAt": "2026-04-24T09:05:00.000Z",
+      "updatedAt": "2026-04-24T09:05:00.000Z"
+    },
+    {
+      "id": "four_epicerie_demo",
+      "nom": "Épicerie Pro Démo",
+      "entrepriseNom": "Épicerie Pro Démo",
+      "entrepriseSiret": "12345678900037",
+      "entrepriseTelephone": "03 44 00 00 03",
+      "telephone": "03 44 00 00 03",
+      "entrepriseMail": "contact@epicerie-demo.fr",
+      "entrepriseAdresse": "3 rue des Matières, 60000 Beauvais",
+      "contacts": [],
+      "livraisons": [
+        {
+          "id": "liv_epicerie_1",
+          "jourCommande": "Jeudi",
+          "jourLivraison": "Samedi",
+          "heureLimite": "11:00",
+          "recurrence": "all"
+        }
+      ],
+      "magasinPhysiqueJours": [],
+      "noteInterne": "Données de test.",
+      "archived": false,
+      "historique": [],
+      "produits": [],
+      "factures": [],
+      "logoDataUrl": "",
+      "createdAt": "2026-04-24T09:10:00.000Z",
+      "updatedAt": "2026-04-24T09:10:00.000Z"
+    }
+  ],
+  "recettes": [
+    {
+      "id": "rec_pate_sucree_base",
+      "nom": "Pâte sucrée — base",
+      "categorie": "Bases",
+      "isBase": true,
+      "rendementQuantite": "1",
+      "rendementUnite": "kg",
+      "baseFormat": {
+        "forme": "cercle",
+        "diametre": "22",
+        "longueur": "",
+        "largeur": "",
+        "hauteur": "4.5",
+        "unite": "cm"
+      },
+      "ingredients": [
+        { "id": "line_far_base", "ingredientId": "ing_far_t45", "quantite": "500", "unite": "g" },
+        { "id": "line_beurre_base", "ingredientId": "ing_beurre_demo", "quantite": "250", "unite": "g" },
+        { "id": "line_sucre_base", "ingredientId": "ing_sucre_demo", "quantite": "180", "unite": "g" }
+      ],
+      "bases": [],
+      "procede": "Sabler les ingrédients, fraiser légèrement puis réserver au froid.",
+      "descriptionCommerciale": "Base de pâte sucrée pour tartes.",
+      "variations": [
+        {
+          "id": "var_pate_22",
+          "nom": "Cercle 22 cm",
+          "forme": "cercle",
+          "diametre": "22",
+          "longueur": "",
+          "largeur": "",
+          "hauteur": "4.5",
+          "unite": "cm",
+          "prixVenteHT": "",
+          "tva": "5.5"
+        }
+      ],
+      "note": "Donnée de test.",
+      "archived": false,
+      "createdAt": "2026-04-24T11:00:00.000Z",
+      "updatedAt": "2026-04-24T11:00:00.000Z"
+    },
+    {
+      "id": "rec_tarte_demo",
+      "nom": "Tarte démo 22 cm",
+      "categorie": "Tartes",
+      "isBase": false,
+      "rendementQuantite": "1",
+      "rendementUnite": "pièce",
+      "baseFormat": {
+        "forme": "cercle",
+        "diametre": "22",
+        "longueur": "",
+        "largeur": "",
+        "hauteur": "4.5",
+        "unite": "cm"
+      },
+      "ingredients": [
+        { "id": "line_sucre_tarte", "ingredientId": "ing_sucre_demo", "quantite": "80", "unite": "g" }
+      ],
+      "bases": [
+        { "id": "base_pate_tarte", "recipeId": "rec_pate_sucree_base", "quantite": "0.4", "unite": "kg" }
+      ],
+      "procede": "Foncer le cercle, garnir puis cuire selon la production.",
+      "descriptionCommerciale": "Tarte démo pour tester les coûts et variations.",
+      "variations": [
+        {
+          "id": "var_tarte_22",
+          "nom": "Cercle 22 cm",
+          "forme": "cercle",
+          "diametre": "22",
+          "longueur": "",
+          "largeur": "",
+          "hauteur": "4.5",
+          "unite": "cm",
+          "prixVenteHT": "16",
+          "tva": "5.5"
+        },
+        {
+          "id": "var_tarte_28",
+          "nom": "Cercle 28 cm",
+          "forme": "cercle",
+          "diametre": "28",
+          "longueur": "",
+          "largeur": "",
+          "hauteur": "4.5",
+          "unite": "cm",
+          "prixVenteHT": "24",
+          "tva": "5.5"
+        }
+      ],
+      "note": "Donnée de test.",
+      "archived": false,
+      "createdAt": "2026-04-24T11:10:00.000Z",
+      "updatedAt": "2026-04-24T11:10:00.000Z"
+    }
+  ],
+  "entreprise": [
+    {
+      "id": "mon-entreprise",
+      "nomCommercial": "Boulangerie Démo",
+      "raisonSociale": "SAS Démo Boulangerie",
+      "siret": "12345678900045",
+      "tvaIntracom": "FR00123456789",
+      "telephone": "03 44 00 00 00",
+      "mail": "contact@boulangerie-demo.fr",
+      "adresse": "10 rue de la Démo, 60000 Beauvais",
+      "validiteDevisJours": "30",
+      "delaiPaiement": "À réception",
+      "tvaDefault": "5.5",
+      "prefixeDevis": "DEV",
+      "mentionsDevis": "Données de test pour devis.",
+      "caHT": "250000",
+      "achatsMatieresHT": "85000",
+      "fraisGeneraux": "72000",
+      "masseSalarialeVenteDirection": "38000",
+      "masseSalarialeProduction": "92000",
+      "semainesProductives": "46",
+      "heuresProductives": "3220",
+      "baseRepartition": "heures",
+      "personnelProduction": [
+        { "id": "staff_1", "nom": "Salarié démo 1", "coutAnnuelEmployeur": "46000", "heuresSemaine": "35" },
+        { "id": "staff_2", "nom": "Salarié démo 2", "coutAnnuelEmployeur": "46000", "heuresSemaine": "35" }
+      ],
+      "note": "Données de test injectées depuis demo-data.json.",
+      "logoDataUrl": "",
+      "updatedAt": "2026-04-24T12:00:00.000Z"
+    }
+  ],
+  "parametres": [
+    {
+      "id": "mercuriale_categories",
+      "categories": [
+        { "id": "cat_farines", "nom": "Farines" },
+        { "id": "cat_produits_laitiers", "nom": "Produits laitiers" },
+        { "id": "cat_epicerie", "nom": "Épicerie" }
+      ],
+      "updatedAt": "2026-04-24T12:10:00.000Z"
+    }
+  ]
+}
