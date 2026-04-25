@@ -1,18 +1,20 @@
 /*
   Copilot Boulangerie - BarcodeScanner indépendant
-  Usage:
-    BarcodeScanner.open({
-      title: 'Scanner un code-barres',
-      onResult: ({ text, format }) => console.log(text, format)
-    });
+  Version iPhone/Safari renforcée
 
-  Le module privilégie BarcodeDetector natif, puis tente ZXing via CDN.
-  Il reste autonome: camera, saisie manuelle et import image.
+  API:
+    const result = await BarcodeScanner.open({ title: 'Scanner un code-barres' });
+
+  Stratégie:
+    - iPhone/iPad: démarrage caméra explicite par bouton, puis ZXing prioritaire.
+    - Autres navigateurs: BarcodeDetector natif si disponible, sinon ZXing.
+    - Fallback permanent: image + saisie manuelle.
 */
 (function(){
   'use strict';
 
-  const ZXING_CDN = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js';
+  const ZXING_LIBRARY_CDN = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+  const ZXING_BROWSER_CDN = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js';
   const DEFAULT_FORMATS = [
     'ean_13', 'ean_8', 'upc_a', 'upc_e',
     'code_128', 'code_39', 'code_93', 'itf',
@@ -35,30 +37,74 @@
     return String(value || '').trim().replace(/\s+/g, '');
   }
 
+  function isIOS(){
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function isSecureCameraContext(){
+    return location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  }
+
   function canUseNativeDetector(){
     return typeof window.BarcodeDetector === 'function';
   }
 
-  function injectZxing(){
-    if (window.ZXingBrowser) return Promise.resolve(window.ZXingBrowser);
-    if (zxingPromise) return zxingPromise;
+  function mapNativeFormatsToZXing(formats, ZXing){
+    if (!ZXing?.BarcodeFormat) return undefined;
+    const map = {
+      ean_13: ZXing.BarcodeFormat.EAN_13,
+      ean_8: ZXing.BarcodeFormat.EAN_8,
+      upc_a: ZXing.BarcodeFormat.UPC_A,
+      upc_e: ZXing.BarcodeFormat.UPC_E,
+      code_128: ZXing.BarcodeFormat.CODE_128,
+      code_39: ZXing.BarcodeFormat.CODE_39,
+      code_93: ZXing.BarcodeFormat.CODE_93,
+      itf: ZXing.BarcodeFormat.ITF,
+      qr_code: ZXing.BarcodeFormat.QR_CODE,
+      data_matrix: ZXing.BarcodeFormat.DATA_MATRIX,
+      pdf417: ZXing.BarcodeFormat.PDF_417
+    };
+    return formats.map(f => map[f]).filter(Boolean);
+  }
 
-    zxingPromise = new Promise((resolve, reject) => {
-      const existing = document.querySelector('script[data-barcode-zxing]');
+  function injectScript(src, datasetKey){
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[data-${datasetKey}]`);
       if (existing) {
-        existing.addEventListener('load', () => resolve(window.ZXingBrowser));
-        existing.addEventListener('error', reject);
+        if (existing.dataset.loaded === 'true') return resolve();
+        existing.addEventListener('load', resolve, { once:true });
+        existing.addEventListener('error', reject, { once:true });
         return;
       }
       const script = document.createElement('script');
-      script.src = ZXING_CDN;
+      script.src = src;
       script.async = true;
       script.defer = true;
-      script.dataset.barcodeZxing = 'true';
-      script.onload = () => window.ZXingBrowser ? resolve(window.ZXingBrowser) : reject(new Error('ZXing indisponible'));
-      script.onerror = () => reject(new Error('Impossible de charger ZXing'));
+      script.dataset[datasetKey] = 'true';
+      script.onload = () => { script.dataset.loaded = 'true'; resolve(); };
+      script.onerror = () => reject(new Error(`Impossible de charger ${src}`));
       document.head.appendChild(script);
     });
+  }
+
+  async function injectZxing(){
+    if (window.ZXing?.BrowserMultiFormatReader) return { type:'library', api: window.ZXing };
+    if (window.ZXingBrowser?.BrowserMultiFormatReader) return { type:'browser', api: window.ZXingBrowser };
+    if (zxingPromise) return zxingPromise;
+
+    zxingPromise = (async () => {
+      try {
+        await injectScript(ZXING_LIBRARY_CDN, 'barcodeZxingLibrary');
+        if (window.ZXing?.BrowserMultiFormatReader) return { type:'library', api: window.ZXing };
+      } catch (error) {
+        console.warn('[BarcodeScanner] ZXing library indisponible', error);
+      }
+      await injectScript(ZXING_BROWSER_CDN, 'barcodeZxingBrowser');
+      if (window.ZXingBrowser?.BrowserMultiFormatReader) return { type:'browser', api: window.ZXingBrowser };
+      throw new Error('ZXing indisponible');
+    })();
+
     return zxingPromise;
   }
 
@@ -75,10 +121,7 @@
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      setTimeout(() => {
-        osc.stop();
-        ctx.close?.();
-      }, 90);
+      setTimeout(() => { osc.stop(); ctx.close?.(); }, 90);
     } catch {}
   }
 
@@ -101,12 +144,16 @@
         </header>
 
         <div class="barcode-scanner-camera">
-          <video class="barcode-scanner-video" playsinline muted autoplay></video>
-          <div class="barcode-scanner-frame">
+          <video class="barcode-scanner-video" playsinline webkit-playsinline muted autoplay disablepictureinpicture></video>
+          <button type="button" class="barcode-scanner-start" data-barcode-start>
+            <strong>Démarrer la caméra</strong>
+            <span>Autorisez l’accès caméra puis pointez le code-barres</span>
+          </button>
+          <div class="barcode-scanner-frame" aria-hidden="true">
             <span></span><span></span><span></span><span></span>
             <i></i>
           </div>
-          <p class="barcode-scanner-status" data-barcode-status>Initialisation de la caméra…</p>
+          <p class="barcode-scanner-status" data-barcode-status>Prêt. Touchez “Démarrer la caméra”.</p>
         </div>
 
         <div class="barcode-scanner-actions">
@@ -114,7 +161,7 @@
           <button type="button" class="barcode-scanner-btn" data-barcode-torch hidden>Lampe</button>
           <label class="barcode-scanner-btn barcode-scanner-file">
             Image
-            <input type="file" accept="image/*" data-barcode-file hidden>
+            <input type="file" accept="image/*" capture="environment" data-barcode-file hidden>
           </label>
         </div>
 
@@ -138,20 +185,14 @@
     } catch { return []; }
   }
 
-  async function startCamera(ctx){
-    stopStream(ctx);
-    const constraints = {
-      video: ctx.deviceId
-        ? { deviceId: { exact: ctx.deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-        : { facingMode: { ideal: ctx.facingMode || 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-      audio: false
-    };
+  function setStatus(ctx, text){
+    const el = qs('[data-barcode-status]', ctx.root);
+    if (el) el.textContent = text;
+  }
 
-    ctx.stream = await navigator.mediaDevices.getUserMedia(constraints);
-    ctx.video.srcObject = ctx.stream;
-    await ctx.video.play();
-    updateTorchAvailability(ctx);
-    setStatus(ctx, ctx.engineLabel ? `${ctx.engineLabel} actif — pointez le code-barres` : 'Scanner actif — pointez le code-barres');
+  function setStartVisible(ctx, visible){
+    const btn = qs('[data-barcode-start]', ctx.root);
+    if (btn) btn.hidden = !visible;
   }
 
   function stopStream(ctx){
@@ -162,27 +203,55 @@
     if (ctx?.video) ctx.video.srcObject = null;
   }
 
+  function stopReader(ctx){
+    try { ctx.zxingControls?.stop?.(); } catch {}
+    try { ctx.zxingReader?.reset?.(); } catch {}
+    ctx.zxingControls = null;
+    ctx.zxingReader = null;
+    if (ctx.raf) cancelAnimationFrame(ctx.raf);
+    ctx.raf = null;
+    stopStream(ctx);
+  }
+
   function updateTorchAvailability(ctx){
     const torchBtn = qs('[data-barcode-torch]', ctx.root);
-    const track = ctx.stream?.getVideoTracks?.()[0];
+    const track = ctx.stream?.getVideoTracks?.()[0] || ctx.video?.srcObject?.getVideoTracks?.()[0];
     const caps = track?.getCapabilities?.();
     if (caps && caps.torch) torchBtn.hidden = false;
     else torchBtn.hidden = true;
   }
 
   async function toggleTorch(ctx){
-    const track = ctx.stream?.getVideoTracks?.()[0];
+    const track = ctx.stream?.getVideoTracks?.()[0] || ctx.video?.srcObject?.getVideoTracks?.()[0];
     if (!track?.getCapabilities?.().torch) return;
     ctx.torchOn = !ctx.torchOn;
     try {
       await track.applyConstraints({ advanced: [{ torch: ctx.torchOn }] });
-      qs('[data-barcode-torch]', ctx.root).classList.toggle('active', ctx.torchOn);
+      qs('[data-barcode-torch]', ctx.root)?.classList.toggle('active', ctx.torchOn);
     } catch {}
   }
 
-  function setStatus(ctx, text){
-    const el = qs('[data-barcode-status]', ctx.root);
-    if (el) el.textContent = text;
+  async function startCameraForNative(ctx){
+    stopReader(ctx);
+    const primary = {
+      video: ctx.deviceId
+        ? { deviceId: { exact: ctx.deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+        : { facingMode: { ideal: ctx.facingMode || 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    };
+    const fallback = { video: { facingMode: 'environment' }, audio:false };
+
+    try { ctx.stream = await navigator.mediaDevices.getUserMedia(primary); }
+    catch { ctx.stream = await navigator.mediaDevices.getUserMedia(fallback); }
+
+    ctx.video.setAttribute('playsinline', '');
+    ctx.video.setAttribute('webkit-playsinline', '');
+    ctx.video.muted = true;
+    ctx.video.srcObject = ctx.stream;
+    await ctx.video.play();
+    setStartVisible(ctx, false);
+    updateTorchAvailability(ctx);
+    setStatus(ctx, ctx.engineLabel ? `${ctx.engineLabel} actif — pointez le code-barres` : 'Scanner actif — pointez le code-barres');
   }
 
   function finish(ctx, result){
@@ -208,14 +277,14 @@
     const formats = Array.isArray(ctx.options.formats) && ctx.options.formats.length ? ctx.options.formats : DEFAULT_FORMATS;
     try { ctx.detector = new BarcodeDetector({ formats }); }
     catch { ctx.detector = new BarcodeDetector(); }
-    await startCamera(ctx);
+    await startCameraForNative(ctx);
 
     const loop = async () => {
       if (!active || ctx.finished || ctx.stopped) return;
       try {
         if (ctx.video.readyState >= 2) {
           const found = await ctx.detector.detect(ctx.video);
-          if (found && found.length) {
+          if (found?.length) {
             finish(ctx, { text: found[0].rawValue, format: found[0].format, source: 'native' });
             return;
           }
@@ -227,43 +296,101 @@
   }
 
   async function startZxing(ctx){
-    const ZXingBrowser = await injectZxing();
     ctx.engine = 'zxing';
     ctx.engineLabel = 'ZXing';
-    setStatus(ctx, 'Chargement du moteur ZXing…');
-
-    ctx.zxingReader = new ZXingBrowser.BrowserMultiFormatReader();
+    setStatus(ctx, 'Chargement du moteur scanner…');
+    const loaded = await injectZxing();
     const devices = await getVideoDevices();
-    const preferred = ctx.deviceId || devices.find(d => /back|rear|environment/i.test(d.label))?.deviceId || devices[0]?.deviceId;
+    const preferred = ctx.deviceId || devices.find(d => /back|rear|environment|arrière|dos/i.test(d.label))?.deviceId || devices[devices.length - 1]?.deviceId || devices[0]?.deviceId;
     ctx.deviceId = preferred || undefined;
 
-    ctx.zxingControls = await ctx.zxingReader.decodeFromVideoDevice(ctx.deviceId, ctx.video, (result) => {
-      if (result) {
+    ctx.video.setAttribute('playsinline', '');
+    ctx.video.setAttribute('webkit-playsinline', '');
+    ctx.video.muted = true;
+
+    if (loaded.type === 'library') {
+      const ZXing = loaded.api;
+      const formats = Array.isArray(ctx.options.formats) && ctx.options.formats.length ? ctx.options.formats : DEFAULT_FORMATS;
+      const zxingFormats = mapNativeFormatsToZXing(formats, ZXing);
+      let hints;
+      if (ZXing.DecodeHintType && zxingFormats?.length) {
+        hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, zxingFormats);
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+      }
+      ctx.zxingReader = new ZXing.BrowserMultiFormatReader(hints, 250);
+      await ctx.zxingReader.decodeFromVideoDevice(ctx.deviceId || undefined, ctx.video, (result) => {
+        if (!result || ctx.finished) return;
         const text = typeof result.getText === 'function' ? result.getText() : result.text;
         const format = typeof result.getBarcodeFormat === 'function' ? String(result.getBarcodeFormat()) : 'unknown';
         finish(ctx, { text, format, source: 'zxing' });
-      }
-    });
-    setStatus(ctx, 'ZXing actif — pointez le code-barres');
-    setTimeout(() => updateTorchAvailability(ctx), 350);
+      });
+    } else {
+      const ZXingBrowser = loaded.api;
+      ctx.zxingReader = new ZXingBrowser.BrowserMultiFormatReader();
+      ctx.zxingControls = await ctx.zxingReader.decodeFromVideoDevice(ctx.deviceId, ctx.video, (result) => {
+        if (!result || ctx.finished) return;
+        const text = typeof result.getText === 'function' ? result.getText() : result.text;
+        const format = typeof result.getBarcodeFormat === 'function' ? String(result.getBarcodeFormat()) : 'unknown';
+        finish(ctx, { text, format, source: 'zxing' });
+      });
+    }
+
+    setStartVisible(ctx, false);
+    setStatus(ctx, 'Scanner actif — pointez le code-barres');
+    setTimeout(() => {
+      ctx.stream = ctx.video?.srcObject || null;
+      updateTorchAvailability(ctx);
+    }, 450);
   }
 
   async function startBestEngine(ctx){
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setStatus(ctx, 'Caméra indisponible. Utilisez la saisie manuelle ou une image.');
-      return;
-    }
+    if (ctx.starting) return;
+    ctx.starting = true;
+    ctx.finished = false;
+    ctx.stopped = false;
+
     try {
-      if (canUseNativeDetector()) return await startNativeLoop(ctx);
-      return await startZxing(ctx);
-    } catch (nativeError) {
-      console.warn('[BarcodeScanner] moteur principal indisponible', nativeError);
-      try { return await startZxing(ctx); }
-      catch (zxingError) {
-        console.warn('[BarcodeScanner] ZXing indisponible', zxingError);
-        setStatus(ctx, 'Scanner caméra indisponible. Essayez une image ou la saisie manuelle.');
+      if (!isSecureCameraContext()) {
+        setStatus(ctx, 'La caméra nécessite HTTPS. Utilisez GitHub Pages ou la saisie manuelle.');
+        setStartVisible(ctx, true);
+        return;
       }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setStatus(ctx, 'Caméra indisponible. Utilisez une image ou la saisie manuelle.');
+        setStartVisible(ctx, true);
+        return;
+      }
+
+      setStatus(ctx, 'Ouverture de la caméra…');
+
+      // Sur iPhone/Safari, ZXing est plus fiable que BarcodeDetector pour EAN/UPC.
+      if (!isIOS() && canUseNativeDetector() && ctx.options.preferNative !== false) {
+        try { return await startNativeLoop(ctx); }
+        catch (nativeError) { console.warn('[BarcodeScanner] détection native indisponible', nativeError); }
+      }
+
+      return await startZxing(ctx);
+    } catch (error) {
+      console.warn('[BarcodeScanner] caméra indisponible', error);
+      setStartVisible(ctx, true);
+      const message = error?.name === 'NotAllowedError'
+        ? 'Accès caméra refusé. Autorisez la caméra ou utilisez Image / Saisie manuelle.'
+        : 'Scanner caméra indisponible. Essayez Image ou Saisie manuelle.';
+      setStatus(ctx, message);
+    } finally {
+      ctx.starting = false;
     }
+  }
+
+  function loadImage(url){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+      if (img.decode) img.decode().then(() => resolve(img)).catch(() => {});
+    });
   }
 
   async function scanImageFile(ctx, file){
@@ -271,12 +398,9 @@
     setStatus(ctx, 'Analyse de l’image…');
     const url = URL.createObjectURL(file);
     try {
-      const img = new Image();
-      img.decoding = 'async';
-      img.src = url;
-      await img.decode();
+      const img = await loadImage(url);
 
-      if (canUseNativeDetector()) {
+      if (!isIOS() && canUseNativeDetector()) {
         try {
           const detector = ctx.detector || new BarcodeDetector({ formats: DEFAULT_FORMATS });
           const found = await detector.detect(img);
@@ -285,19 +409,32 @@
       }
 
       try {
-        const ZXingBrowser = await injectZxing();
-        const reader = new ZXingBrowser.BrowserMultiFormatReader();
-        const result = await reader.decodeFromImageElement(img);
-        if (result) {
-          const text = typeof result.getText === 'function' ? result.getText() : result.text;
-          const format = typeof result.getBarcodeFormat === 'function' ? String(result.getBarcodeFormat()) : 'unknown';
-          return finish(ctx, { text, format, source: 'image-zxing' });
+        const loaded = await injectZxing();
+        if (loaded.type === 'library') {
+          const ZXing = loaded.api;
+          const reader = new ZXing.BrowserMultiFormatReader();
+          const result = await reader.decodeFromImageElement(img);
+          if (result) {
+            const text = typeof result.getText === 'function' ? result.getText() : result.text;
+            const format = typeof result.getBarcodeFormat === 'function' ? String(result.getBarcodeFormat()) : 'unknown';
+            return finish(ctx, { text, format, source: 'image-zxing' });
+          }
+        } else {
+          const reader = new loaded.api.BrowserMultiFormatReader();
+          const result = await reader.decodeFromImageElement(img);
+          if (result) {
+            const text = typeof result.getText === 'function' ? result.getText() : result.text;
+            const format = typeof result.getBarcodeFormat === 'function' ? String(result.getBarcodeFormat()) : 'unknown';
+            return finish(ctx, { text, format, source: 'image-zxing' });
+          }
         }
       } catch {}
 
-      setStatus(ctx, 'Aucun code détecté dans l’image.');
+      setStatus(ctx, 'Aucun code détecté dans l’image. Essayez une photo plus nette.');
     } finally {
       URL.revokeObjectURL(url);
+      const input = qs('[data-barcode-file]', ctx.root);
+      if (input) input.value = '';
     }
   }
 
@@ -307,16 +444,13 @@
     const currentIndex = Math.max(0, devices.findIndex(d => d.deviceId === ctx.deviceId));
     const next = devices[(currentIndex + 1) % devices.length];
     ctx.deviceId = next.deviceId;
-    ctx.finished = false;
-    ctx.stopped = false;
-
-    if (ctx.zxingControls?.stop) ctx.zxingControls.stop();
-    if (ctx.raf) cancelAnimationFrame(ctx.raf);
+    stopReader(ctx);
     await startBestEngine(ctx);
   }
 
   function bindEvents(ctx){
     qsa('[data-barcode-close]', ctx.root).forEach(btn => btn.addEventListener('click', close));
+    qs('[data-barcode-start]', ctx.root)?.addEventListener('click', () => startBestEngine(ctx));
     qs('[data-barcode-switch]', ctx.root)?.addEventListener('click', () => switchCamera(ctx));
     qs('[data-barcode-torch]', ctx.root)?.addEventListener('click', () => toggleTorch(ctx));
     qs('[data-barcode-file]', ctx.root)?.addEventListener('change', e => scanImageFile(ctx, e.target.files?.[0]));
@@ -333,10 +467,7 @@
     const ctx = active;
     if (!ctx) return;
     ctx.stopped = true;
-    if (ctx.raf) cancelAnimationFrame(ctx.raf);
-    try { ctx.zxingControls?.stop?.(); } catch {}
-    try { ctx.zxingReader?.reset?.(); } catch {}
-    stopStream(ctx);
+    stopReader(ctx);
     document.removeEventListener('keydown', ctx.escapeHandler);
     ctx.root?.remove();
     active = null;
@@ -356,11 +487,15 @@
         deviceId: options.deviceId || '',
         finished: false,
         stopped: false,
+        starting: false,
         torchOn: false
       };
       active = ctx;
       bindEvents(ctx);
-      startBestEngine(ctx);
+
+      // iPhone/iPad: démarrage explicite fiable. Autres navigateurs: auto-start autorisé.
+      if (!isIOS() && options.autoStart !== false) startBestEngine(ctx);
+      else setStatus(ctx, 'Prêt. Touchez “Démarrer la caméra”.');
     });
   }
 
@@ -378,8 +513,9 @@
     close,
     attachToButton,
     isSupported(){
-      return Boolean(navigator.mediaDevices?.getUserMedia || canUseNativeDetector() || window.ZXingBrowser);
+      return Boolean(navigator.mediaDevices?.getUserMedia || canUseNativeDetector() || window.ZXing || window.ZXingBrowser);
     },
-    hasNativeDetector: canUseNativeDetector
+    hasNativeDetector: canUseNativeDetector,
+    isIOS
   };
 })();
