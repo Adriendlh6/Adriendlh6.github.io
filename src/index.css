@@ -1,0 +1,103 @@
+/* Variables globales — thème SaaS sobre, fond clair */
+:root {
+  --bg-page: #f4f5f7;
+  --bg-card: #ffffff;
+  --border-subtle: #e6e8ec;
+  --text-primary: #1a1d21;
+  --text-secondary: #5c6370;
+  --text-muted: #8b929e;
+  --accent: #2d6a4f;
+  --accent-soft: #e8f2ed;
+  --sidebar-width: 260px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell,
+    "Noto Sans", sans-serif;
+}
+
+:root[data-theme-variant="goldBeige"] {
+  --bg-page: #f6efe1;
+  --bg-card: #fffaf0;
+  --border-subtle: #e7d9bf;
+  --text-primary: #31261b;
+  --text-secondary: #6a5741;
+  --text-muted: #8a7762;
+  --accent: #b8860b;
+  --accent-soft: #f5e7c4;
+}
+
+:root[data-theme-variant="blueGray"] {
+  --bg-page: #edf1f6;
+  --bg-card: #f8fbff;
+  --border-subtle: #d6dee8;
+  --text-primary: #202a35;
+  --text-secondary: #526476;
+  --text-muted: #73869a;
+  --accent: #2b6cb0;
+  --accent-soft: #dbe9f7;
+}
+
+:root[data-theme-variant="greenGray"] {
+  --bg-page: #eef2ef;
+  --bg-card: #f8fbf9;
+  --border-subtle: #d8e0da;
+  --text-primary: #1f2a23;
+  --text-secondary: #4f6356;
+  --text-muted: #73857a;
+  --accent: #2d6a4f;
+  --accent-soft: #deefe5;
+}
+
+:root[data-theme-variant="roseGray"] {
+  --bg-page: #f3edf1;
+  --bg-card: #fff9fc;
+  --border-subtle: #e5d9e1;
+  --text-primary: #322631;
+  --text-secondary: #695665;
+  --text-muted: #8a7786;
+  --accent: #b64b7a;
+  --accent-soft: #f6dceb;
+}
+
+:root[data-theme-mode="dark"] {
+  --bg-page: #111318;
+  --bg-card: #1a1f27;
+  --border-subtle: #2d3440;
+  --text-primary: #eef1f5;
+  --text-secondary: #b7c0cc;
+  --text-muted: #8f9aab;
+  /* Le sombre conserve la teinte d'accent du mode clair choisi */
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, #0f141b);
+  --shadow-card: 0 2px 6px rgba(2, 6, 23, 0.45);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
